@@ -1,0 +1,121 @@
+/* ==========================================================================
+   GLOBAL.CSS - Ajustado al estilo Marcaciones
+   ========================================================================== */
+@import url('https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&display=swap');
+
+:root {
+    --primary: #2563eb;
+    --primary-hover: #1d4ed8;
+    --primary-dark: #1e3a8a;
+    --bg: #f4f7fb;
+    --white: #ffffff;
+    --text-main: #1f2937;
+    --text-muted: #6b7280;
+    --border: #e5e7eb;
+    --error-bg: #fee2e2;
+    --error-text: #991b1b;
+    --font: 'Figtree', system-ui, sans-serif;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+    font-family: var(--font);
+    background-color: var(--bg);
+    /* Fondo cuadriculado estilo Marcaciones */
+    background-image: 
+        linear-gradient(rgba(37,99,235,.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(37,99,235,.04) 1px, transparent 1px);
+    background-size: 30px 30px;
+    color: var(--text-main);
+    min-height: 100vh;
+}
+
+/* ── Estilos de Login ── */
+.login-page {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    min-height: 100vh;
+}
+
+.login-card {
+    background: var(--white);
+    width: 100%;
+    max-width: 420px;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    box-shadow: 0 10px 25px rgba(37,99,235,0.1);
+    overflow: hidden;
+    animation: fadeIn 0.4s ease;
+}
+
+.card-header {
+    background: linear-gradient(135deg, var(--primary-dark), var(--primary));
+    padding: 25px;
+    text-align: center;
+    color: white;
+}
+
+.card-header h1 { font-size: 18px; font-weight: 700; margin-bottom: 4px; }
+.card-header p { font-size: 12px; opacity: 0.8; }
+
+.card-body { padding: 30px; }
+
+/* ── Formularios ── */
+.form-group { margin-bottom: 18px; }
+.form-group label {
+    display: block;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 6px;
+    letter-spacing: 0.5px;
+}
+
+.form-control {
+    width: 100%;
+    padding: 11px 14px;
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    font-family: var(--font);
+    font-size: 14px;
+    transition: all 0.2s;
+    background: #f9fafb;
+}
+
+.form-control:focus {
+    outline: none;
+    border-color: var(--primary);
+    background: white;
+    box-shadow: 0 0 0 4px rgba(37,99,235,0.15);
+}
+
+.btn-block {
+    width: 100%;
+    background: var(--primary);
+    color: white;
+    border: none;
+    padding: 12px;
+    border-radius: 8px;
+    font-weight: 700;
+    font-size: 14px;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.btn-block:hover { background: var(--primary-hover); transform: translateY(-1px); }
+
+/* ── Alertas ── */
+.alert {
+    padding: 12px;
+    border-radius: 8px;
+    font-size: 13px;
+    margin-bottom: 20px;
+    border: 1px solid transparent;
+}
+.alert-error { background: var(--error-bg); color: var(--error-text); border-color: #fca5a5; }
+
+@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }

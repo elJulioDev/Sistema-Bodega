@@ -35,82 +35,113 @@ $pageTitle = 'Ver Orden de Compra';
 require_once __DIR__ . '/../inc/header.php';
 ?>
 
-<h1 class="page-title">Orden de Compra #<?php echo h($oc['numero_oc']); ?></h1>
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3 mb-0 text-gray-800">
+        <i class="bi bi-cart-check text-primary me-2"></i>Orden de Compra <span class="text-primary">#<?php echo h($oc['numero_oc']); ?></span>
+    </h1>
+    <a href="index.php" class="btn btn-outline-secondary"><i class="bi bi-arrow-left me-1"></i> Volver al listado</a>
+</div>
 
-<div class="card">
-    <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:16px;">
-        <div><strong>Proveedor:</strong><br><?php echo h($oc['razon_social']); ?></div>
-        <div><strong>RUT:</strong><br><?php echo h($oc['rut']); ?></div>
-        <div><strong>Fecha OC:</strong><br><?php echo h($oc['fecha_oc']); ?></div>
-        <div><strong>Estado:</strong><br><?php echo h($oc['estado']); ?></div>
-        <div><strong>Unidad solicitante:</strong><br><?php echo h($oc['unidad_solicitante']); ?></div>
-        <div><strong>Centro de costo:</strong><br><?php echo h($oc['centro_costo']); ?></div>
+<div class="card shadow-sm border-0 mb-4">
+    <div class="card-header bg-white pt-3 pb-2 border-0">
+        <h5 class="mb-0 fw-bold">Información General</h5>
     </div>
-
-    <?php if ($oc['descripcion'] !== ''): ?>
-        <div style="margin-top:16px;">
-            <strong>Descripción:</strong><br>
-            <?php echo nl2br(h($oc['descripcion'])); ?>
+    <div class="card-body bg-light rounded-bottom">
+        <div class="row g-4">
+            <div class="col-md-4 col-lg-3">
+                <span class="d-block text-muted small fw-bold text-uppercase mb-1">Proveedor</span>
+                <span class="fs-6 fw-medium text-dark"><?php echo h($oc['razon_social']); ?></span>
+            </div>
+            <div class="col-md-4 col-lg-3">
+                <span class="d-block text-muted small fw-bold text-uppercase mb-1">RUT</span>
+                <span class="fs-6 text-dark"><?php echo h($oc['rut']); ?></span>
+            </div>
+            <div class="col-md-4 col-lg-2">
+                <span class="d-block text-muted small fw-bold text-uppercase mb-1">Fecha OC</span>
+                <span class="fs-6 text-dark"><?php echo date('d/m/Y', strtotime($oc['fecha_oc'])); ?></span>
+            </div>
+            <div class="col-md-4 col-lg-2">
+                <span class="d-block text-muted small fw-bold text-uppercase mb-1">Estado</span>
+                <?php 
+                    $est = strtolower($oc['estado']);
+                    $badge = 'bg-secondary';
+                    if ($est === 'cerrada') $badge = 'bg-success';
+                    if ($est === 'pendiente') $badge = 'bg-warning text-dark';
+                    if ($est === 'parcial') $badge = 'bg-info text-dark';
+                    if ($est === 'anulada') $badge = 'bg-danger';
+                ?>
+                <span class="badge <?php echo $badge; ?> px-2 py-1 border-0 text-uppercase"><?php echo h($oc['estado']); ?></span>
+            </div>
+            <div class="col-md-4 col-lg-4">
+                <span class="d-block text-muted small fw-bold text-uppercase mb-1">Unidad solicitante</span>
+                <span class="fs-6 text-dark"><?php echo h($oc['unidad_solicitante']) ?: '-'; ?></span>
+            </div>
+            <div class="col-md-4 col-lg-4">
+                <span class="d-block text-muted small fw-bold text-uppercase mb-1">Centro de costo</span>
+                <span class="fs-6 text-dark"><?php echo h($oc['centro_costo']) ?: '-'; ?></span>
+            </div>
+            <?php if ($oc['descripcion'] !== ''): ?>
+            <div class="col-12 border-top pt-3 mt-3">
+                <span class="d-block text-muted small fw-bold text-uppercase mb-1">Descripción</span>
+                <p class="mb-0 text-dark"><?php echo nl2br(h($oc['descripcion'])); ?></p>
+            </div>
+            <?php endif; ?>
+            <?php if ($oc['observacion'] !== ''): ?>
+            <div class="col-12 border-top pt-3 mt-3">
+                <span class="d-block text-muted small fw-bold text-uppercase mb-1">Observación Interna</span>
+                <p class="mb-0 text-dark"><?php echo nl2br(h($oc['observacion'])); ?></p>
+            </div>
+            <?php endif; ?>
         </div>
-    <?php endif; ?>
-
-    <?php if ($oc['observacion'] !== ''): ?>
-        <div style="margin-top:16px;">
-            <strong>Observación:</strong><br>
-            <?php echo nl2br(h($oc['observacion'])); ?>
-        </div>
-    <?php endif; ?>
+    </div>
 </div>
 
-<div class="card" style="overflow:auto;">
-    <table style="width:100%; border-collapse:collapse; min-width:900px;">
-        <thead>
-            <tr style="text-align:left; border-bottom:1px solid #e5e7eb;">
-                <th style="padding:12px 10px;">Producto</th>
-                <th style="padding:12px 10px;">Descripción</th>
-                <th style="padding:12px 10px;">Cantidad</th>
-                <th style="padding:12px 10px;">Precio unitario</th>
-                <th style="padding:12px 10px;">Subtotal</th>
-            </tr>
-        </thead>
-        <tbody>
-        <?php foreach ($detalle as $d): ?>
-            <tr style="border-bottom:1px solid #f0f0f0;">
-                <td style="padding:12px 10px;">
-                    <?php
-                    if ($d['codigo'] || $d['producto_nombre']) {
-                        echo h($d['codigo'] . ' - ' . $d['producto_nombre']);
-                    } else {
-                        echo '-';
-                    }
-                    ?>
-                </td>
-                <td style="padding:12px 10px;"><?php echo h($d['descripcion_item']); ?></td>
-                <td style="padding:12px 10px;"><?php echo number_format((float)$d['cantidad'], 2, ',', '.'); ?></td>
-                <td style="padding:12px 10px;"><?php echo number_format((float)$d['precio_unitario'], 0, ',', '.'); ?></td>
-                <td style="padding:12px 10px;"><?php echo number_format((float)$d['subtotal'], 0, ',', '.'); ?></td>
-            </tr>
-        <?php endforeach; ?>
-        </tbody>
-        <tfoot>
-            <tr>
-                <td colspan="4" style="padding:12px 10px; text-align:right;"><strong>Neto</strong></td>
-                <td style="padding:12px 10px;"><strong><?php echo number_format((float)$oc['monto_neto'], 0, ',', '.'); ?></strong></td>
-            </tr>
-            <tr>
-                <td colspan="4" style="padding:12px 10px; text-align:right;"><strong>IVA</strong></td>
-                <td style="padding:12px 10px;"><strong><?php echo number_format((float)$oc['monto_iva'], 0, ',', '.'); ?></strong></td>
-            </tr>
-            <tr>
-                <td colspan="4" style="padding:12px 10px; text-align:right;"><strong>Total</strong></td>
-                <td style="padding:12px 10px;"><strong><?php echo number_format((float)$oc['monto_total'], 0, ',', '.'); ?></strong></td>
-            </tr>
-        </tfoot>
-    </table>
-</div>
-
-<div class="card">
-    <a href="index.php" class="btn btn--secondary">Volver</a>
+<div class="card shadow-sm border-0 mb-4">
+    <div class="card-header bg-white pt-3 pb-2 border-0">
+        <h5 class="mb-0 fw-bold">Detalle de Ítems</h5>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light text-secondary">
+                    <tr>
+                        <th class="px-4 py-3">Producto</th>
+                        <th class="py-3">Descripción</th>
+                        <th class="py-3 text-end">Cantidad</th>
+                        <th class="py-3 text-end">Precio Unitario</th>
+                        <th class="px-4 py-3 text-end">Subtotal</th>
+                    </tr>
+                </thead>
+                <tbody>
+                <?php foreach ($detalle as $d): ?>
+                    <tr>
+                        <td class="px-4 fw-medium text-dark">
+                            <?php echo ($d['codigo'] || $d['producto_nombre']) ? h($d['codigo'] . ' - ' . $d['producto_nombre']) : '-'; ?>
+                        </td>
+                        <td class="text-secondary"><?php echo h($d['descripcion_item']); ?></td>
+                        <td class="text-end"><?php echo number_format((float)$d['cantidad'], 2, ',', '.'); ?></td>
+                        <td class="text-end">$<?php echo number_format((float)$d['precio_unitario'], 0, ',', '.'); ?></td>
+                        <td class="px-4 text-end fw-medium text-dark">$<?php echo number_format((float)$d['subtotal'], 0, ',', '.'); ?></td>
+                    </tr>
+                <?php endforeach; ?>
+                </tbody>
+                <tfoot class="table-light">
+                    <tr>
+                        <td colspan="4" class="text-end text-muted fw-bold py-2">Neto</td>
+                        <td class="px-4 text-end fw-bold text-dark">$<?php echo number_format((float)$oc['monto_neto'], 0, ',', '.'); ?></td>
+                    </tr>
+                    <tr>
+                        <td colspan="4" class="text-end text-muted fw-bold py-2">IVA (19%)</td>
+                        <td class="px-4 text-end fw-bold text-dark">$<?php echo number_format((float)$oc['monto_iva'], 0, ',', '.'); ?></td>
+                    </tr>
+                    <tr>
+                        <td colspan="4" class="text-end text-dark fs-5 fw-bold py-3">Total</td>
+                        <td class="px-4 text-end fs-5 fw-bold text-primary py-3">$<?php echo number_format((float)$oc['monto_total'], 0, ',', '.'); ?></td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+    </div>
 </div>
 
 <?php require_once __DIR__ . '/../inc/footer.php'; ?>

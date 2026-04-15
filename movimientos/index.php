@@ -55,94 +55,112 @@ $pageTitle = 'Movimientos';
 require_once __DIR__ . '/../inc/header.php';
 ?>
 
-<h1 class="page-title">Movimientos de Bodega</h1>
-
-<div class="card" style="display:flex; gap:12px; flex-wrap:wrap; align-items:end;">
-    <form method="get" style="display:flex; gap:10px; flex-wrap:wrap; align-items:end; margin:0;">
-        <div>
-            <label style="display:block; margin-bottom:6px; font-weight:700;">Buscar</label>
-            <input
-                type="text"
-                name="buscar"
-                value="<?php echo h($buscar); ?>"
-                placeholder="Producto, bodega u observación"
-                style="padding:10px 12px; min-width:260px; border:1px solid #d1d5db; border-radius:10px;"
-            >
-        </div>
-
-        <div>
-            <label style="display:block; margin-bottom:6px; font-weight:700;">Bodega</label>
-            <select name="id_bodega" style="padding:10px 12px; min-width:220px; border:1px solid #d1d5db; border-radius:10px;">
-                <option value="">Todas</option>
-                <?php foreach ($bodegas as $b): ?>
-                    <option value="<?php echo (int)$b['id']; ?>" <?php echo ((string)$id_bodega === (string)$b['id']) ? 'selected' : ''; ?>>
-                        <?php echo h($b['nombre']); ?>
-                    </option>
-                <?php endforeach; ?>
-            </select>
-        </div>
-
-        <div>
-            <label style="display:block; margin-bottom:6px; font-weight:700;">Tipo</label>
-            <select name="tipo_movimiento" style="padding:10px 12px; min-width:220px; border:1px solid #d1d5db; border-radius:10px;">
-                <option value="">Todos</option>
-                <option value="entrada_compra" <?php echo ($tipo_movimiento === 'entrada_compra') ? 'selected' : ''; ?>>entrada_compra</option>
-                <option value="salida_consumo" <?php echo ($tipo_movimiento === 'salida_consumo') ? 'selected' : ''; ?>>salida_consumo</option>
-                <option value="ajuste_entrada" <?php echo ($tipo_movimiento === 'ajuste_entrada') ? 'selected' : ''; ?>>ajuste_entrada</option>
-                <option value="ajuste_salida" <?php echo ($tipo_movimiento === 'ajuste_salida') ? 'selected' : ''; ?>>ajuste_salida</option>
-                <option value="traslado_entrada" <?php echo ($tipo_movimiento === 'traslado_entrada') ? 'selected' : ''; ?>>traslado_entrada</option>
-                <option value="traslado_salida" <?php echo ($tipo_movimiento === 'traslado_salida') ? 'selected' : ''; ?>>traslado_salida</option>
-            </select>
-        </div>
-
-        <div style="display:flex; gap:10px; flex-wrap:wrap;">
-            <button type="submit" class="btn">Buscar</button>
-            <a href="index.php" class="btn btn--secondary">Limpiar</a>
-        </div>
-    </form>
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3 mb-0 text-gray-800"><i class="bi bi-arrow-left-right text-primary me-2"></i>Historial de Movimientos</h1>
 </div>
 
-<div class="card" style="overflow:auto;">
-    <table style="width:100%; border-collapse:collapse; min-width:1400px;">
-        <thead>
-            <tr style="text-align:left; border-bottom:1px solid #e5e7eb;">
-                <th style="padding:12px 10px;">Fecha</th>
-                <th style="padding:12px 10px;">Bodega</th>
-                <th style="padding:12px 10px;">Código</th>
-                <th style="padding:12px 10px;">Producto</th>
-                <th style="padding:12px 10px;">Tipo</th>
-                <th style="padding:12px 10px;">Cantidad</th>
-                <th style="padding:12px 10px;">Precio</th>
-                <th style="padding:12px 10px;">Total</th>
-                <th style="padding:12px 10px;">Referencia</th>
-                <th style="padding:12px 10px;">Observación</th>
-                <th style="padding:12px 10px;">Usuario</th>
-            </tr>
-        </thead>
-        <tbody>
-        <?php if (!$movimientos): ?>
-            <tr>
-                <td colspan="11" style="padding:18px 10px; color:#6b7280;">No se encontraron movimientos.</td>
-            </tr>
-        <?php else: ?>
-            <?php foreach ($movimientos as $m): ?>
-                <tr style="border-bottom:1px solid #f0f0f0;">
-                    <td style="padding:12px 10px;"><?php echo h($m['fecha_movimiento']); ?></td>
-                    <td style="padding:12px 10px;"><?php echo h($m['bodega_nombre']); ?></td>
-                    <td style="padding:12px 10px;"><?php echo h($m['producto_codigo']); ?></td>
-                    <td style="padding:12px 10px;"><?php echo h($m['producto_nombre']); ?></td>
-                    <td style="padding:12px 10px;"><?php echo h($m['tipo_movimiento']); ?></td>
-                    <td style="padding:12px 10px;"><?php echo number_format((float)$m['cantidad'], 2, ',', '.'); ?></td>
-                    <td style="padding:12px 10px;"><?php echo number_format((float)$m['precio_unitario'], 0, ',', '.'); ?></td>
-                    <td style="padding:12px 10px;"><?php echo number_format((float)$m['total'], 0, ',', '.'); ?></td>
-                    <td style="padding:12px 10px;"><?php echo h($m['referencia_tipo'] . ' #' . $m['referencia_id']); ?></td>
-                    <td style="padding:12px 10px;"><?php echo h($m['observacion']); ?></td>
-                    <td style="padding:12px 10px;"><?php echo h($m['usuario_nombre']); ?></td>
-                </tr>
-            <?php endforeach; ?>
-        <?php endif; ?>
-        </tbody>
-    </table>
+<div class="card shadow-sm border-0 mb-4">
+    <div class="card-body">
+        <form method="get" class="row g-3 align-items-end">
+            <div class="col-md-4">
+                <label class="form-label text-secondary fw-bold small">Buscar general</label>
+                <div class="input-group">
+                    <span class="input-group-text bg-light text-secondary border-end-0"><i class="bi bi-search"></i></span>
+                    <input type="text" name="buscar" value="<?php echo h($buscar); ?>" class="form-control border-start-0 ps-0" placeholder="Producto, bodega, u observación...">
+                </div>
+            </div>
+
+            <div class="col-md-3">
+                <label class="form-label text-secondary fw-bold small">Bodega</label>
+                <select name="id_bodega" class="form-select">
+                    <option value="">Todas las bodegas</option>
+                    <?php foreach ($bodegas as $b): ?>
+                        <option value="<?php echo (int)$b['id']; ?>" <?php echo ((string)$id_bodega === (string)$b['id']) ? 'selected' : ''; ?>>
+                            <?php echo h($b['nombre']); ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+
+            <div class="col-md-3">
+                <label class="form-label text-secondary fw-bold small">Tipo de Movimiento</label>
+                <select name="tipo_movimiento" class="form-select">
+                    <option value="">Todos los tipos</option>
+                    <option value="entrada_compra" <?php echo ($tipo_movimiento === 'entrada_compra') ? 'selected' : ''; ?>>Entrada por Compra</option>
+                    <option value="salida_consumo" <?php echo ($tipo_movimiento === 'salida_consumo') ? 'selected' : ''; ?>>Salida por Consumo</option>
+                    <option value="ajuste_entrada" <?php echo ($tipo_movimiento === 'ajuste_entrada') ? 'selected' : ''; ?>>Ajuste de Entrada</option>
+                    <option value="ajuste_salida" <?php echo ($tipo_movimiento === 'ajuste_salida') ? 'selected' : ''; ?>>Ajuste de Salida</option>
+                    <option value="traslado_entrada" <?php echo ($tipo_movimiento === 'traslado_entrada') ? 'selected' : ''; ?>>Traslado Entrada</option>
+                    <option value="traslado_salida" <?php echo ($tipo_movimiento === 'traslado_salida') ? 'selected' : ''; ?>>Traslado Salida</option>
+                </select>
+            </div>
+
+            <div class="col-md-2 d-flex gap-2">
+                <button type="submit" class="btn btn-primary w-100"><i class="bi bi-funnel me-1"></i> Filtrar</button>
+                <?php if ($buscar !== '' || $id_bodega !== '' || $tipo_movimiento !== ''): ?>
+                    <a href="index.php" class="btn btn-light border" title="Limpiar"><i class="bi bi-eraser"></i></a>
+                <?php endif; ?>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card shadow-sm border-0">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0 text-nowrap">
+                <thead class="table-light text-secondary" style="font-size: 0.85rem;">
+                    <tr>
+                        <th class="px-4 py-3">FECHA</th>
+                        <th class="py-3">BODEGA</th>
+                        <th class="py-3">PRODUCTO</th>
+                        <th class="py-3 text-center">TIPO</th>
+                        <th class="py-3 text-end">CANTIDAD</th>
+                        <th class="py-3 text-end">TOTAL $</th>
+                        <th class="py-3">REFERENCIA</th>
+                        <th class="py-3">USUARIO</th>
+                        <th class="px-4 py-3">OBSERVACIÓN</th>
+                    </tr>
+                </thead>
+                <tbody>
+                <?php if (!$movimientos): ?>
+                    <tr>
+                        <td colspan="9" class="text-center py-5 text-muted">No se encontraron movimientos.</td>
+                    </tr>
+                <?php else: ?>
+                    <?php foreach ($movimientos as $m): ?>
+                        <tr>
+                            <td class="px-4 text-muted small"><?php echo date('d/m/Y H:i', strtotime($m['fecha_movimiento'])); ?></td>
+                            <td><span class="badge bg-primary bg-opacity-10 text-primary border-0"><i class="bi bi-geo-alt-fill me-1"></i><?php echo h($m['bodega_nombre']); ?></span></td>
+                            <td>
+                                <div class="fw-bold text-dark"><?php echo h($m['producto_nombre']); ?></div>
+                                <div class="text-muted small">Cód: <?php echo h($m['producto_codigo']); ?></div>
+                            </td>
+                            <td class="text-center">
+                                <?php 
+                                    $tipo = h($m['tipo_movimiento']);
+                                    $badgeClass = (strpos($tipo, 'entrada') !== false) ? 'bg-success bg-opacity-10 text-success' : 'bg-danger bg-opacity-10 text-danger';
+                                ?>
+                                <span class="badge <?php echo $badgeClass; ?> border-0 text-uppercase">
+                                    <?php echo str_replace('_', ' ', $tipo); ?>
+                                </span>
+                            </td>
+                            <td class="text-end fw-bold fs-6 <?php echo (strpos($tipo, 'entrada') !== false) ? 'text-success' : 'text-danger'; ?>">
+                                <?php echo (strpos($tipo, 'entrada') !== false ? '+' : '-'); ?> <?php echo number_format((float)$m['cantidad'], 2, ',', '.'); ?>
+                            </td>
+                            <td class="text-end fw-medium text-dark">$<?php echo number_format((float)$m['total'], 0, ',', '.'); ?></td>
+                            <td class="text-muted small"><?php echo h($m['referencia_tipo'] . ' #' . $m['referencia_id']); ?></td>
+                            <td class="text-secondary small"><i class="bi bi-person me-1"></i><?php echo h($m['usuario_nombre'] ?: 'Sistema'); ?></td>
+                            <td class="px-4 text-muted small text-truncate" style="max-width: 200px;" title="<?php echo h($m['observacion']); ?>">
+                                <?php echo h($m['observacion']) ?: '-'; ?>
+                            </td>
+                        </tr>
+                    <?php endforeach; ?>
+                <?php endif; ?>
+                </tbody>
+            </table>
+        </div>
+    </div>
 </div>
 
 <?php require_once __DIR__ . '/../inc/footer.php'; ?>

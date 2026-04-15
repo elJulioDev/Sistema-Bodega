@@ -41,97 +41,36 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login | Sistema de Bodega</title>
-    <style>
-        *{box-sizing:border-box}
-        body{
-            margin:0;
-            font-family:Arial, Helvetica, sans-serif;
-            background:linear-gradient(135deg,#e5eefb 0%,#f6f8fb 100%);
-            min-height:100vh;
-            display:flex;
-            align-items:center;
-            justify-content:center;
-            padding:20px;
-        }
-        .login-box{
-            width:100%;
-            max-width:420px;
-            background:#fff;
-            border-radius:18px;
-            padding:28px;
-            box-shadow:0 15px 40px rgba(0,0,0,.12);
-        }
-        .title{
-            margin:0 0 8px;
-            font-size:28px;
-            color:#111827;
-        }
-        .subtitle{
-            margin:0 0 22px;
-            color:#6b7280;
-            font-size:14px;
-        }
-        .form-group{
-            margin-bottom:14px;
-        }
-        label{
-            display:block;
-            font-size:14px;
-            margin-bottom:6px;
-            font-weight:700;
-            color:#374151;
-        }
-        input{
-            width:100%;
-            padding:12px 14px;
-            border:1px solid #d1d5db;
-            border-radius:10px;
-            font-size:14px;
-        }
-        .btn{
-            width:100%;
-            padding:12px 14px;
-            background:#2563eb;
-            color:#fff;
-            border:none;
-            border-radius:10px;
-            font-size:15px;
-            font-weight:700;
-            cursor:pointer;
-            margin-top:10px;
-        }
-        .error{
-            background:#fee2e2;
-            color:#991b1b;
-            padding:12px 14px;
-            border-radius:10px;
-            font-size:14px;
-            margin-bottom:14px;
-        }
-    </style>
+    <link rel="stylesheet" href="static/css/login.css">
 </head>
-<body>
-    <div class="login-box">
-        <h1 class="title">Sistema de Bodega</h1>
-        <p class="subtitle">Ingreso al panel de administración</p>
+<body class="login-page">
+    <div class="login-card">
+        <div class="card-header">
+            <h1>Sistema de Bodega</h1>
+            <p>Panel de Administración y Control</p>
+        </div>
 
-        <?php if ($error !== ''): ?>
-            <div class="error"><?php echo h($error); ?></div>
-        <?php endif; ?>
+        <div class="card-body">
+            <?php if ($error !== ''): ?>
+                <div class="alert alert-error">
+                    <strong>Error:</strong> <?php echo h($error); ?>
+                </div>
+            <?php endif; ?>
 
-        <form method="post">
-            <div class="form-group">
-                <label for="usuario">Usuario</label>
-                <input type="text" name="usuario" id="usuario" required>
-            </div>
+            <form method="post" autocomplete="off">
+                <div class="form-group">
+                    <label for="usuario">Nombre de Usuario</label>
+                    <input type="text" name="usuario" id="usuario" class="form-control" placeholder="Ej: admin" required autofocus>
+                </div>
 
-            <div class="form-group">
-                <label for="clave">Contraseña</label>
-                <input type="password" name="clave" id="clave" required>
-            </div>
+                <div class="form-group">
+                    <label for="clave">Contraseña</label>
+                    <input type="password" name="clave" id="clave" class="form-control" placeholder="••••••••" required>
+                </div>
 
-            <button type="submit" class="btn">Ingresar</button>
-        </form>
+                <button type="submit" class="btn-block">Ingresar al Sistema</button>
+            </form>
+        </div>
     </div>
 </body>
 </html>

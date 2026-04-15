@@ -40,7 +40,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($codigo === '' || $nombre === '') {
         $error = 'El código y el nombre son obligatorios.';
     } else {
-
         $stmt = $pdo->prepare("SELECT id FROM productos WHERE codigo = ? LIMIT 1");
         $stmt->execute(array($codigo));
         $existe = $stmt->fetch();
@@ -48,7 +47,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($existe) {
             $error = 'Ya existe un producto con ese código.';
         } else {
-
             $stmt = $pdo->prepare("
                 INSERT INTO productos (
                     codigo, nombre, descripcion, id_tipo_producto, id_unidad_medida,
@@ -79,92 +77,90 @@ $pageTitle = 'Nuevo Producto';
 require_once __DIR__ . '/../inc/header.php';
 ?>
 
-<h1 class="page-title">Nuevo Producto</h1>
-
-<div class="card">
-
-<?php if ($error !== ''): ?>
-    <div class="flash flash--error"><?php echo h($error); ?></div>
-<?php endif; ?>
-
-<form method="post">
-
-<div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:16px;">
-
-<div>
-<label>Código *</label>
-<input type="text" name="codigo" value="<?php echo h($codigo); ?>">
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3 mb-0 text-gray-800"><i class="bi bi-box-seam text-primary me-2"></i>Nuevo Producto</h1>
+    <a href="index.php" class="btn btn-outline-secondary"><i class="bi bi-arrow-left me-1"></i> Volver al listado</a>
 </div>
 
-<div>
-<label>Nombre *</label>
-<input type="text" name="nombre" value="<?php echo h($nombre); ?>">
-</div>
+<div class="card shadow-sm border-0">
+    <div class="card-body p-4">
+        <?php if ($error !== ''): ?>
+            <div class="alert alert-danger"><i class="bi bi-exclamation-triangle-fill me-2"></i><?php echo h($error); ?></div>
+        <?php endif; ?>
 
-<div>
-<label>Tipo</label>
-<select name="id_tipo_producto">
-<option value="">Seleccione</option>
-<?php foreach ($tipos as $t): ?>
-<option value="<?php echo $t['id']; ?>"><?php echo h($t['nombre']); ?></option>
-<?php endforeach; ?>
-</select>
-</div>
+        <form method="post" class="row g-4">
+            <div class="col-md-3">
+                <label class="form-label fw-bold text-secondary">Código <span class="text-danger">*</span></label>
+                <input type="text" name="codigo" value="<?php echo h($codigo); ?>" class="form-control" required>
+            </div>
 
-<div>
-<label>Unidad</label>
-<select name="id_unidad_medida">
-<option value="">Seleccione</option>
-<?php foreach ($unidades as $u): ?>
-<option value="<?php echo $u['id']; ?>"><?php echo h($u['nombre']); ?></option>
-<?php endforeach; ?>
-</select>
-</div>
+            <div class="col-md-9">
+                <label class="form-label fw-bold text-secondary">Nombre de producto <span class="text-danger">*</span></label>
+                <input type="text" name="nombre" value="<?php echo h($nombre); ?>" class="form-control" required>
+            </div>
 
-<div>
-<label>Marca</label>
-<input type="text" name="marca" value="<?php echo h($marca); ?>">
-</div>
+            <div class="col-md-6">
+                <label class="form-label fw-bold text-secondary">Categoría / Tipo</label>
+                <select name="id_tipo_producto" class="form-select">
+                    <option value="">Seleccione</option>
+                    <?php foreach ($tipos as $t): ?>
+                        <option value="<?php echo $t['id']; ?>" <?php echo ($id_tipo_producto == $t['id']) ? 'selected' : ''; ?>><?php echo h($t['nombre']); ?></option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
 
-<div>
-<label>Modelo</label>
-<input type="text" name="modelo" value="<?php echo h($modelo); ?>">
-</div>
+            <div class="col-md-6">
+                <label class="form-label fw-bold text-secondary">Unidad de Medida</label>
+                <select name="id_unidad_medida" class="form-select">
+                    <option value="">Seleccione</option>
+                    <?php foreach ($unidades as $u): ?>
+                        <option value="<?php echo $u['id']; ?>" <?php echo ($id_unidad_medida == $u['id']) ? 'selected' : ''; ?>><?php echo h($u['nombre']); ?></option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
 
-<div>
-<label>Stock mínimo</label>
-<input type="number" step="0.01" name="stock_minimo" value="<?php echo h($stock_minimo); ?>">
-</div>
+            <div class="col-md-4">
+                <label class="form-label fw-bold text-secondary">Marca</label>
+                <input type="text" name="marca" value="<?php echo h($marca); ?>" class="form-control">
+            </div>
 
-<div>
-<label>Controla stock</label>
-<select name="controla_stock">
-<option value="1">Sí</option>
-<option value="0">No</option>
-</select>
-</div>
+            <div class="col-md-4">
+                <label class="form-label fw-bold text-secondary">Modelo</label>
+                <input type="text" name="modelo" value="<?php echo h($modelo); ?>" class="form-control">
+            </div>
 
-<div>
-<label>Activo fijo</label>
-<select name="activo_fijo">
-<option value="0">No</option>
-<option value="1">Sí</option>
-</select>
-</div>
+            <div class="col-md-4">
+                <label class="form-label fw-bold text-secondary">Stock Mínimo Alerta</label>
+                <input type="number" step="0.01" name="stock_minimo" value="<?php echo h($stock_minimo); ?>" class="form-control">
+            </div>
 
-<div style="grid-column:1 / -1;">
-<label>Descripción</label>
-<textarea name="descripcion"><?php echo h($descripcion); ?></textarea>
-</div>
+            <div class="col-md-6">
+                <label class="form-label fw-bold text-secondary">¿Controla Stock?</label>
+                <select name="controla_stock" class="form-select">
+                    <option value="1" <?php echo ($controla_stock == '1') ? 'selected' : ''; ?>>Sí, llevar inventario</option>
+                    <option value="0" <?php echo ($controla_stock == '0') ? 'selected' : ''; ?>>No, es servicio/intangible</option>
+                </select>
+            </div>
 
-</div>
+            <div class="col-md-6">
+                <label class="form-label fw-bold text-secondary">¿Es Activo Fijo?</label>
+                <select name="activo_fijo" class="form-select">
+                    <option value="0" <?php echo ($activo_fijo == '0') ? 'selected' : ''; ?>>No, es producto de consumo</option>
+                    <option value="1" <?php echo ($activo_fijo == '1') ? 'selected' : ''; ?>>Sí, activo fijo de la empresa</option>
+                </select>
+            </div>
 
-<div style="margin-top:15px;">
-<button class="btn">Guardar</button>
-<a href="index.php" class="btn btn--secondary">Volver</a>
-</div>
+            <div class="col-12">
+                <label class="form-label fw-bold text-secondary">Descripción General</label>
+                <textarea name="descripcion" class="form-control" rows="3"><?php echo h($descripcion); ?></textarea>
+            </div>
 
-</form>
+            <div class="col-12 d-flex justify-content-end gap-2 mt-4 pt-3 border-top">
+                <a href="index.php" class="btn btn-light border">Cancelar</a>
+                <button type="submit" class="btn btn-primary"><i class="bi bi-floppy me-1"></i> Guardar Producto</button>
+            </div>
+        </form>
+    </div>
 </div>
 
 <?php require_once __DIR__ . '/../inc/footer.php'; ?>

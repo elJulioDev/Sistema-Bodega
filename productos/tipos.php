@@ -68,70 +68,87 @@ $pageTitle = 'Tipos de Producto';
 require_once __DIR__ . '/../inc/header.php';
 ?>
 
-<h1 class="page-title">Tipos de Producto</h1>
-
-<div class="card">
-    <?php if ($error !== ''): ?>
-        <div class="flash flash--error"><?php echo h($error); ?></div>
-    <?php endif; ?>
-
-    <form method="post">
-        <input type="hidden" name="id" value="<?php echo $editando ? (int)$editando['id'] : 0; ?>">
-
-        <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:16px;">
-            <div>
-                <label style="display:block; margin-bottom:6px; font-weight:700;">Nombre *</label>
-                <input type="text" name="nombre" value="<?php echo h(isset($editando['nombre']) ? $editando['nombre'] : ''); ?>" style="width:100%; padding:10px; border:1px solid #d1d5db; border-radius:10px;">
-            </div>
-
-            <div>
-                <label style="display:block; margin-bottom:6px; font-weight:700;">Descripción</label>
-                <input type="text" name="descripcion" value="<?php echo h(isset($editando['descripcion']) ? $editando['descripcion'] : ''); ?>" style="width:100%; padding:10px; border:1px solid #d1d5db; border-radius:10px;">
-            </div>
-        </div>
-
-        <div style="margin-top:16px; display:flex; gap:10px; flex-wrap:wrap;">
-            <button type="submit" class="btn"><?php echo $editando ? 'Guardar cambios' : 'Guardar'; ?></button>
-            <?php if ($editando): ?>
-                <a href="tipos.php" class="btn btn--secondary">Cancelar</a>
-            <?php endif; ?>
-        </div>
-    </form>
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3 mb-0 text-gray-800"><i class="bi bi-tags text-primary me-2"></i>Tipos de Producto</h1>
+    <a href="index.php" class="btn btn-outline-secondary"><i class="bi bi-arrow-left me-1"></i> Volver a Productos</a>
 </div>
 
-<div class="card" style="overflow:auto;">
-    <table style="width:100%; border-collapse:collapse;">
-        <thead>
-            <tr style="text-align:left; border-bottom:1px solid #e5e7eb;">
-                <th style="padding:12px 10px;">ID</th>
-                <th style="padding:12px 10px;">Nombre</th>
-                <th style="padding:12px 10px;">Descripción</th>
-                <th style="padding:12px 10px;">Estado</th>
-                <th style="padding:12px 10px;">Acciones</th>
-            </tr>
-        </thead>
-        <tbody>
-        <?php foreach ($tipos as $t): ?>
-            <tr style="border-bottom:1px solid #f0f0f0;">
-                <td style="padding:12px 10px;"><?php echo (int)$t['id']; ?></td>
-                <td style="padding:12px 10px;"><?php echo h($t['nombre']); ?></td>
-                <td style="padding:12px 10px;"><?php echo h($t['descripcion']); ?></td>
-                <td style="padding:12px 10px;">
-                    <?php if ((int)$t['estado'] === 1): ?>
-                        <span style="color:#166534; font-weight:700;">Activo</span>
-                    <?php else: ?>
-                        <span style="color:#991b1b; font-weight:700;">Inactivo</span>
-                    <?php endif; ?>
-                </td>
-                <td style="padding:12px 10px;">
-                    <a href="tipos.php?editar=<?php echo (int)$t['id']; ?>">Editar</a>
-                    &nbsp;|&nbsp;
-                    <a href="tipos.php?toggle=<?php echo (int)$t['id']; ?>" onclick="return confirm('¿Deseas cambiar el estado?');">Activar/Desactivar</a>
-                </td>
-            </tr>
-        <?php endforeach; ?>
-        </tbody>
-    </table>
+<div class="card shadow-sm border-0 mb-4">
+    <div class="card-header bg-white pt-3 pb-2 border-0">
+        <h5 class="mb-0 fw-bold"><?php echo $editando ? 'Editar Tipo' : 'Nuevo Tipo'; ?></h5>
+    </div>
+    <div class="card-body">
+        <?php if ($error !== ''): ?>
+            <div class="alert alert-danger"><i class="bi bi-exclamation-triangle-fill me-2"></i><?php echo h($error); ?></div>
+        <?php endif; ?>
+
+        <form method="post" class="row g-3 align-items-end">
+            <input type="hidden" name="id" value="<?php echo $editando ? (int)$editando['id'] : 0; ?>">
+
+            <div class="col-md-4">
+                <label class="form-label fw-bold text-secondary">Nombre <span class="text-danger">*</span></label>
+                <input type="text" name="nombre" value="<?php echo h(isset($editando['nombre']) ? $editando['nombre'] : ''); ?>" class="form-control" placeholder="Ej: Herramientas" required>
+            </div>
+
+            <div class="col-md-6">
+                <label class="form-label fw-bold text-secondary">Descripci贸n</label>
+                <input type="text" name="descripcion" value="<?php echo h(isset($editando['descripcion']) ? $editando['descripcion'] : ''); ?>" class="form-control" placeholder="Opcional">
+            </div>
+
+            <div class="col-md-2 d-flex gap-2">
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="bi bi-floppy me-1"></i> <?php echo $editando ? 'Guardar' : 'Agregar'; ?>
+                </button>
+                <?php if ($editando): ?>
+                    <a href="tipos.php" class="btn btn-light border" title="Cancelar"><i class="bi bi-x-lg"></i></a>
+                <?php endif; ?>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card shadow-sm border-0">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light text-secondary" style="font-size: 0.85rem;">
+                    <tr>
+                        <th class="px-4 py-3">ID</th>
+                        <th class="py-3">NOMBRE</th>
+                        <th class="py-3">DESCRIPCI脫N</th>
+                        <th class="py-3 text-center">ESTADO</th>
+                        <th class="px-4 py-3 text-end">ACCIONES</th>
+                    </tr>
+                </thead>
+                <tbody>
+                <?php foreach ($tipos as $t): ?>
+                    <tr>
+                        <td class="px-4 fw-medium text-muted"><?php echo (int)$t['id']; ?></td>
+                        <td class="fw-bold"><?php echo h($t['nombre']); ?></td>
+                        <td><span class="text-muted"><?php echo h($t['descripcion']) ?: '-'; ?></span></td>
+                        <td class="text-center">
+                            <?php if ((int)$t['estado'] === 1): ?>
+                                <span class="badge bg-success bg-opacity-10 text-success px-2 py-1 border-0">Activo</span>
+                            <?php else: ?>
+                                <span class="badge bg-danger bg-opacity-10 text-danger px-2 py-1 border-0">Inactivo</span>
+                            <?php endif; ?>
+                        </td>
+                        <td class="px-4 text-end">
+                            <div class="btn-group" role="group">
+                                <a href="tipos.php?editar=<?php echo (int)$t['id']; ?>" class="btn btn-sm btn-outline-primary" title="Editar"><i class="bi bi-pencil"></i></a>
+                                <a href="tipos.php?toggle=<?php echo (int)$t['id']; ?>" 
+                                   class="btn btn-sm btn-outline-<?php echo $t['estado'] ? 'danger' : 'success'; ?>" 
+                                   onclick="return confirm('驴Deseas cambiar el estado?');" title="<?php echo $t['estado'] ? 'Desactivar' : 'Activar'; ?>">
+                                   <i class="bi bi-<?php echo $t['estado'] ? 'power' : 'check-circle'; ?>"></i>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                <?php endforeach; ?>
+                </tbody>
+            </table>
+        </div>
+    </div>
 </div>
 
 <?php require_once __DIR__ . '/../inc/footer.php'; ?>

@@ -46,79 +46,95 @@ $stmt = $pdo->prepare($sql);
 $stmt->execute($params);
 $stocks = $stmt->fetchAll();
 
-$pageTitle = 'Stock';
+$pageTitle = 'Control de Stock';
 require_once __DIR__ . '/../inc/header.php';
 ?>
 
-<h1 class="page-title">Stock por Bodega</h1>
-
-<div class="card" style="display:flex; gap:12px; flex-wrap:wrap; align-items:end;">
-    <form method="get" style="display:flex; gap:10px; flex-wrap:wrap; align-items:end; margin:0;">
-        <div>
-            <label style="display:block; margin-bottom:6px; font-weight:700;">Buscar</label>
-            <input
-                type="text"
-                name="buscar"
-                value="<?php echo h($buscar); ?>"
-                placeholder="Producto, código o bodega"
-                style="padding:10px 12px; min-width:280px; border:1px solid #d1d5db; border-radius:10px;"
-            >
-        </div>
-
-        <div>
-            <label style="display:block; margin-bottom:6px; font-weight:700;">Bodega</label>
-            <select name="id_bodega" style="padding:10px 12px; min-width:220px; border:1px solid #d1d5db; border-radius:10px;">
-                <option value="">Todas</option>
-                <?php foreach ($bodegas as $b): ?>
-                    <option value="<?php echo (int)$b['id']; ?>" <?php echo ((string)$id_bodega === (string)$b['id']) ? 'selected' : ''; ?>>
-                        <?php echo h($b['nombre']); ?>
-                    </option>
-                <?php endforeach; ?>
-            </select>
-        </div>
-
-        <div style="display:flex; gap:10px; flex-wrap:wrap;">
-            <button type="submit" class="btn">Buscar</button>
-            <a href="index.php" class="btn btn--secondary">Limpiar</a>
-        </div>
-    </form>
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3 mb-0 text-gray-800"><i class="bi bi-inboxes text-primary me-2"></i>Stock por Bodega</h1>
 </div>
 
-<div class="card" style="overflow:auto;">
-    <table style="width:100%; border-collapse:collapse; min-width:1100px;">
-        <thead>
-            <tr style="text-align:left; border-bottom:1px solid #e5e7eb;">
-                <th style="padding:12px 10px;">Bodega</th>
-                <th style="padding:12px 10px;">Código</th>
-                <th style="padding:12px 10px;">Producto</th>
-                <th style="padding:12px 10px;">Tipo</th>
-                <th style="padding:12px 10px;">Unidad</th>
-                <th style="padding:12px 10px;">Stock actual</th>
-                <th style="padding:12px 10px;">Costo promedio</th>
-                <th style="padding:12px 10px;">Última actualización</th>
-            </tr>
-        </thead>
-        <tbody>
-        <?php if (!$stocks): ?>
-            <tr>
-                <td colspan="8" style="padding:18px 10px; color:#6b7280;">No hay stock registrado.</td>
-            </tr>
-        <?php else: ?>
-            <?php foreach ($stocks as $s): ?>
-                <tr style="border-bottom:1px solid #f0f0f0;">
-                    <td style="padding:12px 10px;"><?php echo h($s['bodega_nombre']); ?></td>
-                    <td style="padding:12px 10px;"><?php echo h($s['producto_codigo']); ?></td>
-                    <td style="padding:12px 10px;"><?php echo h($s['producto_nombre']); ?></td>
-                    <td style="padding:12px 10px;"><?php echo h($s['tipo_nombre']); ?></td>
-                    <td style="padding:12px 10px;"><?php echo h($s['unidad_nombre']); ?></td>
-                    <td style="padding:12px 10px;"><?php echo number_format((float)$s['stock_actual'], 2, ',', '.'); ?></td>
-                    <td style="padding:12px 10px;"><?php echo number_format((float)$s['costo_promedio'], 0, ',', '.'); ?></td>
-                    <td style="padding:12px 10px;"><?php echo h($s['updated_at']); ?></td>
-                </tr>
-            <?php endforeach; ?>
-        <?php endif; ?>
-        </tbody>
-    </table>
+<div class="card shadow-sm border-0 mb-4">
+    <div class="card-body">
+        <form method="get" class="row g-3 align-items-end">
+            <div class="col-md-5">
+                <label class="form-label text-secondary fw-bold small">Buscar producto o código</label>
+                <div class="input-group">
+                    <span class="input-group-text bg-light text-secondary border-end-0"><i class="bi bi-search"></i></span>
+                    <input type="text" name="buscar" value="<?php echo h($buscar); ?>" class="form-control border-start-0 ps-0" placeholder="Ej: Tuerca, PROD-01...">
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <label class="form-label text-secondary fw-bold small">Filtrar por Bodega</label>
+                <select name="id_bodega" class="form-select">
+                    <option value="">Todas las bodegas</option>
+                    <?php foreach ($bodegas as $b): ?>
+                        <option value="<?php echo (int)$b['id']; ?>" <?php echo ((string)$id_bodega === (string)$b['id']) ? 'selected' : ''; ?>>
+                            <?php echo h($b['nombre']); ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+
+            <div class="col-md-3 d-flex gap-2">
+                <button type="submit" class="btn btn-primary w-100"><i class="bi bi-funnel"></i> Filtrar</button>
+                <?php if ($buscar !== '' || $id_bodega !== ''): ?>
+                    <a href="index.php" class="btn btn-light border" title="Limpiar"><i class="bi bi-eraser"></i></a>
+                <?php endif; ?>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card shadow-sm border-0">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light text-secondary" style="font-size: 0.85rem;">
+                    <tr>
+                        <th class="px-4 py-3">BODEGA</th>
+                        <th class="py-3">CÓDIGO</th>
+                        <th class="py-3">PRODUCTO</th>
+                        <th class="py-3">TIPO / UNIDAD</th>
+                        <th class="py-3 text-end">STOCK ACTUAL</th>
+                        <th class="py-3 text-end">C. PROMEDIO</th>
+                        <th class="px-4 py-3 text-center">ÚLTIMA ACT.</th>
+                    </tr>
+                </thead>
+                <tbody>
+                <?php if (!$stocks): ?>
+                    <tr>
+                        <td colspan="7" class="text-center py-5 text-muted">No hay stock registrado con los filtros actuales.</td>
+                    </tr>
+                <?php else: ?>
+                    <?php foreach ($stocks as $s): ?>
+                        <tr>
+                            <td class="px-4">
+                                <span class="badge bg-primary bg-opacity-10 text-primary border-0"><i class="bi bi-geo-alt-fill me-1"></i><?php echo h($s['bodega_nombre']); ?></span>
+                            </td>
+                            <td><span class="badge bg-light text-dark border"><?php echo h($s['producto_codigo']); ?></span></td>
+                            <td class="fw-bold text-dark"><?php echo h($s['producto_nombre']); ?></td>
+                            <td>
+                                <div class="small text-secondary"><?php echo h($s['tipo_nombre'] ?: '-'); ?></div>
+                                <div class="small text-muted"><i class="bi bi-ruler me-1"></i><?php echo h($s['unidad_nombre'] ?: '-'); ?></div>
+                            </td>
+                            <td class="text-end fw-bold fs-6 <?php echo ((float)$s['stock_actual'] <= 0) ? 'text-danger' : 'text-success'; ?>">
+                                <?php echo number_format((float)$s['stock_actual'], 2, ',', '.'); ?>
+                            </td>
+                            <td class="text-end text-secondary fw-medium">
+                                $<?php echo number_format((float)$s['costo_promedio'], 0, ',', '.'); ?>
+                            </td>
+                            <td class="px-4 text-center text-muted small">
+                                <?php echo date('d/m/Y H:i', strtotime($s['updated_at'])); ?>
+                            </td>
+                        </tr>
+                    <?php endforeach; ?>
+                <?php endif; ?>
+                </tbody>
+            </table>
+        </div>
+    </div>
 </div>
 
 <?php require_once __DIR__ . '/../inc/footer.php'; ?>

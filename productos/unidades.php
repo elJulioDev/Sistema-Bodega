@@ -69,77 +69,94 @@ $pageTitle = 'Unidades de Medida';
 require_once __DIR__ . '/../inc/header.php';
 ?>
 
-<h1 class="page-title">Unidades de Medida</h1>
-
-<div class="card">
-    <?php if ($error !== ''): ?>
-        <div class="flash flash--error"><?php echo h($error); ?></div>
-    <?php endif; ?>
-
-    <form method="post">
-        <input type="hidden" name="id" value="<?php echo $editando ? (int)$editando['id'] : 0; ?>">
-
-        <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:16px;">
-            <div>
-                <label style="display:block; margin-bottom:6px; font-weight:700;">Código *</label>
-                <input type="text" name="codigo" value="<?php echo h(isset($editando['codigo']) ? $editando['codigo'] : ''); ?>" style="width:100%; padding:10px; border:1px solid #d1d5db; border-radius:10px;">
-            </div>
-
-            <div>
-                <label style="display:block; margin-bottom:6px; font-weight:700;">Nombre *</label>
-                <input type="text" name="nombre" value="<?php echo h(isset($editando['nombre']) ? $editando['nombre'] : ''); ?>" style="width:100%; padding:10px; border:1px solid #d1d5db; border-radius:10px;">
-            </div>
-
-            <div>
-                <label style="display:block; margin-bottom:6px; font-weight:700;">Descripción</label>
-                <input type="text" name="descripcion" value="<?php echo h(isset($editando['descripcion']) ? $editando['descripcion'] : ''); ?>" style="width:100%; padding:10px; border:1px solid #d1d5db; border-radius:10px;">
-            </div>
-        </div>
-
-        <div style="margin-top:16px; display:flex; gap:10px; flex-wrap:wrap;">
-            <button type="submit" class="btn"><?php echo $editando ? 'Guardar cambios' : 'Guardar'; ?></button>
-            <?php if ($editando): ?>
-                <a href="unidades.php" class="btn btn--secondary">Cancelar</a>
-            <?php endif; ?>
-        </div>
-    </form>
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3 mb-0 text-gray-800"><i class="bi bi-rulers text-primary me-2"></i>Unidades de Medida</h1>
+    <a href="index.php" class="btn btn-outline-secondary"><i class="bi bi-arrow-left me-1"></i> Volver a Productos</a>
 </div>
 
-<div class="card" style="overflow:auto;">
-    <table style="width:100%; border-collapse:collapse;">
-        <thead>
-            <tr style="text-align:left; border-bottom:1px solid #e5e7eb;">
-                <th style="padding:12px 10px;">ID</th>
-                <th style="padding:12px 10px;">Código</th>
-                <th style="padding:12px 10px;">Nombre</th>
-                <th style="padding:12px 10px;">Descripción</th>
-                <th style="padding:12px 10px;">Estado</th>
-                <th style="padding:12px 10px;">Acciones</th>
-            </tr>
-        </thead>
-        <tbody>
-        <?php foreach ($unidades as $u): ?>
-            <tr style="border-bottom:1px solid #f0f0f0;">
-                <td style="padding:12px 10px;"><?php echo (int)$u['id']; ?></td>
-                <td style="padding:12px 10px;"><?php echo h($u['codigo']); ?></td>
-                <td style="padding:12px 10px;"><?php echo h($u['nombre']); ?></td>
-                <td style="padding:12px 10px;"><?php echo h($u['descripcion']); ?></td>
-                <td style="padding:12px 10px;">
-                    <?php if ((int)$u['estado'] === 1): ?>
-                        <span style="color:#166534; font-weight:700;">Activo</span>
-                    <?php else: ?>
-                        <span style="color:#991b1b; font-weight:700;">Inactivo</span>
-                    <?php endif; ?>
-                </td>
-                <td style="padding:12px 10px;">
-                    <a href="unidades.php?editar=<?php echo (int)$u['id']; ?>">Editar</a>
-                    &nbsp;|&nbsp;
-                    <a href="unidades.php?toggle=<?php echo (int)$u['id']; ?>" onclick="return confirm('¿Deseas cambiar el estado?');">Activar/Desactivar</a>
-                </td>
-            </tr>
-        <?php endforeach; ?>
-        </tbody>
-    </table>
+<div class="card shadow-sm border-0 mb-4">
+    <div class="card-header bg-white pt-3 pb-2 border-0">
+        <h5 class="mb-0 fw-bold"><?php echo $editando ? 'Editar Unidad' : 'Nueva Unidad'; ?></h5>
+    </div>
+    <div class="card-body">
+        <?php if ($error !== ''): ?>
+            <div class="alert alert-danger"><i class="bi bi-exclamation-triangle-fill me-2"></i><?php echo h($error); ?></div>
+        <?php endif; ?>
+
+        <form method="post" class="row g-3 align-items-end">
+            <input type="hidden" name="id" value="<?php echo $editando ? (int)$editando['id'] : 0; ?>">
+
+            <div class="col-md-3">
+                <label class="form-label fw-bold text-secondary">Código <span class="text-danger">*</span></label>
+                <input type="text" name="codigo" value="<?php echo h(isset($editando['codigo']) ? $editando['codigo'] : ''); ?>" class="form-control" placeholder="Ej: UN, KG, LT" required>
+            </div>
+
+            <div class="col-md-4">
+                <label class="form-label fw-bold text-secondary">Nombre <span class="text-danger">*</span></label>
+                <input type="text" name="nombre" value="<?php echo h(isset($editando['nombre']) ? $editando['nombre'] : ''); ?>" class="form-control" placeholder="Ej: Unidades, Kilogramos" required>
+            </div>
+
+            <div class="col-md-5">
+                <label class="form-label fw-bold text-secondary">Descripción</label>
+                <input type="text" name="descripcion" value="<?php echo h(isset($editando['descripcion']) ? $editando['descripcion'] : ''); ?>" class="form-control" placeholder="Opcional">
+            </div>
+
+            <div class="col-12 d-flex justify-content-end gap-2 mt-3 pt-3 border-top">
+                <?php if ($editando): ?>
+                    <a href="unidades.php" class="btn btn-light border">Cancelar</a>
+                <?php endif; ?>
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-floppy me-1"></i> <?php echo $editando ? 'Guardar Cambios' : 'Guardar Unidad'; ?>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card shadow-sm border-0">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light text-secondary" style="font-size: 0.85rem;">
+                    <tr>
+                        <th class="px-4 py-3">ID</th>
+                        <th class="py-3">CÓDIGO</th>
+                        <th class="py-3">NOMBRE</th>
+                        <th class="py-3">DESCRIPCIÓN</th>
+                        <th class="py-3 text-center">ESTADO</th>
+                        <th class="px-4 py-3 text-end">ACCIONES</th>
+                    </tr>
+                </thead>
+                <tbody>
+                <?php foreach ($unidades as $u): ?>
+                    <tr>
+                        <td class="px-4 fw-medium text-muted"><?php echo (int)$u['id']; ?></td>
+                        <td><span class="badge bg-light text-dark border"><?php echo h($u['codigo']); ?></span></td>
+                        <td class="fw-bold text-dark"><?php echo h($u['nombre']); ?></td>
+                        <td><span class="text-muted"><?php echo h($u['descripcion']) ?: '-'; ?></span></td>
+                        <td class="text-center">
+                            <?php if ((int)$u['estado'] === 1): ?>
+                                <span class="badge bg-success bg-opacity-10 text-success px-2 py-1 border-0">Activo</span>
+                            <?php else: ?>
+                                <span class="badge bg-danger bg-opacity-10 text-danger px-2 py-1 border-0">Inactivo</span>
+                            <?php endif; ?>
+                        </td>
+                        <td class="px-4 text-end">
+                            <div class="btn-group" role="group">
+                                <a href="unidades.php?editar=<?php echo (int)$u['id']; ?>" class="btn btn-sm btn-outline-primary" title="Editar"><i class="bi bi-pencil"></i></a>
+                                <a href="unidades.php?toggle=<?php echo (int)$u['id']; ?>" 
+                                   class="btn btn-sm btn-outline-<?php echo $u['estado'] ? 'danger' : 'success'; ?>" 
+                                   onclick="return confirm('¿Deseas cambiar el estado?');" title="<?php echo $u['estado'] ? 'Desactivar' : 'Activar'; ?>">
+                                   <i class="bi bi-<?php echo $u['estado'] ? 'power' : 'check-circle'; ?>"></i>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                <?php endforeach; ?>
+                </tbody>
+            </table>
+        </div>
+    </div>
 </div>
 
 <?php require_once __DIR__ . '/../inc/footer.php'; ?>

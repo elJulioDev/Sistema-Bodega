@@ -31,10 +31,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $contacto = post('contacto');
 
     if ($rut === '' || $razon_social === '') {
-        $error = 'El RUT y la raz®Æn social son obligatorios.';
+        $error = 'El RUT y la raz√≥n social son obligatorios.';
     } else {
         $stmt = $pdo->prepare("SELECT id FROM proveedores WHERE rut = ? LIMIT 1");
-        $stmt->execute([$rut]);
+        $stmt->execute(array($rut));
         $existe = $stmt->fetch();
 
         if ($existe) {
@@ -49,7 +49,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     )";
 
             $stmt = $pdo->prepare($sql);
-            $stmt->execute([
+            $stmt->execute(array(
                 ':rut' => $rut,
                 ':razon_social' => $razon_social,
                 ':nombre_fantasia' => $nombre_fantasia,
@@ -60,7 +60,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 ':telefono' => $telefono,
                 ':email' => $email,
                 ':contacto' => $contacto
-            ]);
+            ));
 
             set_flash('success', 'Proveedor creado correctamente.');
             redirect('index.php');
@@ -72,71 +72,77 @@ $pageTitle = 'Nuevo Proveedor';
 require_once __DIR__ . '/../inc/header.php';
 ?>
 
-<h1 class="page-title">Nuevo Proveedor</h1>
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3 mb-0 text-gray-800"><i class="bi bi-truck text-primary me-2"></i>Nuevo Proveedor</h1>
+    <a href="index.php" class="btn btn-outline-secondary"><i class="bi bi-arrow-left me-1"></i> Volver al listado</a>
+</div>
 
-<div class="card">
-    <?php if ($error !== ''): ?>
-        <div class="flash flash--error"><?php echo h($error); ?></div>
-    <?php endif; ?>
+<div class="card shadow-sm border-0">
+    <div class="card-body p-4">
+        <?php if ($error !== ''): ?>
+            <div class="alert alert-danger d-flex align-items-center">
+                <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                <div><?php echo h($error); ?></div>
+            </div>
+        <?php endif; ?>
 
-    <form method="post">
-        <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:16px;">
-            <div>
-                <label style="display:block; margin-bottom:6px; font-weight:700;">RUT *</label>
-                <input type="text" name="rut" value="<?php echo h($rut); ?>" style="width:100%; padding:10px; border:1px solid #d1d5db; border-radius:10px;">
+        <form method="post" class="row g-4">
+            <div class="col-md-4">
+                <label class="form-label fw-bold text-secondary">RUT <span class="text-danger">*</span></label>
+                <input type="text" name="rut" value="<?php echo h($rut); ?>" class="form-control" placeholder="Ej: 76.123.456-7" required>
             </div>
 
-            <div>
-                <label style="display:block; margin-bottom:6px; font-weight:700;">Raz®Æn social *</label>
-                <input type="text" name="razon_social" value="<?php echo h($razon_social); ?>" style="width:100%; padding:10px; border:1px solid #d1d5db; border-radius:10px;">
+            <div class="col-md-8">
+                <label class="form-label fw-bold text-secondary">Raz√≥n Social <span class="text-danger">*</span></label>
+                <input type="text" name="razon_social" value="<?php echo h($razon_social); ?>" class="form-control" placeholder="Nombre legal de la empresa" required>
             </div>
 
-            <div>
-                <label style="display:block; margin-bottom:6px; font-weight:700;">Nombre fantas®™a</label>
-                <input type="text" name="nombre_fantasia" value="<?php echo h($nombre_fantasia); ?>" style="width:100%; padding:10px; border:1px solid #d1d5db; border-radius:10px;">
+            <div class="col-md-6">
+                <label class="form-label fw-bold text-secondary">Nombre de Fantas√≠a</label>
+                <input type="text" name="nombre_fantasia" value="<?php echo h($nombre_fantasia); ?>" class="form-control" placeholder="Nombre comercial">
             </div>
 
-            <div>
-                <label style="display:block; margin-bottom:6px; font-weight:700;">Giro</label>
-                <input type="text" name="giro" value="<?php echo h($giro); ?>" style="width:100%; padding:10px; border:1px solid #d1d5db; border-radius:10px;">
+            <div class="col-md-6">
+                <label class="form-label fw-bold text-secondary">Giro</label>
+                <input type="text" name="giro" value="<?php echo h($giro); ?>" class="form-control" placeholder="Actividad comercial">
             </div>
 
-            <div style="grid-column:1 / -1;">
-                <label style="display:block; margin-bottom:6px; font-weight:700;">Direcci®Æn</label>
-                <input type="text" name="direccion" value="<?php echo h($direccion); ?>" style="width:100%; padding:10px; border:1px solid #d1d5db; border-radius:10px;">
+            <div class="col-12">
+                <label class="form-label fw-bold text-secondary">Direcci√≥n</label>
+                <input type="text" name="direccion" value="<?php echo h($direccion); ?>" class="form-control" placeholder="Calle y n√∫mero">
             </div>
 
-            <div>
-                <label style="display:block; margin-bottom:6px; font-weight:700;">Comuna</label>
-                <input type="text" name="comuna" value="<?php echo h($comuna); ?>" style="width:100%; padding:10px; border:1px solid #d1d5db; border-radius:10px;">
+            <div class="col-md-4">
+                <label class="form-label fw-bold text-secondary">Comuna</label>
+                <input type="text" name="comuna" value="<?php echo h($comuna); ?>" class="form-control">
             </div>
 
-            <div>
-                <label style="display:block; margin-bottom:6px; font-weight:700;">Ciudad</label>
-                <input type="text" name="ciudad" value="<?php echo h($ciudad); ?>" style="width:100%; padding:10px; border:1px solid #d1d5db; border-radius:10px;">
+            <div class="col-md-4">
+                <label class="form-label fw-bold text-secondary">Ciudad</label>
+                <input type="text" name="ciudad" value="<?php echo h($ciudad); ?>" class="form-control">
             </div>
 
-            <div>
-                <label style="display:block; margin-bottom:6px; font-weight:700;">Tel®¶fono</label>
-                <input type="text" name="telefono" value="<?php echo h($telefono); ?>" style="width:100%; padding:10px; border:1px solid #d1d5db; border-radius:10px;">
+            <div class="col-md-4">
+                <label class="form-label fw-bold text-secondary">Tel√©fono</label>
+                <input type="text" name="telefono" value="<?php echo h($telefono); ?>" class="form-control" placeholder="+56 9...">
             </div>
 
-            <div>
-                <label style="display:block; margin-bottom:6px; font-weight:700;">Email</label>
-                <input type="email" name="email" value="<?php echo h($email); ?>" style="width:100%; padding:10px; border:1px solid #d1d5db; border-radius:10px;">
+            <div class="col-md-6">
+                <label class="form-label fw-bold text-secondary">Email</label>
+                <input type="email" name="email" value="<?php echo h($email); ?>" class="form-control" placeholder="correo@empresa.com">
             </div>
 
-            <div>
-                <label style="display:block; margin-bottom:6px; font-weight:700;">Contacto</label>
-                <input type="text" name="contacto" value="<?php echo h($contacto); ?>" style="width:100%; padding:10px; border:1px solid #d1d5db; border-radius:10px;">
+            <div class="col-md-6">
+                <label class="form-label fw-bold text-secondary">Contacto</label>
+                <input type="text" name="contacto" value="<?php echo h($contacto); ?>" class="form-control" placeholder="Nombre del vendedor o ejecutivo">
             </div>
-        </div>
 
-        <div style="margin-top:18px; display:flex; gap:10px; flex-wrap:wrap;">
-            <button type="submit" class="btn">Guardar</button>
-            <a href="index.php" class="btn btn--secondary">Volver</a>
-        </div>
-    </form>
+            <div class="col-12 d-flex justify-content-end gap-2 mt-4 pt-3 border-top">
+                <a href="index.php" class="btn btn-light border">Cancelar</a>
+                <button type="submit" class="btn btn-primary"><i class="bi bi-floppy me-1"></i> Guardar Proveedor</button>
+            </div>
+        </form>
+    </div>
 </div>
 
 <?php require_once __DIR__ . '/../inc/footer.php'; ?>

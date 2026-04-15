@@ -12,192 +12,189 @@ require_once __DIR__ . '/functions.php';
 
 $user = current_user();
 $flash = get_flash();
+
+// Lógica para detectar la página actual
+$current_script = $_SERVER['PHP_SELF'];
 ?>
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?php echo h($pageTitle); ?></title>
+    <title><?php echo h($pageTitle); ?> | Intranet</title>
+    
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&display=swap" rel="stylesheet">
+
     <style>
-        *{box-sizing:border-box}
-        body{
-            margin:0;
-            font-family:Arial, Helvetica, sans-serif;
-            background:#f4f6f9;
-            color:#1f2937;
+        /* Estilos base */
+        body {
+            font-family: 'Figtree', sans-serif;
+            background-color: #f8fafc;
+            height: 100vh;      /* Ocupa exactamente el 100% de la pantalla */
+            overflow: hidden;   /* Evita el scroll en toda la página */
         }
-        a{
-            text-decoration:none;
-            color:inherit;
+        
+        /* Layout principal */
+        .layout-wrapper {
+            height: 100vh;
         }
-        .topbar{
-            background:#111827;
-            color:#fff;
-            padding:14px 20px;
-            display:flex;
-            align-items:center;
-            justify-content:space-between;
-            gap:16px;
-            flex-wrap:wrap;
+
+        /* Sidebar */
+        .sidebar {
+            width: 260px;
+            background-color: #0f172a;
+            color: #cbd5e1;
         }
-        .topbar__brand{
-            font-size:20px;
-            font-weight:700;
+        .sidebar .nav-link {
+            color: #cbd5e1;
+            font-weight: 500;
+            margin-bottom: 0.25rem;
+            border-radius: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transition: all 0.2s;
         }
-        .topbar__user{
-            font-size:14px;
-            opacity:.95;
+        .sidebar .nav-link:hover {
+            color: #fff;
+            background-color: rgba(255,255,255,0.05);
         }
-        .layout{
-            display:flex;
-            min-height:calc(100vh - 56px);
+        .sidebar .nav-link.active {
+            color: #fff;
+            background-color: #0d6efd;
+            box-shadow: 0 4px 12px rgba(13, 110, 253, 0.2);
         }
-        .sidebar{
-            width:260px;
-            background:#1f2937;
-            color:#fff;
-            padding:20px 0;
+
+        /* Contenido Principal */
+        .main-content {
+            width: calc(100% - 260px);
+            height: 100vh;
         }
-        .sidebar__title{
-            padding:0 20px 14px;
-            font-size:13px;
-            text-transform:uppercase;
-            letter-spacing:.08em;
-            opacity:.7;
+        
+        .topbar {
+            background-color: #1e293b;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            z-index: 10;
         }
-        .menu{
-            list-style:none;
-            margin:0;
-            padding:0;
+
+        /* Área scrolleable: Aquí es donde ocurre la magia del scroll vertical */
+        .content-scrollable {
+            overflow-y: auto;
+            overflow-x: hidden;
+            padding: 1.5rem;
+            height: calc(100vh - 64px); /* Resta el alto del topbar */
         }
-        .menu li{
-            margin:0;
+
+        /* Tablas Responsive: Fija el encabezado y permite scroll horizontal limpio */
+        .table-responsive {
+            max-height: calc(100vh - 220px);
+            overflow-y: auto;
         }
-        .menu a{
-            display:block;
-            padding:12px 20px;
-            color:#e5e7eb;
-            border-left:4px solid transparent;
+        .table-responsive thead th {
+            position: sticky;
+            top: 0;
+            background-color: #f8f9fa;
+            z-index: 1;
+            box-shadow: inset 0 -1px 0 #dee2e6;
         }
-        .menu a:hover{
-            background:#374151;
-            border-left-color:#60a5fa;
-        }
-        .content{
-            flex:1;
-            padding:24px;
-        }
-        .card{
-            background:#fff;
-            border-radius:14px;
-            padding:20px;
-            box-shadow:0 8px 24px rgba(0,0,0,.06);
-            margin-bottom:20px;
-        }
-        .page-title{
-            margin:0 0 18px;
-            font-size:28px;
-        }
-        .flash{
-            padding:14px 16px;
-            border-radius:10px;
-            margin-bottom:18px;
-            font-size:14px;
-        }
-        .flash--success{
-            background:#dcfce7;
-            color:#166534;
-        }
-        .flash--error{
-            background:#fee2e2;
-            color:#991b1b;
-        }
-        .grid{
-            display:grid;
-            grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
-            gap:18px;
-        }
-        .tile{
-            background:#fff;
-            border-radius:14px;
-            padding:22px;
-            box-shadow:0 8px 24px rgba(0,0,0,.06);
-            transition:.2s ease;
-        }
-        .tile:hover{
-            transform:translateY(-2px);
-        }
-        .tile__title{
-            font-size:18px;
-            font-weight:700;
-            margin-bottom:8px;
-        }
-        .tile__text{
-            font-size:14px;
-            color:#6b7280;
-            line-height:1.5;
-        }
-        .btn{
-            display:inline-block;
-            padding:10px 14px;
-            border-radius:10px;
-            background:#2563eb;
-            color:#fff;
-            font-size:14px;
-            border:none;
-            cursor:pointer;
-        }
-        .btn--secondary{
-            background:#6b7280;
-        }
-        @media (max-width: 900px){
-            .layout{
-                display:block;
-            }
-            .sidebar{
-                width:100%;
-            }
-            .content{
-                padding:16px;
-            }
+
+        @media (max-width: 768px) {
+            .sidebar { width: 100%; height: auto; }
+            .main-content { width: 100%; height: calc(100vh - 140px); }
+            .layout-wrapper { flex-direction: column; }
+            .content-scrollable { height: 100%; }
         }
     </style>
 </head>
 <body>
-    <div class="topbar">
-        <div class="topbar__brand">Sistema de Bodega</div>
-        <div class="topbar__user">
-            <?php if ($user): ?>
-                Usuario: <strong><?php echo h($user['nombre']); ?></strong>
-                (<?php echo h($user['rol']); ?>)
-                &nbsp; | &nbsp;
-                <a href="/Bodega/logout.php" style="color:#93c5fd;">Cerrar sesión</a>
-            <?php endif; ?>
+
+<div class="d-flex layout-wrapper">
+    <?php if ($user): ?>
+    <aside class="sidebar d-flex flex-column p-3 flex-shrink-0">
+        <div class="d-flex align-items-center mb-3 mb-md-0 me-md-auto text-white text-decoration-none">
+            <i class="bi bi-box-seam fs-4 me-2 text-primary"></i>
+            <span class="fs-5 fw-bold">Sistema Bodega</span>
         </div>
-    </div>
+        <hr class="border-secondary">
+        <ul class="nav nav-pills flex-column mb-auto overflow-auto">
+            <li class="nav-item">
+                <a href="/Bodega/index.php" class="nav-link <?php echo (strpos($current_script, 'index.php') !== false && strpos($current_script, 'Bodega/index.php') !== false) ? 'active' : ''; ?>">
+                    <i class="bi bi-house-door"></i> Inicio
+                </a>
+            </li>
+            <li>
+                <a href="/Bodega/bodegas/index.php" class="nav-link <?php echo (strpos($current_script, '/bodegas/') !== false) ? 'active' : ''; ?>">
+                    <i class="bi bi-buildings"></i> Bodegas
+                </a>
+            </li>
+            <li>
+                <a href="/Bodega/proveedores/index.php" class="nav-link <?php echo (strpos($current_script, '/proveedores/') !== false) ? 'active' : ''; ?>">
+                    <i class="bi bi-truck"></i> Proveedores
+                </a>
+            </li>
+            <li>
+                <a href="/Bodega/productos/index.php" class="nav-link <?php echo (strpos($current_script, '/productos/') !== false) ? 'active' : ''; ?>">
+                    <i class="bi bi-boxes"></i> Productos
+                </a>
+            </li>
+            <li>
+                <a href="/Bodega/ordenes_compra/index.php" class="nav-link <?php echo (strpos($current_script, '/ordenes_compra/') !== false) ? 'active' : ''; ?>">
+                    <i class="bi bi-cart3"></i> Órdenes de compra
+                </a>
+            </li>
+            <li>
+                <a href="/Bodega/facturas/index.php" class="nav-link <?php echo (strpos($current_script, '/facturas/') !== false) ? 'active' : ''; ?>">
+                    <i class="bi bi-receipt"></i> Facturas
+                </a>
+            </li>
+            <li>
+                <a href="/Bodega/stock/index.php" class="nav-link <?php echo (strpos($current_script, '/stock/') !== false) ? 'active' : ''; ?>">
+                    <i class="bi bi-inboxes"></i> Stock
+                </a>
+            </li>
+            <li>
+                <a href="/Bodega/movimientos/index.php" class="nav-link <?php echo (strpos($current_script, '/movimientos/') !== false) ? 'active' : ''; ?>">
+                    <i class="bi bi-arrow-left-right"></i> Movimientos
+                </a>
+            </li>
+            <li>
+                <a href="/Bodega/usuarios/index.php" class="nav-link <?php echo (strpos($current_script, '/usuarios/') !== false) ? 'active' : ''; ?>">
+                    <i class="bi bi-people"></i> Usuarios
+                </a>
+            </li>
+        </ul>
+    </aside>
+    <?php endif; ?>
 
-    <div class="layout">
-        <?php if ($user): ?>
-        <aside class="sidebar">
-            <div class="sidebar__title">Menú principal</div>
-            <ul class="menu">
-                <li><a href="/Bodega/index.php">Inicio</a></li>
-                <li><a href="/Bodega/bodegas/index.php">Bodegas</a></li>
-                <li><a href="/Bodega/proveedores/index.php">Proveedores</a></li>
-                <li><a href="/Bodega/productos/index.php">Productos</a></li>
-                <li><a href="/Bodega/ordenes_compra/index.php">Órdenes de compra</a></li>
-                <li><a href="/Bodega/facturas/index.php">Facturas</a></li>
-                <li><a href="/Bodega/stock/index.php">Stock</a></li>
-                <li><a href="/Bodega/movimientos/index.php">Movimientos</a></li>
-                <li><a href="/Bodega/usuarios/index.php">Usuarios</a></li>
-            </ul>
-        </aside>
-        <?php endif; ?>
+    <div class="main-content d-flex flex-column flex-grow-1 overflow-hidden">
+        
+        <header class="topbar px-4 py-2 d-flex justify-content-between align-items-center text-white" style="height: 64px;">
+            <div class="fs-5 fw-bold text-truncate">
+                <?php echo h($pageTitle); ?>
+            </div>
+            
+            <?php if ($user): ?>
+                <div class="d-flex align-items-center gap-3">
+                    <div class="d-flex align-items-center gap-2 bg-dark bg-opacity-25 px-3 py-1 rounded-pill">
+                        <i class="bi bi-person-circle text-primary fs-5"></i>
+                        <span class="fw-medium small"><?php echo h($user['nombre']); ?></span>
+                        <span class="badge bg-primary ms-1" style="font-size: 0.7rem;"><?php echo h($user['rol']); ?></span>
+                    </div>
+                    <a href="/Bodega/logout.php" class="btn btn-sm btn-outline-danger d-flex align-items-center gap-1">
+                        <i class="bi bi-box-arrow-right"></i> <span class="d-none d-sm-inline">Salir</span>
+                    </a>
+                </div>
+            <?php endif; ?>
+        </header>
 
-        <main class="content">
+        <main class="content-scrollable">
             <?php if ($flash): ?>
-                <div class="flash flash--<?php echo h($flash['type']); ?>">
+                <?php $alertClass = ($flash['type'] === 'error') ? 'alert-danger' : 'alert-success'; ?>
+                <div class="alert <?php echo $alertClass; ?> alert-dismissible fade show shadow-sm" role="alert">
+                    <i class="bi <?php echo ($flash['type'] === 'error') ? 'bi-exclamation-triangle-fill' : 'bi-check-circle-fill'; ?> me-2"></i>
                     <?php echo h($flash['message']); ?>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                 </div>
             <?php endif; ?>

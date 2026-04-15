@@ -36,69 +36,82 @@ $pageTitle = 'Facturas';
 require_once __DIR__ . '/../inc/header.php';
 ?>
 
-<h1 class="page-title">Facturas</h1>
-
-<div class="card" style="display:flex; gap:12px; flex-wrap:wrap; align-items:center; justify-content:space-between;">
-    <form method="get" style="display:flex; gap:10px; flex-wrap:wrap; margin:0;">
-        <input
-            type="text"
-            name="buscar"
-            value="<?php echo h($buscar); ?>"
-            placeholder="Buscar por factura, proveedor, bodega u OC"
-            style="padding:10px 12px; min-width:320px; border:1px solid #d1d5db; border-radius:10px;"
-        >
-        <button type="submit" class="btn">Buscar</button>
-        <?php if ($buscar !== ''): ?>
-            <a href="index.php" class="btn btn--secondary">Limpiar</a>
-        <?php endif; ?>
-    </form>
-
-    <a href="crear.php" class="btn">+ Nueva factura</a>
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3 mb-0 text-gray-800"><i class="bi bi-receipt text-primary me-2"></i>Facturas de Compra</h1>
+    <a href="crear.php" class="btn btn-primary"><i class="bi bi-plus-lg me-1"></i> Ingresar Factura</a>
 </div>
 
-<div class="card" style="overflow:auto;">
-    <table style="width:100%; border-collapse:collapse; min-width:1200px;">
-        <thead>
-            <tr style="text-align:left; border-bottom:1px solid #e5e7eb;">
-                <th style="padding:12px 10px;">ID</th>
-                <th style="padding:12px 10px;">Factura</th>
-                <th style="padding:12px 10px;">Fecha</th>
-                <th style="padding:12px 10px;">Proveedor</th>
-                <th style="padding:12px 10px;">Bodega</th>
-                <th style="padding:12px 10px;">OC</th>
-                <th style="padding:12px 10px;">Neto</th>
-                <th style="padding:12px 10px;">IVA</th>
-                <th style="padding:12px 10px;">Total</th>
-                <th style="padding:12px 10px;">Estado</th>
-                <th style="padding:12px 10px;">Acciones</th>
-            </tr>
-        </thead>
-        <tbody>
-        <?php if (!$facturas): ?>
-            <tr>
-                <td colspan="11" style="padding:18px 10px; color:#6b7280;">No se encontraron facturas.</td>
-            </tr>
-        <?php else: ?>
-            <?php foreach ($facturas as $f): ?>
-                <tr style="border-bottom:1px solid #f0f0f0;">
-                    <td style="padding:12px 10px;"><?php echo (int)$f['id']; ?></td>
-                    <td style="padding:12px 10px;"><?php echo h($f['numero_factura']); ?></td>
-                    <td style="padding:12px 10px;"><?php echo h($f['fecha_factura']); ?></td>
-                    <td style="padding:12px 10px;"><?php echo h($f['razon_social']); ?></td>
-                    <td style="padding:12px 10px;"><?php echo h($f['bodega_nombre']); ?></td>
-                    <td style="padding:12px 10px;"><?php echo h($f['numero_oc']); ?></td>
-                    <td style="padding:12px 10px;"><?php echo number_format((float)$f['monto_neto'], 0, ',', '.'); ?></td>
-                    <td style="padding:12px 10px;"><?php echo number_format((float)$f['monto_iva'], 0, ',', '.'); ?></td>
-                    <td style="padding:12px 10px;"><?php echo number_format((float)$f['monto_total'], 0, ',', '.'); ?></td>
-                    <td style="padding:12px 10px;"><?php echo h($f['estado']); ?></td>
-                    <td style="padding:12px 10px;">
-                        <a href="ver.php?id=<?php echo (int)$f['id']; ?>">Ver</a>
-                    </td>
-                </tr>
-            <?php endforeach; ?>
-        <?php endif; ?>
-        </tbody>
-    </table>
+<div class="card shadow-sm border-0 mb-4">
+    <div class="card-body">
+        <form method="get" class="row g-2 align-items-center">
+            <div class="col-md-8 col-lg-6">
+                <div class="input-group">
+                    <span class="input-group-text bg-light border-end-0"><i class="bi bi-search"></i></span>
+                    <input type="text" name="buscar" value="<?php echo h($buscar); ?>" class="form-control border-start-0 ps-0" placeholder="Buscar por N° Factura, Proveedor, Bodega u OC...">
+                </div>
+            </div>
+            <div class="col-md-4 col-lg-auto d-flex gap-2">
+                <button type="submit" class="btn btn-primary px-4">Buscar</button>
+                <?php if ($buscar !== ''): ?>
+                    <a href="index.php" class="btn btn-light border">Limpiar</a>
+                <?php endif; ?>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card shadow-sm border-0">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light text-secondary text-nowrap" style="font-size: 0.85rem;">
+                    <tr>
+                        <th class="px-4 py-3">FACTURA</th>
+                        <th class="py-3">FECHA</th>
+                        <th class="py-3">PROVEEDOR</th>
+                        <th class="py-3">DESTINO (BODEGA)</th>
+                        <th class="py-3">OC REF.</th>
+                        <th class="py-3 text-end">TOTAL</th>
+                        <th class="py-3 text-center">ESTADO</th>
+                        <th class="px-4 py-3 text-center">ACCIÓN</th>
+                    </tr>
+                </thead>
+                <tbody>
+                <?php if (!$facturas): ?>
+                    <tr><td colspan="8" class="text-center py-5 text-muted">No se encontraron facturas registradas.</td></tr>
+                <?php else: ?>
+                    <?php foreach ($facturas as $f): ?>
+                        <tr>
+                            <td class="px-4 fw-bold text-dark"><i class="bi bi-file-earmark-text text-muted me-1"></i><?php echo h($f['numero_factura']); ?></td>
+                            <td class="text-muted small"><?php echo date('d/m/Y', strtotime($f['fecha_factura'])); ?></td>
+                            <td>
+                                <div class="text-dark fw-medium text-truncate" style="max-width: 200px;" title="<?php echo h($f['razon_social']); ?>">
+                                    <?php echo h($f['razon_social']); ?>
+                                </div>
+                            </td>
+                            <td><span class="badge bg-primary bg-opacity-10 text-primary border-0"><?php echo h($f['bodega_nombre']); ?></span></td>
+                            <td><span class="text-muted small"><?php echo h($f['numero_oc']) ?: '-'; ?></span></td>
+                            <td class="text-end fw-bold text-success">$<?php echo number_format((float)$f['monto_total'], 0, ',', '.'); ?></td>
+                            <td class="text-center">
+                                <?php 
+                                    $est = strtolower($f['estado']);
+                                    $badge = 'bg-secondary';
+                                    if ($est === 'ingresada') $badge = 'bg-success';
+                                    if ($est === 'anulada') $badge = 'bg-danger';
+                                    if ($est === 'borrador') $badge = 'bg-warning text-dark';
+                                ?>
+                                <span class="badge <?php echo $badge; ?> border-0 text-uppercase"><?php echo h($f['estado']); ?></span>
+                            </td>
+                            <td class="px-4 text-center">
+                                <a href="ver.php?id=<?php echo (int)$f['id']; ?>" class="btn btn-sm btn-outline-primary"><i class="bi bi-eye"></i></a>
+                            </td>
+                        </tr>
+                    <?php endforeach; ?>
+                <?php endif; ?>
+                </tbody>
+            </table>
+        </div>
+    </div>
 </div>
 
 <?php require_once __DIR__ . '/../inc/footer.php'; ?>
