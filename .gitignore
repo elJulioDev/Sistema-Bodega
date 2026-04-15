@@ -1,0 +1,40 @@
+# ----------------------------------------------------------------------
+# 1. Credenciales y configuración confidencial
+# ----------------------------------------------------------------------
+# Oculta tus accesos a la base de datos (PDO)
+inc/db.php
+
+# ----------------------------------------------------------------------
+# 2. Logs de errores y debug
+# ----------------------------------------------------------------------
+# Ignora todos los archivos de error_log que genera PHP/Apache en tus carpetas
+error_log
+*.log
+
+# ----------------------------------------------------------------------
+# 3. Bases de Datos y Respaldos
+# ----------------------------------------------------------------------
+# Evita subir volcados de BD con información real (ej: coltauco_Online.sql)
+*.sql
+*.sqlite
+*.bak
+
+# ----------------------------------------------------------------------
+# 4. Archivos del Sistema Operativo (Windows / macOS)
+# ----------------------------------------------------------------------
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+
+# ----------------------------------------------------------------------
+# 5. Archivos de Editores de Código / IDEs (VSCode, PhpStorm, etc.)
+# ----------------------------------------------------------------------
+.vscode/
+.idea/
+*.swp
+*.swo
