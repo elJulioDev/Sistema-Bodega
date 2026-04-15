@@ -39,40 +39,47 @@ $current_script = $_SERVER['PHP_SELF'];
         /* Layout principal */
         .layout-wrapper {
             height: 100vh;
+            background-color: #f6f8fa; /* Fondo general más limpio */
         }
 
-        /* Sidebar */
+        /* Sidebar Minimalista / Estilo Dark */
         .sidebar {
             width: 260px;
-            background-color: #0f172a;
-            color: #cbd5e1;
-        }
-        .sidebar .nav-link {
-            color: #cbd5e1;
-            font-weight: 500;
-            margin-bottom: 0.25rem;
-            border-radius: 0.5rem;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            transition: all 0.2s;
-        }
-        .sidebar .nav-link:hover {
-            color: #fff;
-            background-color: rgba(255,255,255,0.05);
-        }
-        .sidebar .nav-link.active {
-            color: #fff;
-            background-color: #0d6efd;
-            box-shadow: 0 4px 12px rgba(13, 110, 253, 0.2);
-        }
-
-        /* Contenido Principal */
-        .main-content {
-            width: calc(100% - 260px);
-            height: 100vh;
+            background-color: #0d1117; /* Tono muy oscuro y profesional */
+            border-right: 1px solid #30363d;
+            color: #c9d1d9;
         }
         
+        .sidebar .nav-link {
+            color: #8b949e;
+            font-weight: 500;
+            margin-bottom: 0.25rem;
+            border-radius: 0.375rem;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 0.65rem 1rem;
+            transition: all 0.2s ease-in-out;
+        }
+        
+        .sidebar .nav-link:hover {
+            color: #c9d1d9;
+            background-color: rgba(177, 186, 196, 0.12);
+        }
+        
+        .sidebar .nav-link.active {
+            color: #ffffff;
+            background-color: #161b22;
+            border-left: 3px solid #dc3545; /* Acento rojo/corporativo */
+            box-shadow: none;
+            border-radius: 0 0.375rem 0.375rem 0;
+        }
+
+        .sidebar hr.border-secondary {
+            border-color: #30363d !important;
+        }
+
+        /* Topbar Minimalista */
         .topbar {
             background-color: #1e293b;
             box-shadow: 0 1px 3px rgba(0,0,0,0.1);
