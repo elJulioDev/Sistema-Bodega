@@ -1,5 +1,5 @@
 <?php
-require_once __DIR__ . '/inc/db.php'; // Agregamos la conexión a BD para el Dashboard
+require_once __DIR__ . '/inc/db.php';
 require_once __DIR__ . '/inc/auth.php';
 require_once __DIR__ . '/inc/functions.php';
 
@@ -38,6 +38,9 @@ $ultimosMovimientos = $stmt->fetchAll();
 
 $pageTitle = 'Dashboard';
 require_once __DIR__ . '/inc/header.php';
+
+// Variable de conveniencia para saber si tiene permisos operativos
+$canOperate = has_role(array('admin', 'bodega'));
 ?>
 
 <div class="d-flex justify-content-between align-items-center mb-4">
@@ -66,7 +69,9 @@ require_once __DIR__ . '/inc/header.php';
                     </div>
                 </div>
             </div>
-            <a href="/Bodega/productos/index.php" class="stretched-link"></a>
+            <?php if ($canOperate): ?>
+                <a href="/Bodega/productos/index.php" class="stretched-link"></a>
+            <?php endif; ?>
         </div>
     </div>
 
@@ -83,7 +88,9 @@ require_once __DIR__ . '/inc/header.php';
                     </div>
                 </div>
             </div>
-            <a href="/Bodega/ordenes_compra/index.php" class="stretched-link"></a>
+            <?php if ($canOperate): ?>
+                <a href="/Bodega/ordenes_compra/index.php" class="stretched-link"></a>
+            <?php endif; ?>
         </div>
     </div>
 
@@ -100,7 +107,9 @@ require_once __DIR__ . '/inc/header.php';
                     </div>
                 </div>
             </div>
-            <a href="/Bodega/proveedores/index.php" class="stretched-link"></a>
+            <?php if ($canOperate): ?>
+                <a href="/Bodega/proveedores/index.php" class="stretched-link"></a>
+            <?php endif; ?>
         </div>
     </div>
 
@@ -117,18 +126,22 @@ require_once __DIR__ . '/inc/header.php';
                     </div>
                 </div>
             </div>
-            <a href="/Bodega/bodegas/index.php" class="stretched-link"></a>
+            <?php if (has_role('admin')): ?>
+                <a href="/Bodega/bodegas/index.php" class="stretched-link"></a>
+            <?php endif; ?>
         </div>
     </div>
 </div>
 
 <div class="row g-4 mb-4">
     
-    <div class="col-12 col-lg-8">
+    <div class="col-12 <?php echo $canOperate ? 'col-lg-8' : 'col-lg-12'; ?>">
         <div class="card shadow-sm border-0 h-100">
             <div class="card-header bg-white border-bottom-0 pt-4 pb-0 d-flex justify-content-between align-items-center">
                 <h5 class="fw-bold mb-0 text-dark"><i class="bi bi-arrow-left-right text-primary me-2"></i>Últimos Movimientos</h5>
-                <a href="/Bodega/movimientos/index.php" class="btn btn-sm btn-outline-primary px-3">Ver todos</a>
+                <?php if ($canOperate): ?>
+                    <a href="/Bodega/movimientos/index.php" class="btn btn-sm btn-outline-primary px-3">Ver todos</a>
+                <?php endif; ?>
             </div>
             <div class="card-body">
                 <div class="table-responsive">
@@ -164,7 +177,6 @@ require_once __DIR__ . '/inc/header.php';
                                         <td>
                                             <?php 
                                                 $tipo = h($mov['tipo_movimiento']);
-                                                // Definir colores según si es entrada o salida
                                                 $badgeClass = (strpos($tipo, 'entrada') !== false) ? 'bg-success bg-opacity-10 text-success' : 'bg-danger bg-opacity-10 text-danger';
                                             ?>
                                             <span class="badge <?php echo $badgeClass; ?> border-0">
@@ -184,6 +196,7 @@ require_once __DIR__ . '/inc/header.php';
         </div>
     </div>
 
+    <?php if ($canOperate): ?>
     <div class="col-12 col-lg-4">
         <div class="card shadow-sm border-0 h-100">
             <div class="card-header bg-white border-bottom-0 pt-4 pb-0">
@@ -220,6 +233,7 @@ require_once __DIR__ . '/inc/header.php';
             </div>
         </div>
     </div>
+    <?php endif; ?>
 
 </div>
 

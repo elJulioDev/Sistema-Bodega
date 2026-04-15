@@ -125,17 +125,21 @@ $current_script = $_SERVER['PHP_SELF'];
             <span class="fs-5 fw-bold">Sistema Bodega</span>
         </div>
         <hr class="border-secondary">
+        
         <ul class="nav nav-pills flex-column mb-auto overflow-auto">
             <li class="nav-item">
                 <a href="/Bodega/index.php" class="nav-link <?php echo (strpos($current_script, 'index.php') !== false && strpos($current_script, 'Bodega/index.php') !== false) ? 'active' : ''; ?>">
                     <i class="bi bi-house-door"></i> Inicio
                 </a>
             </li>
+            
             <li>
-                <a href="/Bodega/bodegas/index.php" class="nav-link <?php echo (strpos($current_script, '/bodegas/') !== false) ? 'active' : ''; ?>">
-                    <i class="bi bi-buildings"></i> Bodegas
+                <a href="/Bodega/stock/index.php" class="nav-link <?php echo (strpos($current_script, '/stock/') !== false) ? 'active' : ''; ?>">
+                    <i class="bi bi-inboxes"></i> Stock
                 </a>
             </li>
+
+            <?php if (has_role(array('admin', 'bodega'))): ?>
             <li>
                 <a href="/Bodega/proveedores/index.php" class="nav-link <?php echo (strpos($current_script, '/proveedores/') !== false) ? 'active' : ''; ?>">
                     <i class="bi bi-truck"></i> Proveedores
@@ -157,13 +161,19 @@ $current_script = $_SERVER['PHP_SELF'];
                 </a>
             </li>
             <li>
-                <a href="/Bodega/stock/index.php" class="nav-link <?php echo (strpos($current_script, '/stock/') !== false) ? 'active' : ''; ?>">
-                    <i class="bi bi-inboxes"></i> Stock
-                </a>
-            </li>
-            <li>
                 <a href="/Bodega/movimientos/index.php" class="nav-link <?php echo (strpos($current_script, '/movimientos/') !== false) ? 'active' : ''; ?>">
                     <i class="bi bi-arrow-left-right"></i> Movimientos
+                </a>
+            </li>
+            <?php endif; ?>
+
+            <?php if (has_role('admin')): ?>
+            <li class="mt-2 mb-1">
+                <span class="text-secondary small fw-bold px-3 text-uppercase" style="letter-spacing: 1px; font-size: 0.7rem;">Configuración</span>
+            </li>
+            <li>
+                <a href="/Bodega/bodegas/index.php" class="nav-link <?php echo (strpos($current_script, '/bodegas/') !== false) ? 'active' : ''; ?>">
+                    <i class="bi bi-buildings"></i> Bodegas
                 </a>
             </li>
             <li>
@@ -171,6 +181,7 @@ $current_script = $_SERVER['PHP_SELF'];
                     <i class="bi bi-people"></i> Usuarios
                 </a>
             </li>
+            <?php endif; ?>
         </ul>
     </aside>
     <?php endif; ?>
@@ -187,7 +198,7 @@ $current_script = $_SERVER['PHP_SELF'];
                     <div class="d-flex align-items-center gap-2 bg-dark bg-opacity-25 px-3 py-1 rounded-pill">
                         <i class="bi bi-person-circle text-primary fs-5"></i>
                         <span class="fw-medium small"><?php echo h($user['nombre']); ?></span>
-                        <span class="badge bg-primary ms-1" style="font-size: 0.7rem;"><?php echo h($user['rol']); ?></span>
+                        <span class="badge bg-primary ms-1" style="font-size: 0.7rem;"><?php echo strtoupper(h($user['rol'])); ?></span>
                     </div>
                     <a href="/Bodega/logout.php" class="btn btn-sm btn-outline-danger d-flex align-items-center gap-1">
                         <i class="bi bi-box-arrow-right"></i> <span class="d-none d-sm-inline">Salir</span>

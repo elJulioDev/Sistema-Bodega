@@ -4,9 +4,7 @@ require_once __DIR__ . '/../inc/auth.php';
 require_once __DIR__ . '/../inc/functions.php';
 
 require_login();
-
-// Opcional: Proteger para que solo los administradores gestionen usuarios
-// if (!has_role('admin')) { set_flash('error', 'Acceso denegado.'); redirect('/Bodega/index.php'); }
+require_role('admin');
 
 if (isset($_GET['toggle'])) {
     $id = (int)$_GET['toggle'];

@@ -50,7 +50,8 @@ function has_role($roles)
 function require_role($roles)
 {
     if (!has_role($roles)) {
-        http_response_code(403);
-        die('Acceso denegado.');
+        set_flash('error', 'Acceso denegado. No tienes permisos para esta sección.');
+        redirect('/Bodega/index.php');
+        exit;
     }
 }
