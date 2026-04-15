@@ -116,8 +116,8 @@ require_once __DIR__ . '/../inc/header.php';
                             <td><span class="badge bg-light text-dark border"><?php echo h($s['producto_codigo']); ?></span></td>
                             <td class="fw-bold text-dark"><?php echo h($s['producto_nombre']); ?></td>
                             <td>
-                                <div class="small text-secondary"><?php echo h($s['tipo_nombre'] ?: '-'); ?></div>
-                                <div class="small text-muted"><i class="bi bi-ruler me-1"></i><?php echo h($s['unidad_nombre'] ?: '-'); ?></div>
+                                <div class="small text-secondary"><?php echo !empty($s['tipo_nombre']) ? h($s['tipo_nombre']) : '-'; ?></div>
+                                <div class="small text-muted"><i class="bi bi-ruler me-1"></i><?php echo !empty($s['unidad_nombre']) ? h($s['unidad_nombre']) : '-'; ?></div>
                             </td>
                             <td class="text-end fw-bold fs-6 <?php echo ((float)$s['stock_actual'] <= 0) ? 'text-danger' : 'text-success'; ?>">
                                 <?php echo number_format((float)$s['stock_actual'], 2, ',', '.'); ?>

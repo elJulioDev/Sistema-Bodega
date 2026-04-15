@@ -150,9 +150,9 @@ require_once __DIR__ . '/../inc/header.php';
                             </td>
                             <td class="text-end fw-medium text-dark">$<?php echo number_format((float)$m['total'], 0, ',', '.'); ?></td>
                             <td class="text-muted small"><?php echo h($m['referencia_tipo'] . ' #' . $m['referencia_id']); ?></td>
-                            <td class="text-secondary small"><i class="bi bi-person me-1"></i><?php echo h($m['usuario_nombre'] ?: 'Sistema'); ?></td>
+                            <td class="text-secondary small"><i class="bi bi-person me-1"></i><?php echo !empty($m['usuario_nombre']) ? h($m['usuario_nombre']) : 'Sistema'; ?></td>
                             <td class="px-4 text-muted small text-truncate" style="max-width: 200px;" title="<?php echo h($m['observacion']); ?>">
-                                <?php echo h($m['observacion']) ?: '-'; ?>
+                                <?php echo !empty($m['observacion']) ? h($m['observacion']) : '-'; ?>
                             </td>
                         </tr>
                     <?php endforeach; ?>

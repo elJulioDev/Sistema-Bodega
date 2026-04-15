@@ -5,18 +5,18 @@ require_once __DIR__ . '/../inc/functions.php';
 
 require_login();
 
-$pageTitle = 'Bodegas';
-require_once __DIR__ . '/../inc/header.php';
-
-// Activar/desactivar
+// 1. PRIMERO PROCESAMOS LA LÓGICA DE REDIRECCIÓN
 if (isset($_GET['toggle'])) {
     $id = (int)$_GET['toggle'];
     $pdo->exec("UPDATE bodegas SET estado = IF(estado=1,0,1) WHERE id = {$id}");
     set_flash('success', 'Estado actualizado');
-    redirect('index.php');
+    redirect('index.php'); // Ahora la redirección funcionará sin error
 }
 
-// Listado
+// 2. LUEGO CARGAMOS LA VISTA Y EL HEADER
+$pageTitle = 'Bodegas';
+require_once __DIR__ . '/../inc/header.php';
+
 $stmt = $pdo->query("SELECT * FROM bodegas ORDER BY id DESC");
 $bodegas = $stmt->fetchAll();
 ?>
