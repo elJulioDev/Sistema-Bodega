@@ -29,10 +29,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $row = $stmt->fetch();
 
         if ($row && password_verify($clave, $row['clave_hash'])) {
+            // Variables que usan auth.php y algunos módulos (oc_crear, usuarios_lista)
             $_SESSION['user_id'] = (int)$row['id'];
             $_SESSION['user_nombre'] = $row['nombre'];
             $_SESSION['user_usuario'] = $row['usuario'];
             $_SESSION['user_rol'] = $row['rol'];
+
+            // Variables que exigen index.php y header.php
+            $_SESSION['usuario_id'] = (int)$row['id'];
+            $_SESSION['usuario_nombre'] = $row['nombre'];
+            $_SESSION['usuario_rol'] = $row['rol'];
 
             set_flash('success', 'Bienvenido al sistema.');
             redirect('/Bodega/index.php');
@@ -48,7 +54,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Iniciar Sesion | Sistema de Bodega</title>
-    <link rel="stylesheet" href="static/css/login2.css">
+    <link rel="stylesheet" href="static/css/login.css">
 </head>
 <body>
 
