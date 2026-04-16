@@ -140,7 +140,7 @@ $canOperate = has_role(array('admin', 'bodega'));
             <div class="card-header bg-white border-bottom-0 pt-4 pb-0 d-flex justify-content-between align-items-center">
                 <h5 class="fw-bold mb-0 text-dark"><i class="bi bi-arrow-left-right text-primary me-2"></i>Últimos Movimientos</h5>
                 <?php if ($canOperate): ?>
-                    <a href="/Bodega/modulos/movimientos/movimientos_lista.php" class="btn btn-sm btn-outline-primary px-3">Ver todos</a>
+                    <a href="/Bodega/modulos/movimientos_lista.php" class="btn btn-sm btn-outline-primary px-3">Ver todos</a>
                 <?php endif; ?>
             </div>
             <div class="card-body">

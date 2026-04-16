@@ -134,7 +134,7 @@ $current_script = $_SERVER['PHP_SELF'];
             </li>
             
             <li>
-                <a href="/Bodega/modulos/stock/stock_lista.php" class="nav-link <?php echo (strpos($current_script, '/stock/') !== false) ? 'active' : ''; ?>">
+                <a href="/Bodega/modulos/stock_lista.php" class="nav-link <?php echo (strpos($current_script, '/stock/') !== false) ? 'active' : ''; ?>">
                     <i class="bi bi-inboxes"></i> Stock
                 </a>
             </li>
@@ -161,7 +161,7 @@ $current_script = $_SERVER['PHP_SELF'];
                 </a>
             </li>
             <li>
-                <a href="/Bodega/modulos/movimientos/movimientos_lista.php" class="nav-link <?php echo (strpos($current_script, '/movimientos/') !== false) ? 'active' : ''; ?>">
+                <a href="/Bodega/modulos/movimientos_lista.php" class="nav-link <?php echo (strpos($current_script, '/movimientos/') !== false) ? 'active' : ''; ?>">
                     <i class="bi bi-arrow-left-right"></i> Movimientos
                 </a>
             </li>
