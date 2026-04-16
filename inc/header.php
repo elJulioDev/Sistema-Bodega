@@ -1,376 +1,218 @@
 <?php
-/**
- * header.php — Cabecera del sistema de bodega
- * Incluye: topbar, sidebar, apertura del layout
- *
- * Variables esperadas (opcional, definir antes de incluir):
- *   $pageTitle      — Título de la página actual
- *   $pageSection    — Sección activa del sidebar (para marcar active)
- */
-
-// Seguridad: requiere sesión iniciada
-if (session_status() === PHP_SESSION_NONE) session_start();
-if (!isset($_SESSION['usuario_id'])) {
-    header('Location: login.php');
-    exit;
+if (!isset($pageTitle)) {
+    $pageTitle = 'Sistema de Bodega';
 }
 
-// Datos del usuario logueado
-$usuarioNombre  = isset($_SESSION['usuario_nombre']) ? $_SESSION['usuario_nombre'] : 'Usuario';
-$usuarioRol     = isset($_SESSION['usuario_rol'])    ? $_SESSION['usuario_rol']    : 'consulta';
-$usuarioInicial = strtoupper(substr($usuarioNombre, 0, 1));
-
-// Página activa
-$paginaActual = isset($pageSection) ? $pageSection : '';
-$tituloPagina = isset($pageTitle)   ? $pageTitle   : 'Bodega Virtual';
-
-// Helper: clase 'active' para el nav — evita redeclaración si header se incluye varias veces
-if (!function_exists('navActive')) {
-    function navActive($section) {
-        global $paginaActual;
-        return ($paginaActual === $section) ? 'active' : '';
-    }
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
 }
 
-// Helper: ¿el usuario tiene permiso para ver sección?
-if (!function_exists('puedeVer')) {
-    function puedeVer($rolesPermitidos) {
-        global $usuarioRol;
-        return in_array($usuarioRol, $rolesPermitidos);
-    }
-}
+require_once __DIR__ . '/auth.php';
+require_once __DIR__ . '/functions.php';
+
+$user = current_user();
+$flash = get_flash();
+
+// Lógica para detectar la página actual
+$current_script = $_SERVER['PHP_SELF'];
 ?>
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="robots" content="noindex, nofollow">
-  <title><?php echo htmlspecialchars($tituloPagina); ?> — Bodega Virtual</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><?php echo h($pageTitle); ?> | Intranet</title>
+    
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&display=swap" rel="stylesheet">
 
-  <!-- Bootstrap 4 -->
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css">
-  <!-- Sistema propio -->
-  <link rel="stylesheet" href="static/css/style.css">
+    <style>
+        /* Estilos base */
+        body {
+            font-family: 'Figtree', sans-serif;
+            background-color: #f8fafc;
+            height: 100vh;      /* Ocupa exactamente el 100% de la pantalla */
+            overflow: hidden;   /* Evita el scroll en toda la página */
+        }
+        
+        /* Layout principal */
+        .layout-wrapper {
+            height: 100vh;
+            background-color: #f6f8fa; /* Fondo general más limpio */
+        }
+
+        /* Sidebar Minimalista / Estilo Dark */
+        .sidebar {
+            width: 260px;
+            background-color: #0d1117; /* Tono muy oscuro y profesional */
+            border-right: 1px solid #30363d;
+            color: #c9d1d9;
+        }
+        
+        .sidebar .nav-link {
+            color: #8b949e;
+            font-weight: 500;
+            margin-bottom: 0.25rem;
+            border-radius: 0.375rem;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 0.65rem 1rem;
+            transition: all 0.2s ease-in-out;
+        }
+        
+        .sidebar .nav-link:hover {
+            color: #c9d1d9;
+            background-color: rgba(177, 186, 196, 0.12);
+        }
+        
+        .sidebar .nav-link.active {
+            color: #ffffff;
+            background-color: #161b22;
+            border-left: 3px solid #dc3545; /* Acento rojo/corporativo */
+            box-shadow: none;
+            border-radius: 0 0.375rem 0.375rem 0;
+        }
+
+        .sidebar hr.border-secondary {
+            border-color: #30363d !important;
+        }
+
+        /* Topbar Minimalista */
+        .topbar {
+            background-color: #1e293b;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            z-index: 10;
+        }
+
+        /* Área scrolleable: Aquí es donde ocurre la magia del scroll vertical */
+        .content-scrollable {
+            overflow-y: auto;
+            overflow-x: hidden;
+            padding: 1.5rem;
+            height: calc(100vh - 64px); /* Resta el alto del topbar */
+        }
+
+        /* Tablas Responsive: Fija el encabezado y permite scroll horizontal limpio */
+        .table-responsive {
+            max-height: calc(100vh - 220px);
+            overflow-y: auto;
+        }
+        .table-responsive thead th {
+            position: sticky;
+            top: 0;
+            background-color: #f8f9fa;
+            z-index: 1;
+            box-shadow: inset 0 -1px 0 #dee2e6;
+        }
+
+        @media (max-width: 768px) {
+            .sidebar { width: 100%; height: auto; }
+            .main-content { width: 100%; height: calc(100vh - 140px); }
+            .layout-wrapper { flex-direction: column; }
+            .content-scrollable { height: 100%; }
+        }
+    </style>
 </head>
 <body>
 
-<div id="wrapper">
-
-  <!-- ═══════════════════════════════════════════════
-       OVERLAY MOBILE
-  ════════════════════════════════════════════════ -->
-  <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
-
-  <!-- ═══════════════════════════════════════════════
-       SIDEBAR
-  ════════════════════════════════════════════════ -->
-  <nav id="sidebar">
-
-    <!-- Marca -->
-    <a href="index.php" class="sidebar-brand">
-      <div class="sidebar-brand-icon">
-        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-          <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
-        </svg>
-      </div>
-      <div class="sidebar-brand-text">
-        <span class="sidebar-brand-name">Bodega Virtual</span>
-        <span class="sidebar-brand-sub">Sistema de Gestión</span>
-      </div>
-    </a>
-
-    <!-- Navegación -->
-    <div class="sidebar-nav">
-
-      <!-- Dashboard -->
-      <div class="nav-group">
-        <a href="index.php" class="nav-link <?php echo navActive('dashboard'); ?>">
-          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
-            <rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>
-          </svg>
-          Dashboard
-        </a>
-      </div>
-
-      <div class="nav-divider"></div>
-
-      <!-- Inventario -->
-      <div class="nav-group">
-        <span class="nav-group-label">Inventario</span>
-
-        <a href="bodegas.php" class="nav-link <?php echo navActive('bodegas'); ?>">
-          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
-            <polyline points="9 22 9 12 15 12 15 22"/>
-          </svg>
-          Bodegas
-        </a>
-
-        <a href="stock.php" class="nav-link <?php echo navActive('stock'); ?>">
-          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/>
-            <line x1="6" y1="20" x2="6" y2="14"/>
-          </svg>
-          Stock
-        </a>
-
-        <a href="movimientos.php" class="nav-link <?php echo navActive('movimientos'); ?>">
-          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 014-4h14"/>
-            <polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 01-4 4H3"/>
-          </svg>
-          Movimientos
-        </a>
-      </div>
-
-      <div class="nav-divider"></div>
-
-      <!-- Compras -->
-      <div class="nav-group">
-        <span class="nav-group-label">Compras</span>
-
-        <a href="ordenes_compra.php" class="nav-link <?php echo navActive('ordenes_compra'); ?>">
-          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
-            <polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/>
-            <line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/>
-          </svg>
-          Órdenes de Compra
-        </a>
-
-        <a href="facturas.php" class="nav-link <?php echo navActive('facturas'); ?>">
-          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/>
-            <line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/>
-          </svg>
-          Facturas
-        </a>
-      </div>
-
-      <div class="nav-divider"></div>
-
-      <!-- Operaciones -->
-      <div class="nav-group">
-        <span class="nav-group-label">Operaciones</span>
-
-        <a href="salidas.php" class="nav-link <?php echo navActive('salidas'); ?>">
-          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/>
-            <polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>
-          </svg>
-          Salidas de Bodega
-        </a>
-
-        <a href="traslados.php" class="nav-link <?php echo navActive('traslados'); ?>">
-          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/>
-            <circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/>
-          </svg>
-          Traslados
-        </a>
-
-        <a href="ajustes.php" class="nav-link <?php echo navActive('ajustes'); ?>">
-          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <circle cx="12" cy="12" r="3"/>
-            <path d="M19.07 4.93l-1.41 1.41M4.93 4.93l1.41 1.41M19.07 19.07l-1.41-1.41M4.93 19.07l1.41-1.41M12 2v2M12 20v2M2 12h2M20 12h2"/>
-          </svg>
-          Ajustes de Bodega
-        </a>
-      </div>
-
-      <div class="nav-divider"></div>
-
-      <!-- Catálogos -->
-      <div class="nav-group">
-        <span class="nav-group-label">Catálogos</span>
-
-        <a href="productos.php" class="nav-link <?php echo navActive('productos'); ?>">
-          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 002 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/>
-          </svg>
-          Productos
-        </a>
-
-        <a href="proveedores.php" class="nav-link <?php echo navActive('proveedores'); ?>">
-          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/>
-            <circle cx="9" cy="7" r="4"/>
-            <path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/>
-          </svg>
-          Proveedores
-        </a>
-
-        <a href="tipos_producto.php" class="nav-link <?php echo navActive('tipos_producto'); ?>">
-          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z"/>
-            <line x1="7" y1="7" x2="7.01" y2="7"/>
-          </svg>
-          Tipos de Producto
-        </a>
-
-        <a href="unidades_medida.php" class="nav-link <?php echo navActive('unidades'); ?>">
-          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <line x1="12" y1="2" x2="12" y2="22"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/>
-          </svg>
-          Unidades de Medida
-        </a>
-      </div>
-
-      <!-- Admin -->
-      <?php if (puedeVer(array('admin'))): ?>
-      <div class="nav-divider"></div>
-      <div class="nav-group">
-        <span class="nav-group-label">Administración</span>
-
-        <a href="usuarios.php" class="nav-link <?php echo navActive('usuarios'); ?>">
-          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/>
-            <circle cx="12" cy="7" r="4"/>
-          </svg>
-          Usuarios
-        </a>
-
-        <a href="reportes.php" class="nav-link <?php echo navActive('reportes'); ?>">
-          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
-          </svg>
-          Reportes
-        </a>
-      </div>
-      <?php endif; ?>
-
-    </div><!-- /sidebar-nav -->
-
-    <!-- Pie del sidebar: usuario -->
-    <div class="sidebar-footer">
-      <div class="sidebar-footer-user">
-        <div class="sidebar-avatar"><?php echo $usuarioInicial; ?></div>
-        <div class="sidebar-user-info">
-          <span class="sidebar-user-name"><?php echo htmlspecialchars($usuarioNombre); ?></span>
-          <span class="sidebar-user-role"><?php echo htmlspecialchars($usuarioRol); ?></span>
+<div class="d-flex layout-wrapper">
+    <?php if ($user): ?>
+    <aside class="sidebar d-flex flex-column p-3 flex-shrink-0">
+        <div class="d-flex align-items-center mb-3 mb-md-0 me-md-auto text-white text-decoration-none">
+            <i class="bi bi-box-seam fs-4 me-2 text-primary"></i>
+            <span class="fs-5 fw-bold">Sistema Bodega</span>
         </div>
-      </div>
-    </div>
+        <hr class="border-secondary">
+        
+        <ul class="nav nav-pills flex-column mb-auto overflow-auto">
+            <li class="nav-item">
+                <a href="/Bodega/index.php" class="nav-link <?php echo (strpos($current_script, 'index.php') !== false && strpos($current_script, 'Bodega/index.php') !== false) ? 'active' : ''; ?>">
+                    <i class="bi bi-house-door"></i> Inicio
+                </a>
+            </li>
+            
+            <li>
+                <a href="/Bodega/modulos/stock_lista.php" class="nav-link <?php echo (strpos($current_script, '/stock/') !== false) ? 'active' : ''; ?>">
+                    <i class="bi bi-inboxes"></i> Stock
+                </a>
+            </li>
 
-  </nav><!-- /sidebar -->
+            <?php if (has_role(array('admin', 'bodega'))): ?>
+            <li>
+                <a href="/Bodega/modulos/proveedores/proveedores_lista.php" class="nav-link <?php echo (strpos($current_script, '/proveedores/') !== false) ? 'active' : ''; ?>">
+                    <i class="bi bi-truck"></i> Proveedores
+                </a>
+            </li>
+            <li>
+                <a href="/Bodega/modulos/productos/productos_lista.php" class="nav-link <?php echo (strpos($current_script, '/productos/') !== false) ? 'active' : ''; ?>">
+                    <i class="bi bi-boxes"></i> Productos
+                </a>
+            </li>
+            <li>
+                <a href="/Bodega/modulos/ordenes_compra/oc_lista.php" class="nav-link <?php echo (strpos($current_script, '/ordenes_compra/') !== false) ? 'active' : ''; ?>">
+                    <i class="bi bi-cart3"></i> Órdenes de compra
+                </a>
+            </li>
+            <li>
+                <a href="/Bodega/modulos/facturas/facturas_lista.php" class="nav-link <?php echo (strpos($current_script, '/facturas/') !== false) ? 'active' : ''; ?>">
+                    <i class="bi bi-receipt"></i> Facturas
+                </a>
+            </li>
+            <li>
+                <a href="/Bodega/modulos/movimientos_lista.php" class="nav-link <?php echo (strpos($current_script, '/movimientos/') !== false) ? 'active' : ''; ?>">
+                    <i class="bi bi-arrow-left-right"></i> Movimientos
+                </a>
+            </li>
+            <?php endif; ?>
 
+            <?php if (has_role('admin')): ?>
+            <li class="mt-2 mb-1">
+                <span class="text-secondary small fw-bold px-3 text-uppercase" style="letter-spacing: 1px; font-size: 0.7rem;">Configuración</span>
+            </li>
+            <li>
+                <a href="/Bodega/modulos/bodegas/bodegas_lista.php" class="nav-link <?php echo (strpos($current_script, '/bodegas/') !== false) ? 'active' : ''; ?>">
+                    <i class="bi bi-buildings"></i> Bodegas
+                </a>
+            </li>
+            <li>
+                <a href="/Bodega/modulos/usuarios/usuarios_lista.php" class="nav-link <?php echo (strpos($current_script, '/usuarios/') !== false) ? 'active' : ''; ?>">
+                    <i class="bi bi-people"></i> Usuarios
+                </a>
+            </li>
+            <?php endif; ?>
+        </ul>
+    </aside>
+    <?php endif; ?>
 
-  <!-- ═══════════════════════════════════════════════
-       TOPBAR
-  ════════════════════════════════════════════════ -->
-  <header id="topbar">
+    <div class="main-content d-flex flex-column flex-grow-1 overflow-hidden">
+        
+        <header class="topbar px-4 py-2 d-flex justify-content-between align-items-center text-white" style="height: 64px;">
+            <div class="fs-5 fw-bold text-truncate">
+                <?php echo h($pageTitle); ?>
+            </div>
+            
+            <?php if ($user): ?>
+                <div class="d-flex align-items-center gap-3">
+                    <div class="d-flex align-items-center gap-2 bg-dark bg-opacity-25 px-3 py-1 rounded-pill">
+                        <i class="bi bi-person-circle text-primary fs-5"></i>
+                        <span class="fw-medium small"><?php echo h($user['nombre']); ?></span>
+                        <span class="badge bg-primary ms-1" style="font-size: 0.7rem;"><?php echo strtoupper(h($user['rol'])); ?></span>
+                    </div>
+                    <a href="/Bodega/logout.php" class="btn btn-sm btn-outline-danger d-flex align-items-center gap-1">
+                        <i class="bi bi-box-arrow-right"></i> <span class="d-none d-sm-inline">Salir</span>
+                    </a>
+                </div>
+            <?php endif; ?>
+        </header>
 
-    <!-- Toggle mobile -->
-    <button class="topbar-toggle" id="sidebarToggle" onclick="toggleSidebar()" title="Menú">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <line x1="3" y1="6"  x2="21" y2="6"/>
-        <line x1="3" y1="12" x2="21" y2="12"/>
-        <line x1="3" y1="18" x2="21" y2="18"/>
-      </svg>
-    </button>
-
-    <!-- Título de la página -->
-    <div class="topbar-title"><?php echo htmlspecialchars($tituloPagina); ?></div>
-
-    <div class="topbar-spacer"></div>
-
-    <!-- Acciones -->
-    <div class="topbar-actions">
-
-      <!-- Hora/Fecha -->
-      <span id="topbar-clock" class="topbar-clock"></span>
-
-      <!-- Notificaciones (placeholder) -->
-      <button class="topbar-btn" title="Notificaciones">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/>
-          <path d="M13.73 21a2 2 0 01-3.46 0"/>
-        </svg>
-      </button>
-
-      <!-- Usuario dropdown -->
-      <div class="topbar-dropdown">
-        <div class="topbar-user">
-          <div class="topbar-user-avatar"><?php echo $usuarioInicial; ?></div>
-          <div class="topbar-user-info">
-            <span class="topbar-user-name"><?php echo htmlspecialchars($usuarioNombre); ?></span>
-            <span class="topbar-user-role"><?php echo htmlspecialchars($usuarioRol); ?></span>
-          </div>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--color-text-muted); margin-left:2px;">
-            <polyline points="6 9 12 15 18 9"/>
-          </svg>
-        </div>
-        <div class="topbar-dropdown-menu">
-          <div class="dropdown-item-header">
-            <span>Sesión iniciada como</span>
-            <strong><?php echo htmlspecialchars($usuarioNombre); ?></strong>
-          </div>
-          <div class="dropdown-divider"></div>
-          <a href="perfil.php" class="dropdown-item-link">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/>
-              <circle cx="12" cy="7" r="4"/>
-            </svg>
-            Mi Perfil
-          </a>
-          <a href="cambiar_clave.php" class="dropdown-item-link">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
-              <path d="M7 11V7a5 5 0 0110 0v4"/>
-            </svg>
-            Cambiar Clave
-          </a>
-          <div class="dropdown-divider"></div>
-          <a href="logout.php" class="dropdown-item-link text-danger">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/>
-              <polyline points="16 17 21 12 16 7"/>
-              <line x1="21" y1="12" x2="9" y2="12"/>
-            </svg>
-            Cerrar Sesión
-          </a>
-        </div>
-      </div>
-
-    </div><!-- /topbar-actions -->
-
-  </header><!-- /topbar -->
-
-
-  <!-- Scripts de layout (no dependen de jQuery) -->
-  <script>
-  /* Sidebar toggle mobile */
-  function toggleSidebar() {
-    document.getElementById('sidebar').classList.toggle('open');
-    document.getElementById('sidebarOverlay').classList.toggle('active');
-  }
-  function closeSidebar() {
-    document.getElementById('sidebar').classList.remove('open');
-    document.getElementById('sidebarOverlay').classList.remove('active');
-  }
-
-  /* Reloj topbar */
-  function updateClock() {
-    var d = new Date();
-    var days   = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
-    var months = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
-    var h   = d.getHours().toString().padStart(2, '0');
-    var m   = d.getMinutes().toString().padStart(2, '0');
-    var txt = days[d.getDay()] + ' ' + d.getDate() + ' ' + months[d.getMonth()] + ' — ' + h + ':' + m;
-    var el  = document.getElementById('topbar-clock');
-    if (el) el.textContent = txt;
-  }
-  updateClock();
-  setInterval(updateClock, 30000);
-  </script>
-
-
-  <!-- ═══════════════════════════════════════════════
-       CONTENIDO PRINCIPAL
-  ════════════════════════════════════════════════ -->
-  <main id="page-content">
-
-<?php /* ← El contenido de cada página va aquí */ ?>
-<?php /* Cerrar con footer.php que cierra: </main> </div> </body> </html> */ ?>
+        <main class="content-scrollable">
+            <?php if ($flash): ?>
+                <?php $alertClass = ($flash['type'] === 'error') ? 'alert-danger' : 'alert-success'; ?>
+                <div class="alert <?php echo $alertClass; ?> alert-dismissible fade show shadow-sm" role="alert">
+                    <i class="bi <?php echo ($flash['type'] === 'error') ? 'bi-exclamation-triangle-fill' : 'bi-check-circle-fill'; ?> me-2"></i>
+                    <?php echo h($flash['message']); ?>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            <?php endif; ?>
