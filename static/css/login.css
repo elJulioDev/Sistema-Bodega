@@ -1,121 +1,331 @@
-/* ==========================================================================
-   GLOBAL.CSS - Ajustado al estilo Marcaciones
-   ========================================================================== */
-@import url('https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&display=swap');
+/* login.css — Mantenedor de Noticias, Municipalidad de Coltauco */
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700&display=swap');
 
 :root {
-    --primary: #2563eb;
-    --primary-hover: #1d4ed8;
-    --primary-dark: #1e3a8a;
-    --bg: #f4f7fb;
-    --white: #ffffff;
-    --text-main: #1f2937;
-    --text-muted: #6b7280;
-    --border: #e5e7eb;
-    --error-bg: #fee2e2;
-    --error-text: #991b1b;
-    --font: 'Figtree', system-ui, sans-serif;
+    --green-main:   #8CC63F;
+    --green-dark:   #5a8a1f;
+    --green-deeper: #3d6012;
+    --green-pale:   #eaf5d3;
+    --green-subtle: #f5faea;
+    --white:        #ffffff;
+    --text-main:    #2a3a1a;
+    --text-muted:   #6a8040;
+    --border:       #cce89a;
+    --error-bg:     #fff5f5;
+    --error-text:   #c0392b;
+    --error-border: #f5c6c6;
 }
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 body {
-    font-family: var(--font);
-    background-color: var(--bg);
-    /* Fondo cuadriculado estilo Marcaciones */
-    background-image: 
-        linear-gradient(rgba(37,99,235,.04) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(37,99,235,.04) 1px, transparent 1px);
-    background-size: 30px 30px;
+    font-family: 'Nunito', system-ui, sans-serif;
+    background-color: var(--green-subtle);
+    background-image:
+        linear-gradient(rgba(140,198,63,.09) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(140,198,63,.09) 1px, transparent 1px);
+    background-size: 28px 28px;
     color: var(--text-main);
     min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 16px;
 }
 
-/* ── Estilos de Login ── */
-.login-page {
+body::before {
+    content: '';
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--green-deeper), var(--green-main), var(--green-deeper));
+    z-index: 10;
+}
+
+.login-container {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 11px;
+}
+
+/* ── Insignia ── */
+.institution-badge {
     display: flex;
     align-items: center;
-    justify-content: center;
-    padding: 20px;
-    min-height: 100vh;
+    gap: 7px;
+    background: var(--green-deeper);
+    color: var(--white);
+    padding: 6px 14px;
+    border-radius: 100px;
+    font-size: 10.5px;
+    font-weight: 700;
+    letter-spacing: .06em;
+    text-transform: uppercase;
 }
 
+/* ── Card ── */
 .login-card {
     background: var(--white);
     width: 100%;
-    max-width: 420px;
-    border-radius: 12px;
+    max-width: 480px;
+    border-radius: 10px;
     border: 1px solid var(--border);
-    box-shadow: 0 10px 25px rgba(37,99,235,0.1);
     overflow: hidden;
-    animation: fadeIn 0.4s ease;
+    box-shadow: 0 6px 24px rgba(61,96,18,.13);
+    animation: cardIn .35s ease both;
 }
 
+@keyframes cardIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Cabecera ── */
 .card-header {
-    background: linear-gradient(135deg, var(--primary-dark), var(--primary));
-    padding: 25px;
+    background: linear-gradient(135deg, var(--green-deeper) 0%, var(--green-dark) 100%);
+    padding: 18px 26px 15px;
     text-align: center;
-    color: white;
+    position: relative;
 }
 
-.card-header h1 { font-size: 18px; font-weight: 700; margin-bottom: 4px; }
-.card-header p { font-size: 12px; opacity: 0.8; }
+.card-header::after {
+    content: '';
+    position: absolute;
+    bottom: -1px; left: 0; right: 0;
+    height: 13px;
+    background: var(--white);
+    border-radius: 50% 50% 0 0 / 100% 100% 0 0;
+}
 
-.card-body { padding: 30px; }
+.logo-wrap {
+    width: 42px;
+    height: 42px;
+    background: rgba(255,255,255,.13);
+    border: 1.5px solid rgba(255,255,255,.28);
+    border-radius: 10px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--white);
+    margin-bottom: 9px;
+}
 
-/* ── Formularios ── */
-.form-group { margin-bottom: 18px; }
+.card-header h1 {
+    font-size: 16.5px;
+    font-weight: 700;
+    color: var(--white);
+    margin-bottom: 2px;
+    line-height: 1.2;
+}
+
+.card-header p {
+    font-size: 11px;
+    color: rgba(255,255,255,.68);
+}
+
+/* ── Cuerpo ── */
+.card-body { padding: 18px 26px 14px; }
+
+/* ── Alerta error ── */
+.alert {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 9px 12px;
+    border-radius: 7px;
+    font-size: 13px;
+    margin-bottom: 14px;
+    line-height: 1.45;
+}
+
+.alert-error {
+    background: var(--error-bg);
+    color: var(--error-text);
+    border: 1px solid var(--error-border);
+}
+
+.alert svg { flex-shrink: 0; margin-top: 1px; }
+
+/* ── Fila de dos columnas ── */
+.form-row {
+    display: flex;
+    gap: 14px;
+}
+
+.form-row .form-group { flex: 1; }
+
+.form-group { margin-bottom: 13px; }
+
 .form-group label {
     display: block;
-    font-size: 11px;
+    font-size: 10.5px;
     font-weight: 700;
-    text-transform: uppercase;
     color: var(--text-muted);
-    margin-bottom: 6px;
-    letter-spacing: 0.5px;
+    letter-spacing: .05em;
+    text-transform: uppercase;
+    margin-bottom: 5px;
+}
+
+.input-wrap { position: relative; }
+
+.input-icon {
+    position: absolute;
+    left: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--green-main);
+    display: flex;
+    pointer-events: none;
 }
 
 .form-control {
     width: 100%;
-    padding: 11px 14px;
+    padding: 9px 11px 9px 33px;
     border: 1.5px solid var(--border);
-    border-radius: 8px;
-    font-family: var(--font);
-    font-size: 14px;
-    transition: all 0.2s;
-    background: #f9fafb;
+    border-radius: 7px;
+    font-size: 13.5px;
+    font-family: 'Nunito', sans-serif;
+    color: var(--text-main);
+    background: var(--green-subtle);
+    transition: border-color .2s, box-shadow .2s, background .2s;
 }
+
+.form-control::placeholder { color: #b5cf80; }
 
 .form-control:focus {
     outline: none;
-    border-color: var(--primary);
-    background: white;
-    box-shadow: 0 0 0 4px rgba(37,99,235,0.15);
+    border-color: var(--green-main);
+    background: var(--white);
+    box-shadow: 0 0 0 3px rgba(140,198,63,.18);
 }
 
-.btn-block {
+/* ── Divisor ── */
+.divider {
+    height: 1px;
+    background: var(--green-pale);
+    margin: 2px 0 13px;
+}
+
+/* ── Botón ── */
+.btn-submit {
     width: 100%;
-    background: var(--primary);
-    color: white;
+    background: linear-gradient(135deg, var(--green-deeper), var(--green-dark));
+    color: var(--white);
     border: none;
-    padding: 12px;
-    border-radius: 8px;
+    padding: 11px 16px;
+    border-radius: 7px;
+    font-size: 13.5px;
     font-weight: 700;
-    font-size: 14px;
+    font-family: 'Nunito', sans-serif;
     cursor: pointer;
-    transition: 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    transition: opacity .2s, transform .15s, box-shadow .2s;
+    box-shadow: 0 4px 12px rgba(61,96,18,.28);
 }
 
-.btn-block:hover { background: var(--primary-hover); transform: translateY(-1px); }
-
-/* ── Alertas ── */
-.alert {
-    padding: 12px;
-    border-radius: 8px;
-    font-size: 13px;
-    margin-bottom: 20px;
-    border: 1px solid transparent;
+.btn-submit:hover {
+    opacity: .9;
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px rgba(61,96,18,.32);
 }
-.alert-error { background: var(--error-bg); color: var(--error-text); border-color: #fca5a5; }
 
-@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+.btn-submit:active { transform: translateY(0); opacity: 1; }
+
+/* ── Pie ── */
+.card-footer {
+    text-align: center;
+    padding: 9px 26px 12px;
+    border-top: 1px solid var(--green-pale);
+    font-size: 11px;
+    color: var(--text-muted);
+    background: var(--green-subtle);
+}
+
+.card-footer strong { color: var(--green-dark); font-weight: 700; }
+
+/* ═══════════════════════════════
+   RESPONSIVE — MÓVIL (MEJORADO)
+═══════════════════════════════ */
+@media (max-width: 520px) {
+    body {
+        /* Mantenemos el centrado vertical eliminando flex-start */
+        padding: 20px;
+        justify-content: center; 
+    }
+
+    .login-container {
+        gap: 16px; /* Un poco más de espacio entre la insignia y la tarjeta */
+    }
+
+    .login-card {
+        max-width: 100%;
+        width: 100%;
+        border-radius: 12px; /* Bordes un poco más suaves en móvil */
+        box-shadow: 0 8px 30px rgba(61,96,18,.15); /* Sombra más amplia y difusa para dar profundidad */
+    }
+
+    .card-header { 
+        padding: 20px 20px 16px; 
+    }
+
+    .logo-wrap {
+        width: 46px; 
+        height: 46px; /* Logo ligeramente más grande para destacar en móvil */
+        border-radius: 10px;
+        margin-bottom: 10px;
+    }
+
+    .card-header h1 { font-size: 17px; }
+    .card-header p  { font-size: 12px; }
+
+    .card-body { 
+        padding: 20px; 
+    }
+
+    /* Apila las columnas de forma limpia */
+    .form-row { 
+        flex-direction: column; 
+        gap: 16px; /* Separación uniforme entre campos */
+    }
+
+    .form-group {
+        margin-bottom: 0; /* Evita doble espaciado ya que estamos usando gap en form-row */
+    }
+
+    .form-group label {
+        font-size: 11px;
+        margin-bottom: 6px;
+    }
+
+    /* Evita el zoom automático en iOS y mejora el área táctil para los dedos */
+    .form-control { 
+        font-size: 16px; 
+        padding: 12px 14px 12px 38px; /* Inputs más altos para mayor comodidad al escribir */
+    }
+
+    .input-icon {
+        left: 12px; /* Ajuste del ícono al nuevo padding */
+    }
+
+    /* Divisor con un poco más de aire */
+    .divider {
+        margin: 8px 0 16px;
+    }
+
+    /* Botón más grande para facilitar el 'tap' */
+    .btn-submit {
+        padding: 13px 16px;
+        font-size: 14.5px;
+    }
+
+    .card-footer { 
+        padding: 12px 20px 15px; 
+        font-size: 11.5px;
+    }
+}
