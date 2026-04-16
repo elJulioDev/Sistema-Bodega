@@ -1046,3 +1046,20 @@ textarea.form-control { resize: vertical; min-height: 80px; }
   #page-content, #footer { margin-left: 0 !important; margin-top: 0 !important; }
   .card { box-shadow: none !important; border: 1px solid #ddd !important; }
 }
+
+/* ── TOPBAR CLOCK ───────────────────────────────────────────── */
+.topbar-clock {
+  font-size: 12px;
+  color: var(--color-text-muted);
+  margin-right: 4px;
+  white-space: nowrap;
+}
+
+/* ── KPI FOOTER LINKS ───────────────────────────────────────── */
+.kpi-footer a {
+  color: var(--color-primary);
+  text-decoration: none;
+  font-weight: 500;
+  transition: opacity .15s;
+}
+.kpi-footer a:hover { opacity: .75; text-decoration: none; }
