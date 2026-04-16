@@ -1,7 +1,7 @@
 <?php
-require_once __DIR__ . '/../inc/db.php';
-require_once __DIR__ . '/../inc/auth.php';
-require_once __DIR__ . '/../inc/functions.php';
+require_once __DIR__ . '/../../inc/db.php';
+require_once __DIR__ . '/../../inc/auth.php';
+require_once __DIR__ . '/../../inc/functions.php';
 
 require_login();
 
@@ -29,12 +29,12 @@ $stmt->execute($params);
 $ordenes = $stmt->fetchAll();
 
 $pageTitle = 'Órdenes de Compra';
-require_once __DIR__ . '/../inc/header.php';
+require_once __DIR__ . '/../../inc/header.php';
 ?>
 
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h1 class="h3 mb-0 text-gray-800"><i class="bi bi-cart3 text-primary me-2"></i>Órdenes de Compra</h1>
-    <a href="crear.php" class="btn btn-primary"><i class="bi bi-plus-lg me-1"></i> Nueva OC</a>
+    <a href="oc_crear.php" class="btn btn-primary"><i class="bi bi-plus-lg me-1"></i> Nueva OC</a>
 </div>
 
 <div class="card shadow-sm border-0 mb-4">
@@ -49,7 +49,7 @@ require_once __DIR__ . '/../inc/header.php';
             <div class="col-md-4 col-lg-auto d-flex gap-2">
                 <button type="submit" class="btn btn-primary px-4">Buscar</button>
                 <?php if ($buscar !== ''): ?>
-                    <a href="index.php" class="btn btn-light border">Limpiar</a>
+                    <a href="oc_lista.php" class="btn btn-light border">Limpiar</a>
                 <?php endif; ?>
             </div>
         </form>
@@ -101,8 +101,8 @@ require_once __DIR__ . '/../inc/header.php';
                             </td>
                             <td class="px-4 text-center">
                                 <div class="btn-group" role="group">
-                                    <a href="ver.php?id=<?php echo (int)$oc['id']; ?>" class="btn btn-sm btn-outline-primary" title="Ver detalle"><i class="bi bi-eye"></i></a>
-                                    <a href="editar.php?id=<?php echo (int)$oc['id']; ?>" class="btn btn-sm btn-outline-secondary" title="Editar"><i class="bi bi-pencil"></i></a>
+                                    <a href="oc_ver.php?id=<?php echo (int)$oc['id']; ?>" class="btn btn-sm btn-outline-primary" title="Ver detalle"><i class="bi bi-eye"></i></a>
+                                    <a href="oc_editar.php?id=<?php echo (int)$oc['id']; ?>" class="btn btn-sm btn-outline-secondary" title="Editar"><i class="bi bi-pencil"></i></a>
                                 </div>
                             </td>
                         </tr>
@@ -114,4 +114,4 @@ require_once __DIR__ . '/../inc/header.php';
     </div>
 </div>
 
-<?php require_once __DIR__ . '/../inc/footer.php'; ?>
+<?php require_once __DIR__ . '/../../inc/footer.php';

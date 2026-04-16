@@ -134,34 +134,34 @@ $current_script = $_SERVER['PHP_SELF'];
             </li>
             
             <li>
-                <a href="/Bodega/stock/index.php" class="nav-link <?php echo (strpos($current_script, '/stock/') !== false) ? 'active' : ''; ?>">
+                <a href="/Bodega/modulos/stock/stock_lista.php" class="nav-link <?php echo (strpos($current_script, '/stock/') !== false) ? 'active' : ''; ?>">
                     <i class="bi bi-inboxes"></i> Stock
                 </a>
             </li>
 
             <?php if (has_role(array('admin', 'bodega'))): ?>
             <li>
-                <a href="/Bodega/proveedores/index.php" class="nav-link <?php echo (strpos($current_script, '/proveedores/') !== false) ? 'active' : ''; ?>">
+                <a href="/Bodega/modulos/proveedores/proveedores_lista.php" class="nav-link <?php echo (strpos($current_script, '/proveedores/') !== false) ? 'active' : ''; ?>">
                     <i class="bi bi-truck"></i> Proveedores
                 </a>
             </li>
             <li>
-                <a href="/Bodega/productos/index.php" class="nav-link <?php echo (strpos($current_script, '/productos/') !== false) ? 'active' : ''; ?>">
+                <a href="/Bodega/modulos/productos/productos_lista.php" class="nav-link <?php echo (strpos($current_script, '/productos/') !== false) ? 'active' : ''; ?>">
                     <i class="bi bi-boxes"></i> Productos
                 </a>
             </li>
             <li>
-                <a href="/Bodega/ordenes_compra/index.php" class="nav-link <?php echo (strpos($current_script, '/ordenes_compra/') !== false) ? 'active' : ''; ?>">
+                <a href="/Bodega/modulos/ordenes_compra/oc_lista.php" class="nav-link <?php echo (strpos($current_script, '/ordenes_compra/') !== false) ? 'active' : ''; ?>">
                     <i class="bi bi-cart3"></i> Órdenes de compra
                 </a>
             </li>
             <li>
-                <a href="/Bodega/facturas/index.php" class="nav-link <?php echo (strpos($current_script, '/facturas/') !== false) ? 'active' : ''; ?>">
+                <a href="/Bodega/modulos/facturas/facturas_lista.php" class="nav-link <?php echo (strpos($current_script, '/facturas/') !== false) ? 'active' : ''; ?>">
                     <i class="bi bi-receipt"></i> Facturas
                 </a>
             </li>
             <li>
-                <a href="/Bodega/movimientos/index.php" class="nav-link <?php echo (strpos($current_script, '/movimientos/') !== false) ? 'active' : ''; ?>">
+                <a href="/Bodega/modulos/movimientos/movimientos_lista.php" class="nav-link <?php echo (strpos($current_script, '/movimientos/') !== false) ? 'active' : ''; ?>">
                     <i class="bi bi-arrow-left-right"></i> Movimientos
                 </a>
             </li>
@@ -172,12 +172,12 @@ $current_script = $_SERVER['PHP_SELF'];
                 <span class="text-secondary small fw-bold px-3 text-uppercase" style="letter-spacing: 1px; font-size: 0.7rem;">Configuración</span>
             </li>
             <li>
-                <a href="/Bodega/bodegas/index.php" class="nav-link <?php echo (strpos($current_script, '/bodegas/') !== false) ? 'active' : ''; ?>">
+                <a href="/Bodega/modulos/bodegas/bodegas_lista.php" class="nav-link <?php echo (strpos($current_script, '/bodegas/') !== false) ? 'active' : ''; ?>">
                     <i class="bi bi-buildings"></i> Bodegas
                 </a>
             </li>
             <li>
-                <a href="/Bodega/usuarios/index.php" class="nav-link <?php echo (strpos($current_script, '/usuarios/') !== false) ? 'active' : ''; ?>">
+                <a href="/Bodega/modulos/usuarios/usuarios_lista.php" class="nav-link <?php echo (strpos($current_script, '/usuarios/') !== false) ? 'active' : ''; ?>">
                     <i class="bi bi-people"></i> Usuarios
                 </a>
             </li>

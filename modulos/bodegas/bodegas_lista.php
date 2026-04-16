@@ -1,7 +1,7 @@
 <?php
-require_once __DIR__ . '/../inc/db.php';
-require_once __DIR__ . '/../inc/auth.php';
-require_once __DIR__ . '/../inc/functions.php';
+require_once __DIR__ . '/../../inc/db.php';
+require_once __DIR__ . '/../../inc/auth.php';
+require_once __DIR__ . '/../../inc/functions.php';
 
 require_login();
 
@@ -10,12 +10,12 @@ if (isset($_GET['toggle'])) {
     $id = (int)$_GET['toggle'];
     $pdo->exec("UPDATE bodegas SET estado = IF(estado=1,0,1) WHERE id = {$id}");
     set_flash('success', 'Estado actualizado');
-    redirect('index.php'); // Ahora la redirección funcionará sin error
+    redirect('bodegas_lista.php');
 }
 
 // 2. LUEGO CARGAMOS LA VISTA Y EL HEADER
 $pageTitle = 'Bodegas';
-require_once __DIR__ . '/../inc/header.php';
+require_once __DIR__ . '/../../inc/header.php';
 
 $stmt = $pdo->query("SELECT * FROM bodegas ORDER BY id DESC");
 $bodegas = $stmt->fetchAll();
@@ -23,7 +23,7 @@ $bodegas = $stmt->fetchAll();
 
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h1 class="h3 mb-0 text-gray-800"><i class="bi bi-buildings text-primary me-2"></i>Gestión de Bodegas</h1>
-    <a href="crear.php" class="btn btn-primary"><i class="bi bi-plus-lg me-1"></i> Nueva Bodega</a>
+    <a href="bodegas_crear.php" class="btn btn-primary"><i class="bi bi-plus-lg me-1"></i> Nueva Bodega</a>
 </div>
 
 <div class="card shadow-sm border-0">
@@ -67,7 +67,7 @@ $bodegas = $stmt->fetchAll();
                             </td>
                             <td class="px-4 text-end">
                                 <div class="btn-group" role="group">
-                                    <a href="editar.php?id=<?php echo $b['id']; ?>" class="btn btn-sm btn-outline-primary" title="Editar">
+                                    <a href="bodegas_editar.php?id=<?php echo $b['id']; ?>" class="btn btn-sm btn-outline-primary" title="Editar">
                                         <i class="bi bi-pencil"></i>
                                     </a>
                                     <a href="?toggle=<?php echo $b['id']; ?>" 
@@ -87,4 +87,4 @@ $bodegas = $stmt->fetchAll();
     </div>
 </div>
 
-<?php require_once __DIR__ . '/../inc/footer.php'; ?>
+<?php require_once __DIR__ . '/../../inc/footer.php';

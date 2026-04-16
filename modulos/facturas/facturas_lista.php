@@ -1,7 +1,7 @@
 <?php
-require_once __DIR__ . '/../inc/db.php';
-require_once __DIR__ . '/../inc/auth.php';
-require_once __DIR__ . '/../inc/functions.php';
+require_once __DIR__ . '/../../inc/db.php';
+require_once __DIR__ . '/../../inc/auth.php';
+require_once __DIR__ . '/../../inc/functions.php';
 
 require_login();
 
@@ -33,12 +33,12 @@ $stmt->execute($params);
 $facturas = $stmt->fetchAll();
 
 $pageTitle = 'Facturas';
-require_once __DIR__ . '/../inc/header.php';
+require_once __DIR__ . '/../../inc/header.php';
 ?>
 
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h1 class="h3 mb-0 text-gray-800"><i class="bi bi-receipt text-primary me-2"></i>Facturas de Compra</h1>
-    <a href="crear.php" class="btn btn-primary"><i class="bi bi-plus-lg me-1"></i> Ingresar Factura</a>
+    <a href="facturas_crear.php" class="btn btn-primary"><i class="bi bi-plus-lg me-1"></i> Ingresar Factura</a>
 </div>
 
 <div class="card shadow-sm border-0 mb-4">
@@ -53,7 +53,7 @@ require_once __DIR__ . '/../inc/header.php';
             <div class="col-md-4 col-lg-auto d-flex gap-2">
                 <button type="submit" class="btn btn-primary px-4">Buscar</button>
                 <?php if ($buscar !== ''): ?>
-                    <a href="index.php" class="btn btn-light border">Limpiar</a>
+                    <a href="facturas_lista.php" class="btn btn-light border">Limpiar</a>
                 <?php endif; ?>
             </div>
         </form>
@@ -103,7 +103,7 @@ require_once __DIR__ . '/../inc/header.php';
                                 <span class="badge <?php echo $badge; ?> border-0 text-uppercase"><?php echo h($f['estado']); ?></span>
                             </td>
                             <td class="px-4 text-center">
-                                <a href="ver.php?id=<?php echo (int)$f['id']; ?>" class="btn btn-sm btn-outline-primary"><i class="bi bi-eye"></i></a>
+                                <a href="facturas_ver.php?id=<?php echo (int)$f['id']; ?>" class="btn btn-sm btn-outline-primary"><i class="bi bi-eye"></i></a>
                             </td>
                         </tr>
                     <?php endforeach; ?>
@@ -114,4 +114,4 @@ require_once __DIR__ . '/../inc/header.php';
     </div>
 </div>
 
-<?php require_once __DIR__ . '/../inc/footer.php'; ?>
+<?php require_once __DIR__ . '/../../inc/footer.php';

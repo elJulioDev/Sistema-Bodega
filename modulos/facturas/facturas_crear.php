@@ -1,7 +1,7 @@
 <?php
-require_once __DIR__ . '/../inc/db.php';
-require_once __DIR__ . '/../inc/auth.php';
-require_once __DIR__ . '/../inc/functions.php';
+require_once __DIR__ . '/../../inc/db.php';
+require_once __DIR__ . '/../../inc/auth.php';
+require_once __DIR__ . '/../../inc/functions.php';
 
 require_login();
 
@@ -106,7 +106,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                     $pdo->commit();
                     set_flash('success', 'Factura registrada y stock actualizado.');
-                    redirect('ver.php?id=' . $id_factura);
+                    redirect('facturas_ver.php?id=' . $id_factura);
 
                 } catch (Exception $e) {
                     $pdo->rollBack();
@@ -118,12 +118,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 $pageTitle = 'Nueva Factura';
-require_once __DIR__ . '/../inc/header.php';
+require_once __DIR__ . '/../../inc/header.php';
 ?>
 
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h1 class="h3 mb-0 text-gray-800"><i class="bi bi-receipt text-primary me-2"></i>Ingresar Nueva Factura</h1>
-    <a href="index.php" class="btn btn-outline-secondary"><i class="bi bi-arrow-left me-1"></i> Volver</a>
+    <a href="facturas_lista.php" class="btn btn-outline-secondary"><i class="bi bi-arrow-left me-1"></i> Volver</a>
 </div>
 
 <?php if ($error !== ''): ?>
@@ -302,4 +302,4 @@ require_once __DIR__ . '/../inc/header.php';
 })();
 </script>
 
-<?php require_once __DIR__ . '/../inc/footer.php'; ?>
+<?php require_once __DIR__ . '/../../inc/footer.php';

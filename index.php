@@ -70,7 +70,7 @@ $canOperate = has_role(array('admin', 'bodega'));
                 </div>
             </div>
             <?php if ($canOperate): ?>
-                <a href="/Bodega/productos/index.php" class="stretched-link"></a>
+                <a href="/Bodega/modulos/productos/productos_lista.php" class="stretched-link"></a>
             <?php endif; ?>
         </div>
     </div>
@@ -89,7 +89,7 @@ $canOperate = has_role(array('admin', 'bodega'));
                 </div>
             </div>
             <?php if ($canOperate): ?>
-                <a href="/Bodega/ordenes_compra/index.php" class="stretched-link"></a>
+                <a href="/Bodega/modulos/ordenes_compra/oc_lista.php" class="stretched-link"></a>
             <?php endif; ?>
         </div>
     </div>
@@ -108,7 +108,7 @@ $canOperate = has_role(array('admin', 'bodega'));
                 </div>
             </div>
             <?php if ($canOperate): ?>
-                <a href="/Bodega/proveedores/index.php" class="stretched-link"></a>
+                <a href="/Bodega/modulos/proveedores/proveedores_lista.php" class="stretched-link"></a>
             <?php endif; ?>
         </div>
     </div>
@@ -127,7 +127,7 @@ $canOperate = has_role(array('admin', 'bodega'));
                 </div>
             </div>
             <?php if (has_role('admin')): ?>
-                <a href="/Bodega/bodegas/index.php" class="stretched-link"></a>
+                <a href="/Bodega/modulos/bodegas/bodegas_lista.php" class="stretched-link"></a>
             <?php endif; ?>
         </div>
     </div>
@@ -140,7 +140,7 @@ $canOperate = has_role(array('admin', 'bodega'));
             <div class="card-header bg-white border-bottom-0 pt-4 pb-0 d-flex justify-content-between align-items-center">
                 <h5 class="fw-bold mb-0 text-dark"><i class="bi bi-arrow-left-right text-primary me-2"></i>Últimos Movimientos</h5>
                 <?php if ($canOperate): ?>
-                    <a href="/Bodega/movimientos/index.php" class="btn btn-sm btn-outline-primary px-3">Ver todos</a>
+                    <a href="/Bodega/modulos/movimientos/movimientos_lista.php" class="btn btn-sm btn-outline-primary px-3">Ver todos</a>
                 <?php endif; ?>
             </div>
             <div class="card-body">
@@ -205,7 +205,7 @@ $canOperate = has_role(array('admin', 'bodega'));
             <div class="card-body">
                 <div class="d-flex flex-column gap-3">
                     
-                    <a href="/Bodega/ordenes_compra/crear.php" class="btn btn-outline-primary text-start d-flex align-items-center p-3 rounded-3" style="border-width: 2px;">
+                    <a href="/Bodega/modulos/ordenes_compra/oc_crear.php" class="btn btn-outline-primary text-start d-flex align-items-center p-3 rounded-3" style="border-width: 2px;">
                         <i class="bi bi-cart-plus fs-3 me-3"></i>
                         <div>
                             <div class="fw-bold">Nueva OC</div>
@@ -213,7 +213,7 @@ $canOperate = has_role(array('admin', 'bodega'));
                         </div>
                     </a>
 
-                    <a href="/Bodega/facturas/crear.php" class="btn btn-outline-success text-start d-flex align-items-center p-3 rounded-3" style="border-width: 2px;">
+                    <a href="/Bodega/modulos/facturas/facturas_crear.php" class="btn btn-outline-success text-start d-flex align-items-center p-3 rounded-3" style="border-width: 2px;">
                         <i class="bi bi-receipt fs-3 me-3"></i>
                         <div>
                             <div class="fw-bold">Ingresar Factura</div>
@@ -221,7 +221,7 @@ $canOperate = has_role(array('admin', 'bodega'));
                         </div>
                     </a>
 
-                    <a href="/Bodega/productos/crear.php" class="btn btn-outline-secondary text-start d-flex align-items-center p-3 rounded-3" style="border-width: 2px;">
+                    <a href="/Bodega/modulos/productos/productos_crear.php" class="btn btn-outline-secondary text-start d-flex align-items-center p-3 rounded-3" style="border-width: 2px;">
                         <i class="bi bi-box-seam fs-3 me-3"></i>
                         <div>
                             <div class="fw-bold">Nuevo Producto</div>

@@ -1,7 +1,7 @@
 <?php
-require_once __DIR__ . '/../inc/db.php';
-require_once __DIR__ . '/../inc/auth.php';
-require_once __DIR__ . '/../inc/functions.php';
+require_once __DIR__ . '/../../inc/db.php';
+require_once __DIR__ . '/../../inc/auth.php';
+require_once __DIR__ . '/../../inc/functions.php';
 
 require_login();
 
@@ -52,7 +52,7 @@ $stmt->execute($params);
 $movimientos = $stmt->fetchAll();
 
 $pageTitle = 'Movimientos';
-require_once __DIR__ . '/../inc/header.php';
+require_once __DIR__ . '/../../inc/header.php';
 ?>
 
 <div class="d-flex justify-content-between align-items-center mb-4">
@@ -98,7 +98,7 @@ require_once __DIR__ . '/../inc/header.php';
             <div class="col-md-2 d-flex gap-2">
                 <button type="submit" class="btn btn-primary w-100"><i class="bi bi-funnel me-1"></i> Filtrar</button>
                 <?php if ($buscar !== '' || $id_bodega !== '' || $tipo_movimiento !== ''): ?>
-                    <a href="index.php" class="btn btn-light border" title="Limpiar"><i class="bi bi-eraser"></i></a>
+                    <a href="movimientos_lista.php" class="btn btn-light border" title="Limpiar"><i class="bi bi-eraser"></i></a>
                 <?php endif; ?>
             </div>
         </form>
@@ -163,4 +163,4 @@ require_once __DIR__ . '/../inc/header.php';
     </div>
 </div>
 
-<?php require_once __DIR__ . '/../inc/footer.php'; ?>
+<?php require_once __DIR__ . '/../../inc/footer.php';

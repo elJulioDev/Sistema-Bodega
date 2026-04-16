@@ -1,7 +1,7 @@
 <?php
-require_once __DIR__ . '/../inc/db.php';
-require_once __DIR__ . '/../inc/auth.php';
-require_once __DIR__ . '/../inc/functions.php';
+require_once __DIR__ . '/../../inc/db.php';
+require_once __DIR__ . '/../../inc/auth.php';
+require_once __DIR__ . '/../../inc/functions.php';
 
 require_login();
 
@@ -10,7 +10,7 @@ if (isset($_GET['toggle'])) {
     $stmt = $pdo->prepare("UPDATE productos SET estado = IF(estado=1,0,1) WHERE id = ?");
     $stmt->execute(array($id));
     set_flash('success', 'Estado del producto actualizado.');
-    redirect('index.php');
+    redirect('productos_lista.php');
 }
 
 $buscar = get('buscar');
@@ -39,16 +39,16 @@ $stmt->execute($params);
 $productos = $stmt->fetchAll();
 
 $pageTitle = 'Productos';
-require_once __DIR__ . '/../inc/header.php';
+require_once __DIR__ . '/../../inc/header.php';
 ?>
 
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h1 class="h3 mb-0 text-gray-800"><i class="bi bi-boxes text-primary me-2"></i>Catálogo de Productos</h1>
     
     <div class="d-flex gap-2">
-        <a href="tipos.php" class="btn btn-outline-secondary"><i class="bi bi-tags"></i> Tipos</a>
-        <a href="unidades.php" class="btn btn-outline-secondary"><i class="bi bi-rulers"></i> Unidades</a>
-        <a href="crear.php" class="btn btn-primary"><i class="bi bi-plus-lg"></i> Nuevo Producto</a>
+        <a href="tipos_lista.php" class="btn btn-outline-secondary"><i class="bi bi-tags"></i> Tipos</a>
+        <a href="unidades_lista.php" class="btn btn-outline-secondary"><i class="bi bi-rulers"></i> Unidades</a>
+        <a href="productos_crear.php" class="btn btn-primary"><i class="bi bi-plus-lg"></i> Nuevo Producto</a>
     </div>
 </div>
 
@@ -64,7 +64,7 @@ require_once __DIR__ . '/../inc/header.php';
             <div class="col-md-4 col-lg-auto d-flex gap-2">
                 <button type="submit" class="btn btn-primary px-4">Buscar</button>
                 <?php if ($buscar !== ''): ?>
-                    <a href="index.php" class="btn btn-light border">Limpiar</a>
+                    <a href="productos_lista.php" class="btn btn-light border">Limpiar</a>
                 <?php endif; ?>
             </div>
         </form>
@@ -120,8 +120,8 @@ require_once __DIR__ . '/../inc/header.php';
                             </td>
                             <td class="px-4 text-end">
                                 <div class="btn-group" role="group">
-                                    <a href="editar.php?id=<?php echo (int)$p['id']; ?>" class="btn btn-sm btn-outline-primary" title="Editar"><i class="bi bi-pencil"></i></a>
-                                    <a href="index.php?toggle=<?php echo (int)$p['id']; ?>" 
+                                    <a href="productos_editar.php?id=<?php echo (int)$p['id']; ?>" class="btn btn-sm btn-outline-primary" title="Editar"><i class="bi bi-pencil"></i></a>
+                                    <a href="productos_lista.php?toggle=<?php echo (int)$p['id']; ?>" 
                                        class="btn btn-sm btn-outline-<?php echo $p['estado'] ? 'danger' : 'success'; ?>" 
                                        onclick="return confirm('¿Deseas cambiar el estado de este producto?');"
                                        title="<?php echo $p['estado'] ? 'Desactivar' : 'Activar'; ?>">
@@ -138,4 +138,4 @@ require_once __DIR__ . '/../inc/header.php';
     </div>
 </div>
 
-<?php require_once __DIR__ . '/../inc/footer.php'; ?>
+<?php require_once __DIR__ . '/../../inc/footer.php';

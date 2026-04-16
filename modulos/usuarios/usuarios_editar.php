@@ -1,7 +1,7 @@
 <?php
-require_once __DIR__ . '/../inc/db.php';
-require_once __DIR__ . '/../inc/auth.php';
-require_once __DIR__ . '/../inc/functions.php';
+require_once __DIR__ . '/../../inc/db.php';
+require_once __DIR__ . '/../../inc/auth.php';
+require_once __DIR__ . '/../../inc/functions.php';
 
 require_login();
 
@@ -44,18 +44,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
             
             set_flash('success', 'Usuario actualizado correctamente.');
-            redirect('index.php');
+            redirect('usuarios_lista.php');
         }
     }
 }
 
 $pageTitle = 'Editar Usuario';
-require_once __DIR__ . '/../inc/header.php';
+require_once __DIR__ . '/../../inc/header.php';
 ?>
 
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h1 class="h3 mb-0 text-gray-800"><i class="bi bi-pencil-square text-primary me-2"></i>Editar Usuario</h1>
-    <a href="index.php" class="btn btn-outline-secondary"><i class="bi bi-arrow-left me-1"></i> Volver al listado</a>
+    <a href="usuarios_lista.php" class="btn btn-outline-secondary"><i class="bi bi-arrow-left me-1"></i> Volver al listado</a>
 </div>
 
 <div class="row">
@@ -92,7 +92,7 @@ require_once __DIR__ . '/../inc/header.php';
                     </div>
 
                     <div class="col-12 d-flex justify-content-end gap-2 mt-4 pt-3 border-top">
-                        <a href="index.php" class="btn btn-light border">Cancelar</a>
+                        <a href="usuarios_lista.php" class="btn btn-light border">Cancelar</a>
                         <button type="submit" class="btn btn-primary"><i class="bi bi-floppy me-1"></i> Guardar Cambios</button>
                     </div>
                 </form>
@@ -101,4 +101,4 @@ require_once __DIR__ . '/../inc/header.php';
     </div>
 </div>
 
-<?php require_once __DIR__ . '/../inc/footer.php'; ?>
+<?php require_once __DIR__ . '/../../inc/footer.php';
