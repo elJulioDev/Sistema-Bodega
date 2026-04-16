@@ -5,7 +5,7 @@ require_once __DIR__ . '/../inc/functions.php';
 
 require_login();
 
-$buscar = get('buscar');
+$buscar    = get('buscar');
 $id_bodega = get('id_bodega');
 
 $stmt = $pdo->query("SELECT id, nombre FROM bodegas WHERE estado = 1 ORDER BY nombre ASC");
@@ -46,12 +46,19 @@ $stmt = $pdo->prepare($sql);
 $stmt->execute($params);
 $stocks = $stmt->fetchAll();
 
+$canOperate = has_role(array('admin', 'bodega'));
+
 $pageTitle = 'Control de Stock';
 require_once __DIR__ . '/../inc/header.php';
 ?>
 
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h1 class="h3 mb-0 text-gray-800"><i class="bi bi-inboxes text-primary me-2"></i>Stock por Bodega</h1>
+    <?php if ($canOperate): ?>
+        <a href="movimientos/movimientos_crear.php" class="btn btn-primary">
+            <i class="bi bi-plus-lg me-1"></i> Registrar Movimiento
+        </a>
+    <?php endif; ?>
 </div>
 
 <div class="card shadow-sm border-0 mb-4">
@@ -100,23 +107,28 @@ require_once __DIR__ . '/../inc/header.php';
                         <th class="py-3 text-end">STOCK ACTUAL</th>
                         <th class="py-3 text-end">C. PROMEDIO</th>
                         <th class="px-4 py-3 text-center">ÚLTIMA ACT.</th>
+                        <?php if ($canOperate): ?>
+                            <th class="py-3 text-center">ACCIONES</th>
+                        <?php endif; ?>
                     </tr>
                 </thead>
                 <tbody>
                 <?php if (!$stocks): ?>
                     <tr>
-                        <td colspan="7" class="text-center py-5 text-muted">No hay stock registrado con los filtros actuales.</td>
+                        <td colspan="<?php echo $canOperate ? 8 : 7; ?>" class="text-center py-5 text-muted">No hay stock registrado con los filtros actuales.</td>
                     </tr>
                 <?php else: ?>
                     <?php foreach ($stocks as $s): ?>
                         <tr>
                             <td class="px-4">
-                                <span class="badge bg-primary bg-opacity-10 text-primary border-0"><i class="bi bi-geo-alt-fill me-1"></i><?php echo h($s['bodega_nombre']); ?></span>
+                                <span class="badge bg-primary bg-opacity-10 text-primary border-0">
+                                    <i class="bi bi-geo-alt-fill me-1"></i><?php echo h($s['bodega_nombre']); ?>
+                                </span>
                             </td>
                             <td><span class="badge bg-light text-dark border"><?php echo h($s['producto_codigo']); ?></span></td>
                             <td class="fw-bold text-dark"><?php echo h($s['producto_nombre']); ?></td>
                             <td>
-                                <div class="small text-secondary"><?php echo !empty($s['tipo_nombre']) ? h($s['tipo_nombre']) : '-'; ?></div>
+                                <div class="small text-secondary"><?php echo !empty($s['tipo_nombre'])   ? h($s['tipo_nombre'])   : '-'; ?></div>
                                 <div class="small text-muted"><i class="bi bi-ruler me-1"></i><?php echo !empty($s['unidad_nombre']) ? h($s['unidad_nombre']) : '-'; ?></div>
                             </td>
                             <td class="text-end fw-bold fs-6 <?php echo ((float)$s['stock_actual'] <= 0) ? 'text-danger' : 'text-success'; ?>">
@@ -128,6 +140,24 @@ require_once __DIR__ . '/../inc/header.php';
                             <td class="px-4 text-center text-muted small">
                                 <?php echo date('d/m/Y H:i', strtotime($s['updated_at'])); ?>
                             </td>
+                            <?php if ($canOperate): ?>
+                            <td class="text-center">
+                                <div class="btn-group" role="group">
+                                    <a href="movimientos/movimientos_crear.php?tipo=salida_consumo&id_bodega=<?php echo (int)$s['id_bodega']; ?>&id_producto=<?php echo (int)$s['id_producto']; ?>"
+                                       class="btn btn-sm btn-outline-danger" title="Registrar salida por consumo">
+                                        <i class="bi bi-box-arrow-right"></i>
+                                    </a>
+                                    <a href="movimientos/movimientos_crear.php?tipo=traslado&id_bodega=<?php echo (int)$s['id_bodega']; ?>&id_producto=<?php echo (int)$s['id_producto']; ?>"
+                                       class="btn btn-sm btn-outline-primary" title="Trasladar a otra bodega">
+                                        <i class="bi bi-arrow-repeat"></i>
+                                    </a>
+                                    <a href="movimientos/movimientos_crear.php?tipo=ajuste_entrada&id_bodega=<?php echo (int)$s['id_bodega']; ?>&id_producto=<?php echo (int)$s['id_producto']; ?>"
+                                       class="btn btn-sm btn-outline-success" title="Ajuste de entrada">
+                                        <i class="bi bi-plus-circle"></i>
+                                    </a>
+                                </div>
+                            </td>
+                            <?php endif; ?>
                         </tr>
                     <?php endforeach; ?>
                 <?php endif; ?>
@@ -137,4 +167,4 @@ require_once __DIR__ . '/../inc/header.php';
     </div>
 </div>
 
-<?php require_once __DIR__ . '/../inc/footer.php';
+<?php require_once __DIR__ . '/../inc/footer.php'; ?>

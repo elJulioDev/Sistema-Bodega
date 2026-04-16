@@ -1,12 +1,12 @@
 <?php
-require_once __DIR__ . '/../inc/db.php';
-require_once __DIR__ . '/../inc/auth.php';
-require_once __DIR__ . '/../inc/functions.php';
+require_once __DIR__ . '/../../inc/db.php';
+require_once __DIR__ . '/../../inc/auth.php';
+require_once __DIR__ . '/../../inc/functions.php';
 
 require_login();
 
-$buscar = get('buscar');
-$id_bodega = get('id_bodega');
+$buscar         = get('buscar');
+$id_bodega      = get('id_bodega');
 $tipo_movimiento = get('tipo_movimiento');
 
 $stmt = $pdo->query("SELECT id, nombre FROM bodegas WHERE estado = 1 ORDER BY nombre ASC");
@@ -52,11 +52,16 @@ $stmt->execute($params);
 $movimientos = $stmt->fetchAll();
 
 $pageTitle = 'Movimientos';
-require_once __DIR__ . '/../inc/header.php';
+require_once __DIR__ . '/../../inc/header.php';
 ?>
 
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h1 class="h3 mb-0 text-gray-800"><i class="bi bi-arrow-left-right text-primary me-2"></i>Historial de Movimientos</h1>
+    <?php if (has_role(array('admin', 'bodega'))): ?>
+        <a href="movimientos_crear.php" class="btn btn-primary">
+            <i class="bi bi-plus-lg me-1"></i> Registrar Movimiento
+        </a>
+    <?php endif; ?>
 </div>
 
 <div class="card shadow-sm border-0 mb-4">
@@ -66,7 +71,7 @@ require_once __DIR__ . '/../inc/header.php';
                 <label class="form-label text-secondary fw-bold small">Buscar general</label>
                 <div class="input-group">
                     <span class="input-group-text bg-light text-secondary border-end-0"><i class="bi bi-search"></i></span>
-                    <input type="text" name="buscar" value="<?php echo h($buscar); ?>" class="form-control border-start-0 ps-0" placeholder="Producto, bodega, u observación...">
+                    <input type="text" name="buscar" value="<?php echo h($buscar); ?>" class="form-control border-start-0 ps-0" placeholder="Producto, bodega u observación...">
                 </div>
             </div>
 
@@ -86,12 +91,12 @@ require_once __DIR__ . '/../inc/header.php';
                 <label class="form-label text-secondary fw-bold small">Tipo de Movimiento</label>
                 <select name="tipo_movimiento" class="form-select">
                     <option value="">Todos los tipos</option>
-                    <option value="entrada_compra" <?php echo ($tipo_movimiento === 'entrada_compra') ? 'selected' : ''; ?>>Entrada por Compra</option>
-                    <option value="salida_consumo" <?php echo ($tipo_movimiento === 'salida_consumo') ? 'selected' : ''; ?>>Salida por Consumo</option>
-                    <option value="ajuste_entrada" <?php echo ($tipo_movimiento === 'ajuste_entrada') ? 'selected' : ''; ?>>Ajuste de Entrada</option>
-                    <option value="ajuste_salida" <?php echo ($tipo_movimiento === 'ajuste_salida') ? 'selected' : ''; ?>>Ajuste de Salida</option>
+                    <option value="entrada_compra"   <?php echo ($tipo_movimiento === 'entrada_compra')   ? 'selected' : ''; ?>>Entrada por Compra</option>
+                    <option value="salida_consumo"   <?php echo ($tipo_movimiento === 'salida_consumo')   ? 'selected' : ''; ?>>Salida por Consumo</option>
+                    <option value="ajuste_entrada"   <?php echo ($tipo_movimiento === 'ajuste_entrada')   ? 'selected' : ''; ?>>Ajuste de Entrada</option>
+                    <option value="ajuste_salida"    <?php echo ($tipo_movimiento === 'ajuste_salida')    ? 'selected' : ''; ?>>Ajuste de Salida</option>
                     <option value="traslado_entrada" <?php echo ($tipo_movimiento === 'traslado_entrada') ? 'selected' : ''; ?>>Traslado Entrada</option>
-                    <option value="traslado_salida" <?php echo ($tipo_movimiento === 'traslado_salida') ? 'selected' : ''; ?>>Traslado Salida</option>
+                    <option value="traslado_salida"  <?php echo ($tipo_movimiento === 'traslado_salida')  ? 'selected' : ''; ?>>Traslado Salida</option>
                 </select>
             </div>
 
@@ -129,6 +134,7 @@ require_once __DIR__ . '/../inc/header.php';
                     </tr>
                 <?php else: ?>
                     <?php foreach ($movimientos as $m): ?>
+                        <?php $tipo = h($m['tipo_movimiento']); ?>
                         <tr>
                             <td class="px-4 text-muted small"><?php echo date('d/m/Y H:i', strtotime($m['fecha_movimiento'])); ?></td>
                             <td><span class="badge bg-primary bg-opacity-10 text-primary border-0"><i class="bi bi-geo-alt-fill me-1"></i><?php echo h($m['bodega_nombre']); ?></span></td>
@@ -137,10 +143,7 @@ require_once __DIR__ . '/../inc/header.php';
                                 <div class="text-muted small">Cód: <?php echo h($m['producto_codigo']); ?></div>
                             </td>
                             <td class="text-center">
-                                <?php 
-                                    $tipo = h($m['tipo_movimiento']);
-                                    $badgeClass = (strpos($tipo, 'entrada') !== false) ? 'bg-success bg-opacity-10 text-success' : 'bg-danger bg-opacity-10 text-danger';
-                                ?>
+                                <?php $badgeClass = (strpos($tipo, 'entrada') !== false) ? 'bg-success bg-opacity-10 text-success' : 'bg-danger bg-opacity-10 text-danger'; ?>
                                 <span class="badge <?php echo $badgeClass; ?> border-0 text-uppercase">
                                     <?php echo str_replace('_', ' ', $tipo); ?>
                                 </span>
@@ -163,4 +166,4 @@ require_once __DIR__ . '/../inc/header.php';
     </div>
 </div>
 
-<?php require_once __DIR__ . '/../inc/footer.php';
+<?php require_once __DIR__ . '/../../inc/footer.php'; ?>
