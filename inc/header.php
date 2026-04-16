@@ -165,6 +165,11 @@ $current_script = $_SERVER['PHP_SELF'];
                     <i class="bi bi-arrow-left-right"></i> Movimientos
                 </a>
             </li>
+            <li>
+                <a href="/Bodega/modulos/movimientos/solicitudes_lista.php" class="nav-link <?php echo (strpos($current_script, 'solicitudes') !== false) ? 'active' : ''; ?>">
+                    <i class="bi bi-clipboard-check"></i> Solicitudes
+                </a>
+            </li>
             <?php endif; ?>
 
             <?php if (has_role('admin')): ?>

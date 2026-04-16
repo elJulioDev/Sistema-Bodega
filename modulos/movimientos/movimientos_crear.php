@@ -2,143 +2,128 @@
 require_once __DIR__ . '/../../inc/db.php';
 require_once __DIR__ . '/../../inc/auth.php';
 require_once __DIR__ . '/../../inc/functions.php';
-
 require_login();
 
-$error = '';
-
-$bodegas = $pdo->query("SELECT id, nombre FROM bodegas WHERE estado = 1 ORDER BY nombre ASC")->fetchAll();
-
+$error    = '';
+$bodegas  = $pdo->query("SELECT id, nombre FROM bodegas WHERE estado = 1 ORDER BY nombre")->fetchAll();
 $productos = $pdo->query("
     SELECT p.id, p.codigo, p.nombre, um.nombre AS unidad_nombre
-    FROM productos p
-    LEFT JOIN unidades_medida um ON um.id = p.id_unidad_medida
-    WHERE p.estado = 1 AND p.controla_stock = 1
-    ORDER BY p.nombre ASC
+    FROM productos p LEFT JOIN unidades_medida um ON um.id = p.id_unidad_medida
+    WHERE p.estado = 1 AND p.controla_stock = 1 ORDER BY p.nombre
 ")->fetchAll();
 
-// Stock map para mostrar en JS sin llamadas AJAX
 $stockRows = $pdo->query("SELECT id_bodega, id_producto, stock_actual FROM stock_bodega")->fetchAll();
 $stockMap  = array();
-foreach ($stockRows as $sr) {
-    $stockMap[$sr['id_bodega'] . '_' . $sr['id_producto']] = (float)$sr['stock_actual'];
+foreach ($stockRows as $r) {
+    $stockMap[$r['id_bodega'] . '_' . $r['id_producto']] = (float)$r['stock_actual'];
 }
 
-// Valores prefill desde GET (accesos rápidos de stock_lista)
 $pre_tipo     = get('tipo', 'salida_consumo');
-$pre_bodega   = get('id_bodega');
-$pre_producto = get('id_producto');
+$pre_bodega   = get('id_bodega', '');
+$pre_producto = get('id_producto', '');
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $tipo              = post('tipo_movimiento');
-    $id_bodega         = post('id_bodega');
-    $id_bodega_destino = post('id_bodega_destino');
-    $id_producto       = post('id_producto');
-    $cantidad          = (float) str_replace(',', '.', post('cantidad'));
-    $precio_unitario   = (float) str_replace(',', '.', post('precio_unitario', '0'));
-    $observacion       = post('observacion');
+    $tipo        = post('tipo_movimiento');
+    $id_bodega   = post('id_bodega');
+    $id_destino  = post('id_bodega_destino');
+    $obs         = post('observacion');
+    $items_prod  = isset($_POST['item_id_producto']) ? $_POST['item_id_producto'] : array();
+    $items_cant  = isset($_POST['item_cantidad'])    ? $_POST['item_cantidad']    : array();
+    $items_precio= isset($_POST['item_precio'])      ? $_POST['item_precio']      : array();
 
-    $esTraslado   = ($tipo === 'traslado');
-    $tiposValidos = array('salida_consumo', 'ajuste_entrada', 'ajuste_salida', 'traslado');
+    $esTraslado = ($tipo === 'traslado');
+    $tiposOK    = array('salida_consumo', 'ajuste_entrada', 'ajuste_salida', 'traslado');
 
-    if (!in_array($tipo, $tiposValidos) || $id_bodega === '' || $id_producto === '' || $cantidad <= 0) {
-        $error = 'Tipo, bodega, producto y cantidad son obligatorios. La cantidad debe ser mayor a 0.';
-    } elseif ($esTraslado && ($id_bodega_destino === '' || (int)$id_bodega_destino === (int)$id_bodega)) {
-        $error = 'Para traslados debes seleccionar una bodega de destino diferente a la de origen.';
+    if (!in_array($tipo, $tiposOK) || $id_bodega === '') {
+        $error = 'Tipo y bodega son obligatorios.';
+    } elseif ($esTraslado && ($id_destino === '' || (int)$id_destino === (int)$id_bodega)) {
+        $error = 'Traslado: selecciona bodega destino diferente a origen.';
     } else {
-        try {
-            $pdo->beginTransaction();
+        $detalle = array();
+        for ($i = 0; $i < count($items_prod); $i++) {
+            $p  = (int)(isset($items_prod[$i])   ? $items_prod[$i]   : 0);
+            $c  = (float)str_replace(',', '.', isset($items_cant[$i])   ? $items_cant[$i]   : '0');
+            $pr = (float)str_replace(',', '.', isset($items_precio[$i]) ? $items_precio[$i] : '0');
+            if ($p > 0 && $c > 0) {
+                $detalle[] = array('p' => $p, 'c' => $c, 'pr' => $pr);
+            }
+        }
 
-            $total      = $cantidad * $precio_unitario;
-            $id_usuario = isset($_SESSION['user_id']) ? (int)$_SESSION['user_id'] : null;
-
-            if ($esTraslado) {
-
-                $stmtS = $pdo->prepare("SELECT id, stock_actual FROM stock_bodega WHERE id_bodega = ? AND id_producto = ? LIMIT 1");
-                $stmtS->execute(array((int)$id_bodega, (int)$id_producto));
-                $stockOrigen = $stmtS->fetch();
-
-                if (!$stockOrigen || (float)$stockOrigen['stock_actual'] < $cantidad) {
-                    $disp = $stockOrigen ? number_format((float)$stockOrigen['stock_actual'], 2, ',', '.') : '0';
-                    throw new Exception('Stock insuficiente en bodega origen. Disponible: ' . $disp);
+        if (!$detalle) {
+            $error = 'Agrega al menos un producto con cantidad válida.';
+        } else {
+            $esSalida = in_array($tipo, array('salida_consumo', 'ajuste_salida', 'traslado'));
+            if ($esSalida) {
+                foreach ($detalle as $d) {
+                    $stS = $pdo->prepare("SELECT stock_actual FROM stock_bodega WHERE id_bodega = ? AND id_producto = ? LIMIT 1");
+                    $stS->execute(array((int)$id_bodega, $d['p']));
+                    $cur = (float)($stS->fetchColumn() ?: 0);
+                    if ($cur < $d['c']) {
+                        $nQ = $pdo->prepare("SELECT nombre FROM productos WHERE id = ?");
+                        $nQ->execute(array($d['p']));
+                        $error = 'Stock insuficiente: "' . $nQ->fetchColumn() . '". Disponible: ' . number_format($cur, 2, ',', '.');
+                        break;
+                    }
                 }
+            }
+        }
 
-                // salida en origen
-                $s = $pdo->prepare("INSERT INTO movimientos_bodega
-                    (id_bodega, id_producto, tipo_movimiento, cantidad, precio_unitario, total, referencia_tipo, referencia_id, observacion, id_usuario)
-                    VALUES (?, ?, 'traslado_salida', ?, ?, ?, 'traslado', 0, ?, ?)");
-                $s->execute(array((int)$id_bodega, (int)$id_producto, $cantidad, $precio_unitario, $total, $observacion, $id_usuario));
-                $id_mov = (int)$pdo->lastInsertId();
-                $pdo->prepare("UPDATE movimientos_bodega SET referencia_id = ? WHERE id = ?")->execute(array($id_mov, $id_mov));
+        if ($error === '') {
+            try {
+                $pdo->beginTransaction();
+                $uid = isset($_SESSION['user_id']) ? (int)$_SESSION['user_id'] : null;
 
-                $pdo->prepare("UPDATE stock_bodega SET stock_actual = stock_actual - ? WHERE id = ?")
-                    ->execute(array($cantidad, (int)$stockOrigen['id']));
+                foreach ($detalle as $d) {
+                    $total = $d['c'] * $d['pr'];
 
-                // entrada en destino
-                $e = $pdo->prepare("INSERT INTO movimientos_bodega
-                    (id_bodega, id_producto, tipo_movimiento, cantidad, precio_unitario, total, referencia_tipo, referencia_id, observacion, id_usuario)
-                    VALUES (?, ?, 'traslado_entrada', ?, ?, ?, 'traslado', ?, ?, ?)");
-                $e->execute(array((int)$id_bodega_destino, (int)$id_producto, $cantidad, $precio_unitario, $total, $id_mov, $observacion, $id_usuario));
+                    if ($esTraslado) {
+                        $pdo->prepare("INSERT INTO movimientos_bodega (id_bodega,id_producto,tipo_movimiento,cantidad,precio_unitario,total,referencia_tipo,referencia_id,observacion,id_usuario) VALUES (?,?,'traslado_salida',?,?,?,'traslado',0,?,?)")
+                            ->execute(array((int)$id_bodega, $d['p'], $d['c'], $d['pr'], $total, $obs, $uid));
+                        $idM = (int)$pdo->lastInsertId();
+                        $pdo->prepare("UPDATE movimientos_bodega SET referencia_id=? WHERE id=?")->execute(array($idM, $idM));
+                        $pdo->prepare("UPDATE stock_bodega SET stock_actual=stock_actual-? WHERE id_bodega=? AND id_producto=?")->execute(array($d['c'], (int)$id_bodega, $d['p']));
 
-                $stmtD = $pdo->prepare("SELECT id, stock_actual FROM stock_bodega WHERE id_bodega = ? AND id_producto = ? LIMIT 1");
-                $stmtD->execute(array((int)$id_bodega_destino, (int)$id_producto));
-                $stockDest = $stmtD->fetch();
+                        $pdo->prepare("INSERT INTO movimientos_bodega (id_bodega,id_producto,tipo_movimiento,cantidad,precio_unitario,total,referencia_tipo,referencia_id,observacion,id_usuario) VALUES (?,?,'traslado_entrada',?,?,?,'traslado',?,?,?)")
+                            ->execute(array((int)$id_destino, $d['p'], $d['c'], $d['pr'], $total, $idM, $obs, $uid));
 
-                if ($stockDest) {
-                    $pdo->prepare("UPDATE stock_bodega SET stock_actual = stock_actual + ? WHERE id = ?")
-                        ->execute(array($cantidad, (int)$stockDest['id']));
-                } else {
-                    $pdo->prepare("INSERT INTO stock_bodega (id_bodega, id_producto, stock_actual, costo_promedio) VALUES (?, ?, ?, ?)")
-                        ->execute(array((int)$id_bodega_destino, (int)$id_producto, $cantidad, $precio_unitario));
-                }
+                        $stD = $pdo->prepare("SELECT id FROM stock_bodega WHERE id_bodega=? AND id_producto=? LIMIT 1");
+                        $stD->execute(array((int)$id_destino, $d['p']));
+                        $sD = $stD->fetch();
+                        if ($sD) {
+                            $pdo->prepare("UPDATE stock_bodega SET stock_actual=stock_actual+? WHERE id=?")->execute(array($d['c'], $sD['id']));
+                        } else {
+                            $pdo->prepare("INSERT INTO stock_bodega (id_bodega,id_producto,stock_actual,costo_promedio) VALUES (?,?,?,?)")->execute(array((int)$id_destino, $d['p'], $d['c'], $d['pr']));
+                        }
+                    } else {
+                        $esE = ($tipo === 'ajuste_entrada');
+                        $pdo->prepare("INSERT INTO movimientos_bodega (id_bodega,id_producto,tipo_movimiento,cantidad,precio_unitario,total,referencia_tipo,referencia_id,observacion,id_usuario) VALUES (?,?,?,?,?,?,'manual',0,?,?)")
+                            ->execute(array((int)$id_bodega, $d['p'], $tipo, $d['c'], $d['pr'], $total, $obs, $uid));
+                        $idM = (int)$pdo->lastInsertId();
+                        $pdo->prepare("UPDATE movimientos_bodega SET referencia_id=? WHERE id=?")->execute(array($idM, $idM));
 
-            } else {
-
-                $esEntrada = ($tipo === 'ajuste_entrada');
-                $esSalida  = ($tipo === 'salida_consumo' || $tipo === 'ajuste_salida');
-
-                $stmtS = $pdo->prepare("SELECT id, stock_actual FROM stock_bodega WHERE id_bodega = ? AND id_producto = ? LIMIT 1");
-                $stmtS->execute(array((int)$id_bodega, (int)$id_producto));
-                $stockActual = $stmtS->fetch();
-
-                if ($esSalida) {
-                    $disp = $stockActual ? (float)$stockActual['stock_actual'] : 0;
-                    if ($disp < $cantidad) {
-                        throw new Exception('Stock insuficiente. Disponible: ' . number_format($disp, 2, ',', '.'));
+                        $stS = $pdo->prepare("SELECT id, stock_actual FROM stock_bodega WHERE id_bodega=? AND id_producto=? LIMIT 1");
+                        $stS->execute(array((int)$id_bodega, $d['p']));
+                        $sS = $stS->fetch();
+                        if ($sS) {
+                            $pdo->prepare("UPDATE stock_bodega SET stock_actual=stock_actual+? WHERE id=?")->execute(array($esE ? $d['c'] : -$d['c'], $sS['id']));
+                        } elseif ($esE) {
+                            $pdo->prepare("INSERT INTO stock_bodega (id_bodega,id_producto,stock_actual,costo_promedio) VALUES (?,?,?,?)")->execute(array((int)$id_bodega, $d['p'], $d['c'], $d['pr']));
+                        }
                     }
                 }
 
-                $m = $pdo->prepare("INSERT INTO movimientos_bodega
-                    (id_bodega, id_producto, tipo_movimiento, cantidad, precio_unitario, total, referencia_tipo, referencia_id, observacion, id_usuario)
-                    VALUES (?, ?, ?, ?, ?, ?, 'manual', 0, ?, ?)");
-                $m->execute(array((int)$id_bodega, (int)$id_producto, $tipo, $cantidad, $precio_unitario, $total, $observacion, $id_usuario));
-                $id_mov = (int)$pdo->lastInsertId();
-                $pdo->prepare("UPDATE movimientos_bodega SET referencia_id = ? WHERE id = ?")->execute(array($id_mov, $id_mov));
-
-                if ($stockActual) {
-                    $delta = $esEntrada ? $cantidad : -$cantidad;
-                    $pdo->prepare("UPDATE stock_bodega SET stock_actual = stock_actual + ? WHERE id = ?")
-                        ->execute(array($delta, (int)$stockActual['id']));
-                } elseif ($esEntrada) {
-                    $pdo->prepare("INSERT INTO stock_bodega (id_bodega, id_producto, stock_actual, costo_promedio) VALUES (?, ?, ?, ?)")
-                        ->execute(array((int)$id_bodega, (int)$id_producto, $cantidad, $precio_unitario));
-                }
+                $pdo->commit();
+                set_flash('success', count($detalle) . ' producto(s) registrado(s) correctamente.');
+                redirect('movimientos_lista.php');
+            } catch (Exception $e) {
+                $pdo->rollBack();
+                $error = $e->getMessage();
             }
-
-            $pdo->commit();
-            set_flash('success', 'Movimiento registrado y stock actualizado correctamente.');
-            redirect('movimientos_lista.php');
-
-        } catch (Exception $e) {
-            $pdo->rollBack();
-            $error = $e->getMessage();
         }
     }
 
-    // restaurar prefill si hay error
-    $pre_tipo     = $tipo;
-    $pre_bodega   = $id_bodega;
-    $pre_producto = $id_producto;
+    $pre_tipo   = $tipo;
+    $pre_bodega = $id_bodega;
 }
 
 $pageTitle = 'Nuevo Movimiento';
@@ -146,43 +131,33 @@ require_once __DIR__ . '/../../inc/header.php';
 ?>
 
 <div class="d-flex justify-content-between align-items-center mb-4">
-    <h1 class="h3 mb-0 text-gray-800">
-        <i class="bi bi-arrow-left-right text-primary me-2"></i>Nuevo Movimiento de Bodega
-    </h1>
-    <a href="movimientos_lista.php" class="btn btn-outline-secondary">
-        <i class="bi bi-arrow-left me-1"></i> Volver al historial
-    </a>
+    <h1 class="h3 mb-0"><i class="bi bi-arrow-left-right text-primary me-2"></i>Nuevo Movimiento</h1>
+    <a href="movimientos_lista.php" class="btn btn-outline-secondary"><i class="bi bi-arrow-left me-1"></i> Historial</a>
 </div>
 
 <?php if ($error !== ''): ?>
     <div class="alert alert-danger"><i class="bi bi-exclamation-triangle-fill me-2"></i><?php echo h($error); ?></div>
 <?php endif; ?>
 
-<form method="post" id="formMovimiento">
+<form method="post" id="formMov">
 
-    <!-- 1. Tipo -->
+    <!-- TIPO -->
     <div class="card shadow-sm border-0 mb-4">
-        <div class="card-header bg-white pt-3 pb-2 border-0">
-            <h5 class="mb-0 fw-bold">¿Qué tipo de movimiento es?</h5>
-        </div>
+        <div class="card-header bg-white pt-3 pb-2 border-0"><h5 class="mb-0 fw-bold">Tipo de Movimiento</h5></div>
         <div class="card-body">
             <div class="row g-3">
                 <?php
                 $tipos_mov = array(
-                    'salida_consumo' => array('icon' => 'bi-box-arrow-right', 'color' => 'danger',  'label' => 'Salida por Consumo',       'desc' => 'Entrega de material para uso interno'),
-                    'traslado'       => array('icon' => 'bi-arrow-repeat',    'color' => 'primary', 'label' => 'Traslado entre Bodegas',    'desc' => 'Mover stock de una bodega a otra'),
-                    'ajuste_entrada' => array('icon' => 'bi-plus-circle',     'color' => 'success', 'label' => 'Ajuste Entrada',            'desc' => 'Corrección positiva de inventario'),
-                    'ajuste_salida'  => array('icon' => 'bi-dash-circle',     'color' => 'warning', 'label' => 'Ajuste Salida',             'desc' => 'Corrección negativa de inventario'),
+                    'salida_consumo' => array('icon'=>'bi-box-arrow-right','color'=>'danger', 'label'=>'Salida por Consumo',     'desc'=>'Entrega para uso interno'),
+                    'traslado'       => array('icon'=>'bi-arrow-repeat',   'color'=>'primary','label'=>'Traslado entre Bodegas', 'desc'=>'Mover stock a otra bodega'),
+                    'ajuste_entrada' => array('icon'=>'bi-plus-circle',    'color'=>'success','label'=>'Ajuste Entrada',         'desc'=>'Corrección positiva'),
+                    'ajuste_salida'  => array('icon'=>'bi-dash-circle',    'color'=>'warning','label'=>'Ajuste Salida',          'desc'=>'Corrección negativa'),
                 );
                 foreach ($tipos_mov as $val => $t): ?>
                 <div class="col-6 col-md-3">
-                    <input type="radio" class="btn-check" name="tipo_movimiento"
-                           id="tipo_<?php echo $val; ?>" value="<?php echo $val; ?>"
-                           autocomplete="off" required
-                           <?php echo ($pre_tipo === $val) ? 'checked' : ''; ?>>
+                    <input type="radio" class="btn-check" name="tipo_movimiento" id="tipo_<?php echo $val; ?>" value="<?php echo $val; ?>" autocomplete="off" required <?php echo ($pre_tipo === $val) ? 'checked' : ''; ?>>
                     <label class="btn btn-outline-<?php echo $t['color']; ?> w-100 h-100 d-flex flex-column align-items-center justify-content-center p-3 gap-2 text-center"
-                           for="tipo_<?php echo $val; ?>"
-                           style="min-height:115px; border-width:2px; cursor:pointer; transition: all .15s;">
+                           for="tipo_<?php echo $val; ?>" style="min-height:110px;border-width:2px;cursor:pointer;">
                         <i class="bi <?php echo $t['icon']; ?> fs-2"></i>
                         <span class="fw-bold" style="font-size:.82rem;"><?php echo $t['label']; ?></span>
                         <span class="text-muted" style="font-size:.7rem;"><?php echo $t['desc']; ?></span>
@@ -193,102 +168,98 @@ require_once __DIR__ . '/../../inc/header.php';
         </div>
     </div>
 
-    <!-- 2. Detalle -->
+    <!-- BODEGAS -->
     <div class="card shadow-sm border-0 mb-4">
-        <div class="card-header bg-white pt-3 pb-2 border-0">
-            <h5 class="mb-0 fw-bold">Detalle del Movimiento</h5>
-        </div>
+        <div class="card-header bg-white pt-3 pb-2 border-0"><h5 class="mb-0 fw-bold">Bodegas</h5></div>
         <div class="card-body">
             <div class="row g-4">
-
-                <!-- Bodega origen -->
                 <div class="col-md-6">
-                    <label class="form-label fw-bold text-secondary">
-                        Bodega <span id="lbl-origen-suffix">de Origen</span> <span class="text-danger">*</span>
-                    </label>
+                    <label class="form-label fw-bold text-secondary">Bodega Origen <span class="text-danger">*</span></label>
                     <select name="id_bodega" id="id_bodega" class="form-select" required>
-                        <option value="">Seleccione una bodega</option>
+                        <option value="">Seleccione</option>
                         <?php foreach ($bodegas as $b): ?>
-                            <option value="<?php echo (int)$b['id']; ?>"
-                                <?php echo ((string)$pre_bodega === (string)$b['id']) ? 'selected' : ''; ?>>
-                                <?php echo h($b['nombre']); ?>
-                            </option>
+                            <option value="<?php echo (int)$b['id']; ?>" <?php echo ((string)$pre_bodega === (string)$b['id']) ? 'selected' : ''; ?>><?php echo h($b['nombre']); ?></option>
                         <?php endforeach; ?>
                     </select>
                 </div>
-
-                <!-- Bodega destino (traslado) -->
                 <div class="col-md-6" id="wrap-destino" style="display:none;">
-                    <label class="form-label fw-bold text-secondary">
-                        Bodega de Destino <span class="text-danger">*</span>
-                    </label>
+                    <label class="form-label fw-bold text-secondary">Bodega Destino <span class="text-danger">*</span></label>
                     <select name="id_bodega_destino" id="id_bodega_destino" class="form-select">
-                        <option value="">Seleccione una bodega</option>
+                        <option value="">Seleccione</option>
                         <?php foreach ($bodegas as $b): ?>
                             <option value="<?php echo (int)$b['id']; ?>"><?php echo h($b['nombre']); ?></option>
                         <?php endforeach; ?>
                     </select>
                 </div>
-
-                <!-- Producto -->
-                <div class="col-md-6">
-                    <label class="form-label fw-bold text-secondary">Producto <span class="text-danger">*</span></label>
-                    <select name="id_producto" id="id_producto" class="form-select" required>
-                        <option value="">Seleccione un producto</option>
-                        <?php foreach ($productos as $p): ?>
-                            <option value="<?php echo (int)$p['id']; ?>"
-                                data-unidad="<?php echo h($p['unidad_nombre']); ?>"
-                                <?php echo ((string)$pre_producto === (string)$p['id']) ? 'selected' : ''; ?>>
-                                <?php echo h($p['codigo'] . ' — ' . $p['nombre']); ?>
-                            </option>
-                        <?php endforeach; ?>
-                    </select>
-
-                    <!-- Stock actual dinámico -->
-                    <div id="stock-display-wrap" class="mt-2 d-flex align-items-center gap-2" style="display:none!important;">
-                        <span id="stock-display" class="badge fs-6 px-3 py-2"></span>
-                        <span id="stock-unidad" class="text-muted small"></span>
-                    </div>
-                </div>
-
-                <!-- Cantidad -->
-                <div class="col-md-3">
-                    <label class="form-label fw-bold text-secondary">Cantidad <span class="text-danger">*</span></label>
-                    <input type="number" step="0.01" min="0.01"
-                           name="cantidad" id="cantidad" class="form-control fs-5 fw-bold"
-                           placeholder="0.00"
-                           value="<?php echo isset($_POST['cantidad']) ? h(post('cantidad')) : ''; ?>" required>
-                </div>
-
-                <!-- Precio unitario -->
-                <div class="col-md-3">
-                    <label class="form-label fw-bold text-secondary">Precio Unitario</label>
-                    <div class="input-group">
-                        <span class="input-group-text">$</span>
-                        <input type="number" step="0.01" min="0"
-                               name="precio_unitario" class="form-control"
-                               placeholder="0"
-                               value="<?php echo isset($_POST['precio_unitario']) ? h(post('precio_unitario')) : '0'; ?>">
-                    </div>
-                    <div class="form-text">Solo para registro de costo.</div>
-                </div>
-
-                <!-- Observación -->
-                <div class="col-12">
-                    <label class="form-label fw-bold text-secondary">Observación / Motivo</label>
-                    <textarea name="observacion" class="form-control" rows="2"
-                        placeholder="Ej: Entrega a Dir. Obras para proyecto X, corrección inventario diciembre..."><?php echo isset($_POST['observacion']) ? h(post('observacion')) : ''; ?></textarea>
-                </div>
-
             </div>
         </div>
     </div>
 
-    <div class="d-flex justify-content-end gap-2 mb-5">
-        <a href="movimientos_lista.php" class="btn btn-light border px-4">Cancelar</a>
-        <button type="submit" class="btn btn-primary px-5 py-2" id="btnSubmit">
-            <i class="bi bi-floppy me-2"></i>Registrar Movimiento
-        </button>
+    <!-- PRODUCTOS (CARRITO) -->
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-header bg-white pt-3 pb-2 border-0 d-flex justify-content-between align-items-center">
+            <h5 class="mb-0 fw-bold">Productos</h5>
+            <button type="button" id="btnAdd" class="btn btn-sm btn-success"><i class="bi bi-plus-lg me-1"></i> Agregar Producto</button>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light text-secondary" style="font-size:.85rem;">
+                        <tr>
+                            <th class="px-3 py-3" style="min-width:260px;">PRODUCTO</th>
+                            <th class="py-3 text-center" style="width:110px;">DISPONIBLE</th>
+                            <th class="py-3" style="width:120px;">CANTIDAD</th>
+                            <th class="py-3" style="width:140px;">PRECIO UNIT.</th>
+                            <th class="py-3 text-center" style="width:50px;"><i class="bi bi-trash"></i></th>
+                        </tr>
+                    </thead>
+                    <tbody id="itemsBody">
+                        <tr>
+                            <td class="px-3">
+                                <select name="item_id_producto[]" class="form-select form-select-sm item-producto">
+                                    <option value="">— Seleccione —</option>
+                                    <?php foreach ($productos as $pr): ?>
+                                        <option value="<?php echo (int)$pr['id']; ?>"
+                                            data-unidad="<?php echo h($pr['unidad_nombre']); ?>"
+                                            <?php echo ((string)$pre_producto === (string)$pr['id']) ? 'selected' : ''; ?>>
+                                            <?php echo h($pr['codigo'] . ' — ' . $pr['nombre']); ?>
+                                        </option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </td>
+                            <td class="text-center">
+                                <span class="item-stock badge bg-secondary bg-opacity-10 text-secondary" style="display:none;font-size:.75rem;">—</span>
+                            </td>
+                            <td>
+                                <input type="number" name="item_cantidad[]" class="form-control form-control-sm item-cantidad" value="1" step="0.01" min="0.01" required>
+                            </td>
+                            <td>
+                                <div class="input-group input-group-sm">
+                                    <span class="input-group-text">$</span>
+                                    <input type="number" name="item_precio[]" class="form-control item-precio" value="0" step="0.01" min="0">
+                                </div>
+                            </td>
+                            <td class="text-center">
+                                <button type="button" class="btn btn-sm btn-outline-danger btn-del"><i class="bi bi-x-lg"></i></button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- OBSERVACION + SUBMIT -->
+    <div class="row g-4 mb-5">
+        <div class="col-md-8">
+            <label class="form-label fw-bold text-secondary">Observación / Motivo</label>
+            <textarea name="observacion" class="form-control" rows="2" placeholder="Ej: Entrega Dir. Obras, corrección inventario..."><?php echo isset($_POST['observacion']) ? h(post('observacion')) : ''; ?></textarea>
+        </div>
+        <div class="col-md-4 d-flex align-items-end">
+            <button type="submit" class="btn btn-primary w-100 py-2" id="btnSubmit">
+                <i class="bi bi-floppy me-2"></i>Registrar Movimiento
+            </button>
+        </div>
     </div>
 
 </form>
@@ -296,22 +267,20 @@ require_once __DIR__ . '/../../inc/header.php';
 <script>
 (function () {
     var stockMap    = <?php echo json_encode($stockMap); ?>;
-    var tipoRadios  = document.querySelectorAll('input[name="tipo_movimiento"]');
-    var wrapDestino = document.getElementById('wrap-destino');
+    var selOrigenEl = document.getElementById('id_bodega');
+    var wrapDest    = document.getElementById('wrap-destino');
     var selDestino  = document.getElementById('id_bodega_destino');
-    var selBodega   = document.getElementById('id_bodega');
-    var selProducto = document.getElementById('id_producto');
-    var stockWrap   = document.getElementById('stock-display-wrap');
-    var stockEl     = document.getElementById('stock-display');
-    var stockUnidad = document.getElementById('stock-unidad');
-    var lblSuffix   = document.getElementById('lbl-origen-suffix');
+    var itemsBody   = document.getElementById('itemsBody');
+    var btnAdd      = document.getElementById('btnAdd');
     var btnSubmit   = document.getElementById('btnSubmit');
+
+    var productoSelectHTML = document.querySelector('.item-producto').innerHTML;
 
     var btnLabels = {
         'salida_consumo': 'Registrar Salida',
         'traslado':       'Registrar Traslado',
-        'ajuste_entrada': 'Registrar Ajuste de Entrada',
-        'ajuste_salida':  'Registrar Ajuste de Salida'
+        'ajuste_entrada': 'Registrar Ajuste Entrada',
+        'ajuste_salida':  'Registrar Ajuste Salida'
     };
 
     function getTipo() {
@@ -319,44 +288,71 @@ require_once __DIR__ . '/../../inc/header.php';
         return c ? c.value : '';
     }
 
+    function getStock(bodega, producto) {
+        var key = bodega + '_' + producto;
+        return stockMap.hasOwnProperty(key) ? parseFloat(stockMap[key]) : 0;
+    }
+
+    function updateRowStock(tr) {
+        var bodega   = selOrigenEl.value;
+        var producto = tr.querySelector('.item-producto').value;
+        var el       = tr.querySelector('.item-stock');
+        var tipo     = getTipo();
+        var mostrar  = (tipo === 'salida_consumo' || tipo === 'ajuste_salida' || tipo === 'traslado');
+
+        if (bodega && producto && mostrar) {
+            var s = getStock(bodega, producto);
+            el.style.display = '';
+            el.textContent   = 'Disp: ' + s.toFixed(2);
+            el.className     = 'item-stock badge ' + (s > 0 ? 'bg-success bg-opacity-10 text-success' : 'bg-danger bg-opacity-10 text-danger');
+        } else {
+            el.style.display = 'none';
+        }
+    }
+
+    function updateAllStocks() {
+        itemsBody.querySelectorAll('tr').forEach(function (tr) { updateRowStock(tr); });
+    }
+
     function updateTipo() {
         var tipo = getTipo();
-        var esTraslado = tipo === 'traslado';
-
-        wrapDestino.style.display = esTraslado ? '' : 'none';
-        selDestino.required = esTraslado;
-        lblSuffix.textContent = esTraslado ? 'de Origen' : '';
-        btnSubmit.innerHTML = '<i class="bi bi-floppy me-2"></i>' + (btnLabels[tipo] || 'Registrar Movimiento');
-
-        updateStock();
+        var esT  = (tipo === 'traslado');
+        wrapDest.style.display = esT ? '' : 'none';
+        selDestino.required    = esT;
+        btnSubmit.innerHTML    = '<i class="bi bi-floppy me-2"></i>' + (btnLabels[tipo] || 'Registrar Movimiento');
+        updateAllStocks();
     }
 
-    function updateStock() {
-        var bodega   = selBodega.value;
-        var producto = selProducto.value;
-
-        if (!bodega || !producto) {
-            stockWrap.style.display = 'none';
-            return;
-        }
-
-        var key   = bodega + '_' + producto;
-        var stock = stockMap.hasOwnProperty(key) ? parseFloat(stockMap[key]) : 0;
-        var opt   = selProducto.options[selProducto.selectedIndex];
-        var unidad = opt ? (opt.getAttribute('data-unidad') || '') : '';
-
-        stockWrap.style.removeProperty('display');
-        stockEl.textContent  = 'Stock actual: ' + stock.toFixed(2);
-        stockEl.className    = 'badge fs-6 px-3 py-2 ' + (stock > 0 ? 'bg-success' : 'bg-danger');
-        stockUnidad.textContent = unidad;
+    function enlazarFila(tr) {
+        tr.querySelector('.item-producto').onchange = function () { updateRowStock(tr); };
+        tr.querySelector('.btn-del').onclick = function () {
+            if (itemsBody.querySelectorAll('tr').length > 1) { tr.remove(); }
+        };
     }
 
-    tipoRadios.forEach(function (r) { r.addEventListener('change', updateTipo); });
-    selBodega.addEventListener('change', updateStock);
-    selProducto.addEventListener('change', updateStock);
+    document.querySelectorAll('input[name="tipo_movimiento"]').forEach(function (r) {
+        r.addEventListener('change', updateTipo);
+    });
 
+    selOrigenEl.addEventListener('change', updateAllStocks);
+
+    btnAdd.onclick = function () {
+        var tr = document.createElement('tr');
+        tr.innerHTML =
+            '<td class="px-3"><select name="item_id_producto[]" class="form-select form-select-sm item-producto">' + productoSelectHTML + '</select></td>' +
+            '<td class="text-center"><span class="item-stock badge bg-secondary bg-opacity-10 text-secondary" style="display:none;font-size:.75rem;">—</span></td>' +
+            '<td><input type="number" name="item_cantidad[]" class="form-control form-control-sm item-cantidad" value="1" step="0.01" min="0.01" required></td>' +
+            '<td><div class="input-group input-group-sm"><span class="input-group-text">$</span><input type="number" name="item_precio[]" class="form-control item-precio" value="0" step="0.01" min="0"></div></td>' +
+            '<td class="text-center"><button type="button" class="btn btn-sm btn-outline-danger btn-del"><i class="bi bi-x-lg"></i></button></td>';
+        // reset selected
+        Array.from(tr.querySelector('.item-producto').options).forEach(function (o) { o.removeAttribute('selected'); });
+        itemsBody.appendChild(tr);
+        enlazarFila(tr);
+    };
+
+    itemsBody.querySelectorAll('tr').forEach(enlazarFila);
     updateTipo();
-    updateStock();
+    updateAllStocks();
 })();
 </script>
 
