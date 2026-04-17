@@ -5,16 +5,20 @@ require_once __DIR__ . '/../../inc/functions.php';
 
 require_login();
 
+// --- LÓGICA DE ESTADO (DESACTIVAR/ACTIVAR) ---
 if (isset($_GET['toggle'])) {
     $id = (int)$_GET['toggle'];
     $stmt = $pdo->prepare("UPDATE productos SET estado = IF(estado=1,0,1) WHERE id = ?");
     $stmt->execute(array($id));
-    set_flash('success', 'Estado del producto actualizado.');
+    set_flash('success', 'Estado del producto actualizado correctamente.');
     redirect('productos_lista.php');
 }
 
+// Nota: Se ha removido la lógica de eliminación física para proteger la integridad de los datos.
+
 $buscar = get('buscar');
 
+// Consulta con JOIN para traer nombres de categorías y unidades
 $sql = "SELECT p.*, tp.nombre AS tipo_nombre, um.nombre AS unidad_nombre
         FROM productos p
         LEFT JOIN tipos_producto tp ON tp.id = p.id_tipo_producto
@@ -26,8 +30,6 @@ if ($buscar !== '') {
     $sql .= " AND (
         p.codigo LIKE :buscar
         OR p.nombre LIKE :buscar
-        OR p.marca LIKE :buscar
-        OR p.modelo LIKE :buscar
     )";
     $params[':buscar'] = '%' . $buscar . '%';
 }
@@ -38,17 +40,25 @@ $stmt = $pdo->prepare($sql);
 $stmt->execute($params);
 $productos = $stmt->fetchAll();
 
-$pageTitle = 'Productos';
+$pageTitle = 'Catálogo de Productos';
 require_once __DIR__ . '/../../inc/header.php';
 ?>
 
 <div class="d-flex justify-content-between align-items-center mb-4">
-    <h1 class="h3 mb-0 text-gray-800"><i class="bi bi-boxes text-primary me-2"></i>Catálogo de Productos</h1>
+    <h1 class="h3 mb-0 text-gray-800">
+        <i class="bi bi-boxes text-primary me-2"></i>Catálogo de Productos
+    </h1>
     
     <div class="d-flex gap-2">
-        <a href="tipos_lista.php" class="btn btn-outline-secondary"><i class="bi bi-tags"></i> Tipos</a>
-        <a href="unidades_lista.php" class="btn btn-outline-secondary"><i class="bi bi-rulers"></i> Unidades</a>
-        <a href="productos_crear.php" class="btn btn-primary"><i class="bi bi-plus-lg"></i> Nuevo Producto</a>
+        <a href="unidades_lista.php" class="btn btn-outline-primary">
+            <i class="bi bi-ruler me-1"></i> Unidades
+        </a>
+        <div class="vr mx-2"></div> <a href="productos_importar.php" class="btn btn-success">
+            <i class="bi bi-file-earmark-arrow-up me-1"></i> Importar CSV
+        </a>
+        <a href="productos_crear.php" class="btn btn-primary">
+            <i class="bi bi-plus-lg me-1"></i> Nuevo Producto
+        </a>
     </div>
 </div>
 
@@ -58,7 +68,7 @@ require_once __DIR__ . '/../../inc/header.php';
             <div class="col-md-8 col-lg-6">
                 <div class="input-group">
                     <span class="input-group-text bg-light text-secondary border-end-0"><i class="bi bi-search"></i></span>
-                    <input type="text" name="buscar" value="<?php echo h($buscar); ?>" class="form-control border-start-0 ps-0" placeholder="Buscar por código, nombre, marca o modelo...">
+                    <input type="text" name="buscar" value="<?php echo h($buscar); ?>" class="form-control border-start-0 ps-0" placeholder="Buscar por código o nombre...">
                 </div>
             </div>
             <div class="col-md-4 col-lg-auto d-flex gap-2">
@@ -79,9 +89,10 @@ require_once __DIR__ . '/../../inc/header.php';
                     <tr>
                         <th class="px-4 py-3">CÓDIGO</th>
                         <th class="py-3">PRODUCTO</th>
-                        <th class="py-3">TIPO/UNIDAD</th>
-                        <th class="py-3">MARCA/MODELO</th>
-                        <th class="py-3 text-center">CONTROL STOCK</th>
+                        <th class="py-3">CATEGORÍA</th>
+                        <th class="py-3">UNIDAD</th>
+                        <th class="py-3 text-center">ACTIVO FIJO</th>
+                        <th class="py-3 text-center">STOCK MIN.</th>
                         <th class="py-3 text-center">ESTADO</th>
                         <th class="px-4 py-3 text-end">ACCIONES</th>
                     </tr>
@@ -89,45 +100,50 @@ require_once __DIR__ . '/../../inc/header.php';
                 <tbody>
                 <?php if (!$productos): ?>
                     <tr>
-                        <td colspan="7" class="text-center py-5 text-muted">No se encontraron productos registrados en el sistema.</td>
+                        <td colspan="8" class="text-center py-5 text-muted">No hay productos registrados.</td>
                     </tr>
                 <?php else: ?>
                     <?php foreach ($productos as $p): ?>
                         <tr>
-                            <td class="px-4"><span class="badge bg-light text-dark border"><?php echo h($p['codigo']); ?></span></td>
+                            <td class="px-4">
+                                <span class="badge bg-light text-dark border"><?php echo h($p['codigo']); ?></span>
+                            </td>
                             <td class="fw-bold text-dark"><?php echo h($p['nombre']); ?></td>
                             <td>
-                                <div class="text-secondary small"><i class="bi bi-tag-fill text-muted me-1"></i><?php echo h($p['tipo_nombre'] ?: 'Sin tipo'); ?></div>
-                                <div class="text-secondary small"><i class="bi bi-ruler text-muted me-1"></i><?php echo h($p['unidad_nombre'] ?: 'Sin unidad'); ?></div>
+                                <span class="text-secondary small"><?php echo h($p['tipo_nombre'] ?: 'Sin categoría'); ?></span>
                             </td>
                             <td>
-                                <div class="text-secondary small fw-medium"><?php echo h($p['marca'] ?: '-'); ?></div>
-                                <div class="text-secondary small"><?php echo h($p['modelo'] ?: '-'); ?></div>
+                                <span class="text-secondary small text-uppercase"><?php echo h($p['unidad_nombre'] ?: 'N/A'); ?></span>
                             </td>
                             <td class="text-center">
-                                <?php if ((int)$p['controla_stock'] === 1): ?>
-                                    <span class="badge bg-info bg-opacity-10 text-info border-0"><i class="bi bi-check-circle me-1"></i>Sí</span>
+                                <?php if ((int)$p['activo_fijo'] === 1): ?>
+                                    <span class="badge bg-info bg-opacity-10 text-info border-0">Sí</span>
                                 <?php else: ?>
-                                    <span class="badge bg-secondary bg-opacity-10 text-secondary border-0"><i class="bi bi-x-circle me-1"></i>No</span>
+                                    <span class="badge bg-secondary bg-opacity-10 text-secondary border-0">No</span>
                                 <?php endif; ?>
+                            </td>
+                            <td class="text-center text-muted fw-bold">
+                                <?php echo number_format((float)$p['stock_minimo'], 2, ',', '.'); ?>
                             </td>
                             <td class="text-center">
                                 <?php if ((int)$p['estado'] === 1): ?>
-                                    <span class="badge bg-success bg-opacity-10 text-success px-2 py-1 border-0">Activo</span>
+                                    <span class="badge bg-success bg-opacity-10 text-success border-0 px-2 py-1">Activo</span>
                                 <?php else: ?>
-                                    <span class="badge bg-danger bg-opacity-10 text-danger px-2 py-1 border-0">Inactivo</span>
+                                    <span class="badge bg-danger bg-opacity-10 text-danger border-0 px-2 py-1">Inactivo</span>
                                 <?php endif; ?>
                             </td>
                             <td class="px-4 text-end">
-                                <div class="btn-group" role="group">
-                                    <a href="productos_editar.php?id=<?php echo (int)$p['id']; ?>" class="btn btn-sm btn-outline-primary" title="Editar"><i class="bi bi-pencil"></i></a>
+                                <div class="btn-group">
+                                    <a href="productos_editar.php?id=<?php echo (int)$p['id']; ?>" class="btn btn-sm btn-outline-primary" title="Editar">
+                                        <i class="bi bi-pencil"></i>
+                                    </a>
                                     <a href="productos_lista.php?toggle=<?php echo (int)$p['id']; ?>" 
-                                       class="btn btn-sm btn-outline-<?php echo $p['estado'] ? 'danger' : 'success'; ?>" 
+                                       class="btn btn-sm btn-outline-<?php echo $p['estado'] ? 'warning' : 'success'; ?>" 
                                        onclick="return confirm('¿Deseas cambiar el estado de este producto?');"
                                        title="<?php echo $p['estado'] ? 'Desactivar' : 'Activar'; ?>">
                                        <i class="bi bi-<?php echo $p['estado'] ? 'power' : 'check-circle'; ?>"></i>
                                     </a>
-                                </div>
+                                    </div>
                             </td>
                         </tr>
                     <?php endforeach; ?>
@@ -138,4 +154,4 @@ require_once __DIR__ . '/../../inc/header.php';
     </div>
 </div>
 
-<?php require_once __DIR__ . '/../../inc/footer.php';
+<?php require_once __DIR__ . '/../../inc/footer.php'; ?>

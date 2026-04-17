@@ -6,69 +6,38 @@ require_once __DIR__ . '/../../inc/functions.php';
 require_login();
 
 $id = (int)get('id');
-
 $stmt = $pdo->prepare("SELECT * FROM productos WHERE id = ?");
 $stmt->execute(array($id));
 $producto = $stmt->fetch();
 
-if (!$producto) {
-    die('Producto no encontrado');
-}
+if (!$producto) { die('Producto no encontrado'); }
 
-$stmt = $pdo->query("SELECT id, nombre FROM tipos_producto ORDER BY nombre");
-$tipos = $stmt->fetchAll();
-
-$stmt = $pdo->query("SELECT id, nombre FROM unidades_medida ORDER BY nombre");
-$unidades = $stmt->fetchAll();
+$tipos = $pdo->query("SELECT id, nombre FROM tipos_producto WHERE estado = 1 ORDER BY nombre ASC")->fetchAll();
+$unidades = $pdo->query("SELECT id, nombre FROM unidades_medida WHERE estado = 1 ORDER BY nombre ASC")->fetchAll();
 
 $error = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $codigo = post('codigo');
     $nombre = post('nombre');
+    $id_tipo = post('id_tipo_producto');
+    $id_unidad = post('id_unidad_medida');
+    $stock_min = post('stock_minimo', 0);
+    $activo_fijo = post('activo_fijo', 0);
     $descripcion = post('descripcion');
-    $id_tipo_producto = post('id_tipo_producto');
-    $id_unidad_medida = post('id_unidad_medida');
-    $marca = post('marca');
-    $modelo = post('modelo');
-    $stock_minimo = post('stock_minimo');
-    $controla_stock = post('controla_stock');
-    $activo_fijo = post('activo_fijo');
 
     if ($codigo === '' || $nombre === '') {
-        $error = 'El código y el nombre son obligatorios.';
+        $error = 'Código y nombre son obligatorios.';
     } else {
-        $stmt = $pdo->prepare("SELECT id FROM productos WHERE codigo = ? AND id <> ?");
-        $stmt->execute(array($codigo, $id));
-        $existe = $stmt->fetch();
-
-        if ($existe) {
-            $error = 'Ya existe otro producto con ese código.';
-        } else {
-            $stmt = $pdo->prepare("
-                UPDATE productos SET
-                codigo=?, nombre=?, descripcion=?, id_tipo_producto=?, id_unidad_medida=?,
-                marca=?, modelo=?, stock_minimo=?, controla_stock=?, activo_fijo=?
-                WHERE id=?
-            ");
-
-            $stmt->execute(array(
-                $codigo,
-                $nombre,
-                $descripcion,
-                ($id_tipo_producto !== '' ? $id_tipo_producto : null),
-                ($id_unidad_medida !== '' ? $id_unidad_medida : null),
-                $marca,
-                $modelo,
-                ($stock_minimo !== '' ? $stock_minimo : 0),
-                $controla_stock,
-                $activo_fijo,
-                $id
-            ));
-
-            set_flash('success', 'Producto actualizado correctamente.');
-            redirect('productos_lista.php');
-        }
+        $sql = "UPDATE productos SET 
+                codigo = ?, nombre = ?, id_tipo_producto = ?, id_unidad_medida = ?, 
+                stock_minimo = ?, activo_fijo = ?, descripcion = ? 
+                WHERE id = ?";
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute(array($codigo, $nombre, $id_tipo ?: null, $id_unidad ?: null, $stock_min, $activo_fijo, $descripcion, $id));
+        
+        set_flash('success', 'Producto actualizado correctamente.');
+        redirect('productos_lista.php');
     }
 }
 
@@ -78,30 +47,26 @@ require_once __DIR__ . '/../../inc/header.php';
 
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h1 class="h3 mb-0 text-gray-800"><i class="bi bi-pencil-square text-primary me-2"></i>Editar Producto</h1>
-    <a href="productos_lista.php" class="btn btn-outline-secondary"><i class="bi bi-arrow-left me-1"></i> Volver al listado</a>
+    <a href="productos_lista.php" class="btn btn-outline-secondary"><i class="bi bi-arrow-left me-1"></i> Volver</a>
 </div>
 
 <div class="card shadow-sm border-0">
     <div class="card-body p-4">
-        <?php if ($error !== ''): ?>
-            <div class="alert alert-danger"><i class="bi bi-exclamation-triangle-fill me-2"></i><?php echo h($error); ?></div>
-        <?php endif; ?>
-
+        <?php if ($error): ?><div class="alert alert-danger"><?php echo h($error); ?></div><?php endif; ?>
         <form method="post" class="row g-4">
             <div class="col-md-3">
-                <label class="form-label fw-bold text-secondary">Código <span class="text-danger">*</span></label>
+                <label class="form-label fw-bold text-secondary small text-uppercase">Código</label>
                 <input type="text" name="codigo" value="<?php echo h($producto['codigo']); ?>" class="form-control" required>
             </div>
-
             <div class="col-md-9">
-                <label class="form-label fw-bold text-secondary">Nombre de producto <span class="text-danger">*</span></label>
+                <label class="form-label fw-bold text-secondary small text-uppercase">Nombre del Producto</label>
                 <input type="text" name="nombre" value="<?php echo h($producto['nombre']); ?>" class="form-control" required>
             </div>
 
             <div class="col-md-6">
-                <label class="form-label fw-bold text-secondary">Categoría / Tipo</label>
+                <label class="form-label fw-bold text-secondary small text-uppercase">Categoría</label>
                 <select name="id_tipo_producto" class="form-select">
-                    <option value="">Seleccione</option>
+                    <option value="">Seleccione...</option>
                     <?php foreach ($tipos as $t): ?>
                         <option value="<?php echo $t['id']; ?>" <?php echo ($producto['id_tipo_producto'] == $t['id']) ? 'selected' : ''; ?>><?php echo h($t['nombre']); ?></option>
                     <?php endforeach; ?>
@@ -109,9 +74,9 @@ require_once __DIR__ . '/../../inc/header.php';
             </div>
 
             <div class="col-md-6">
-                <label class="form-label fw-bold text-secondary">Unidad de Medida</label>
+                <label class="form-label fw-bold text-secondary small text-uppercase">Unidad de Medida</label>
                 <select name="id_unidad_medida" class="form-select">
-                    <option value="">Seleccione</option>
+                    <option value="">Seleccione...</option>
                     <?php foreach ($unidades as $u): ?>
                         <option value="<?php echo $u['id']; ?>" <?php echo ($producto['id_unidad_medida'] == $u['id']) ? 'selected' : ''; ?>><?php echo h($u['nombre']); ?></option>
                     <?php endforeach; ?>
@@ -119,47 +84,28 @@ require_once __DIR__ . '/../../inc/header.php';
             </div>
 
             <div class="col-md-4">
-                <label class="form-label fw-bold text-secondary">Marca</label>
-                <input type="text" name="marca" value="<?php echo h($producto['marca']); ?>" class="form-control">
-            </div>
-
-            <div class="col-md-4">
-                <label class="form-label fw-bold text-secondary">Modelo</label>
-                <input type="text" name="modelo" value="<?php echo h($producto['modelo']); ?>" class="form-control">
-            </div>
-
-            <div class="col-md-4">
-                <label class="form-label fw-bold text-secondary">Stock Mínimo Alerta</label>
+                <label class="form-label fw-bold text-secondary small text-uppercase">Stock Mínimo</label>
                 <input type="number" step="0.01" name="stock_minimo" value="<?php echo h($producto['stock_minimo']); ?>" class="form-control">
             </div>
 
-            <div class="col-md-6">
-                <label class="form-label fw-bold text-secondary">¿Controla Stock?</label>
-                <select name="controla_stock" class="form-select">
-                    <option value="1" <?php echo ($producto['controla_stock'] == 1) ? 'selected' : ''; ?>>Sí, llevar inventario</option>
-                    <option value="0" <?php echo ($producto['controla_stock'] == 0) ? 'selected' : ''; ?>>No, es servicio/intangible</option>
-                </select>
-            </div>
-
-            <div class="col-md-6">
-                <label class="form-label fw-bold text-secondary">¿Es Activo Fijo?</label>
+            <div class="col-md-4">
+                <label class="form-label fw-bold text-secondary small text-uppercase">¿Es Activo Fijo?</label>
                 <select name="activo_fijo" class="form-select">
-                    <option value="0" <?php echo ($producto['activo_fijo'] == 0) ? 'selected' : ''; ?>>No, es producto de consumo</option>
-                    <option value="1" <?php echo ($producto['activo_fijo'] == 1) ? 'selected' : ''; ?>>Sí, activo fijo de la empresa</option>
+                    <option value="0" <?php echo ($producto['activo_fijo'] == 0) ? 'selected' : ''; ?>>No (Consumo)</option>
+                    <option value="1" <?php echo ($producto['activo_fijo'] == 1) ? 'selected' : ''; ?>>Sí (Activo)</option>
                 </select>
             </div>
 
             <div class="col-12">
-                <label class="form-label fw-bold text-secondary">Descripción General</label>
+                <label class="form-label fw-bold text-secondary small text-uppercase">Descripción</label>
                 <textarea name="descripcion" class="form-control" rows="3"><?php echo h($producto['descripcion']); ?></textarea>
             </div>
 
-            <div class="col-12 d-flex justify-content-end gap-2 mt-4 pt-3 border-top">
+            <div class="col-12 text-end pt-3 border-top">
                 <a href="productos_lista.php" class="btn btn-light border">Cancelar</a>
-                <button type="submit" class="btn btn-primary"><i class="bi bi-floppy me-1"></i> Guardar Cambios</button>
+                <button type="submit" class="btn btn-primary px-4"><i class="bi bi-floppy me-1"></i> Guardar Cambios</button>
             </div>
         </form>
     </div>
 </div>
-
-<?php require_once __DIR__ . '/../../inc/footer.php';
+<?php require_once __DIR__ . '/../../inc/footer.php'; ?>
