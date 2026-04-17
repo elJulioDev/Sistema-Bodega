@@ -7,21 +7,25 @@ require_login();
 
 $error = '';
 
+// Obtener solo las unidades de medida (ya no consultamos tipos_producto)
+$stmt = $pdo->query("SELECT id, nombre, codigo FROM unidades_medida WHERE estado = 1 ORDER BY nombre ASC");
+$unidades = $stmt->fetchAll();
+
 $codigo = '';
 $nombre = '';
-$unidad_medida = 'unidad';
-$activo_fijo = '0';
-$stock_minimo = '0.00';
 $descripcion = '';
+$id_unidad_medida = '';
+$stock_minimo = '0.00';
+$activo_fijo = '0';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     $codigo = post('codigo');
     $nombre = post('nombre');
-    $unidad_medida = post('unidad_medida');
-    $activo_fijo = post('activo_fijo', '0');
-    $stock_minimo = post('stock_minimo', '0.00');
     $descripcion = post('descripcion');
+    $id_unidad_medida = post('id_unidad_medida');
+    $stock_minimo = post('stock_minimo', '0.00');
+    $activo_fijo = post('activo_fijo', '0');
 
     if ($codigo === '' || $nombre === '') {
         $error = 'El código y el nombre son obligatorios.';
@@ -33,19 +37,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($existe) {
             $error = 'Ya existe un producto con ese código.';
         } else {
+            // Ejecutar la inserción usando estrictamente las columnas que existen hoy en tu DB
             $stmt = $pdo->prepare("
                 INSERT INTO productos (
-                    codigo, nombre, unidad_medida, activo_fijo, stock_minimo, descripcion, estado
+                    codigo, nombre, descripcion, id_unidad_medida,
+                    stock_minimo, activo_fijo, estado
                 ) VALUES (?, ?, ?, ?, ?, ?, 1)
             ");
 
             $stmt->execute(array(
                 $codigo,
                 $nombre,
-                $unidad_medida,
-                (int)$activo_fijo,
+                ($descripcion !== '' ? $descripcion : null),
+                ($id_unidad_medida !== '' ? (int)$id_unidad_medida : null),
                 ($stock_minimo !== '' ? $stock_minimo : 0),
-                ($descripcion !== '' ? $descripcion : null)
+                (int)$activo_fijo
             ));
 
             set_flash('success', 'Producto creado correctamente.');
@@ -70,24 +76,23 @@ require_once __DIR__ . '/../../inc/header.php';
         <?php endif; ?>
 
         <form method="post" class="row g-4">
-            <div class="col-md-3">
+            <div class="col-md-4">
                 <label class="form-label fw-bold text-secondary">Código <span class="text-danger">*</span></label>
                 <input type="text" name="codigo" value="<?php echo h($codigo); ?>" class="form-control" required>
             </div>
 
-            <div class="col-md-9">
+            <div class="col-md-8">
                 <label class="form-label fw-bold text-secondary">Nombre de producto <span class="text-danger">*</span></label>
                 <input type="text" name="nombre" value="<?php echo h($nombre); ?>" class="form-control" required>
             </div>
 
             <div class="col-md-4">
                 <label class="form-label fw-bold text-secondary">Unidad de Medida</label>
-                <select name="unidad_medida" class="form-select">
-                    <option value="unidad" <?php echo ($unidad_medida == 'unidad') ? 'selected' : ''; ?>>Unidad</option>
-                    <option value="caja" <?php echo ($unidad_medida == 'caja') ? 'selected' : ''; ?>>Caja</option>
-                    <option value="paquete" <?php echo ($unidad_medida == 'paquete') ? 'selected' : ''; ?>>Paquete</option>
-                    <option value="kilogramo" <?php echo ($unidad_medida == 'kilogramo') ? 'selected' : ''; ?>>Kilogramo</option>
-                    <option value="litro" <?php echo ($unidad_medida == 'litro') ? 'selected' : ''; ?>>Litro</option>
+                <select name="id_unidad_medida" class="form-select">
+                    <option value="">Seleccione</option>
+                    <?php foreach ($unidades as $u): ?>
+                        <option value="<?php echo $u['id']; ?>" <?php echo ($id_unidad_medida == $u['id']) ? 'selected' : ''; ?>><?php echo h($u['nombre']); ?></option>
+                    <?php endforeach; ?>
                 </select>
             </div>
 
@@ -99,14 +104,14 @@ require_once __DIR__ . '/../../inc/header.php';
             <div class="col-md-4">
                 <label class="form-label fw-bold text-secondary">¿Es Activo Fijo?</label>
                 <select name="activo_fijo" class="form-select">
-                    <option value="0" <?php echo ($activo_fijo == '0') ? 'selected' : ''; ?>>No, es de consumo (fungible)</option>
-                    <option value="1" <?php echo ($activo_fijo == '1') ? 'selected' : ''; ?>>Sí, es activo de la empresa</option>
+                    <option value="0" <?php echo ($activo_fijo == '0') ? 'selected' : ''; ?>>No, es producto de consumo</option>
+                    <option value="1" <?php echo ($activo_fijo == '1') ? 'selected' : ''; ?>>Sí, activo fijo de la empresa</option>
                 </select>
             </div>
 
             <div class="col-12">
                 <label class="form-label fw-bold text-secondary">Descripción General</label>
-                <textarea name="descripcion" class="form-control" rows="3" placeholder="Ingresa detalles, características, etc."><?php echo h($descripcion); ?></textarea>
+                <textarea name="descripcion" class="form-control" rows="3"><?php echo h($descripcion); ?></textarea>
             </div>
 
             <div class="col-12 d-flex justify-content-end gap-2 mt-4 pt-3 border-top">
@@ -117,4 +122,4 @@ require_once __DIR__ . '/../../inc/header.php';
     </div>
 </div>
 
-<?php require_once __DIR__ . '/../../inc/footer.php';
+<?php require_once __DIR__ . '/../../inc/footer.php'; ?>
