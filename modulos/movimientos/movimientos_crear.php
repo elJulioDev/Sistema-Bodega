@@ -7,6 +7,7 @@ require_login();
 
 $error = '';
 
+// Seguridad: asegurar tablas (legacy)
 $pdo->exec("
     CREATE TABLE IF NOT EXISTS traspasos_bodega (
         id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -37,9 +38,38 @@ $pdo->exec("
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
 ");
 
-$stmt = $pdo->query("SELECT id, codigo, nombre FROM bodegas WHERE estado = 1 ORDER BY nombre ASC");
-$bodegas = $stmt->fetchAll();
+// --- Datos base ---
+$bodegas = $pdo->query("SELECT id, codigo, nombre FROM bodegas WHERE estado = 1 ORDER BY nombre ASC")->fetchAll();
 
+// Todos los productos activos con stock > 0 en alguna bodega
+$sqlProd = "
+    SELECT DISTINCT p.id, p.codigo, p.nombre, um.nombre AS unidad_nombre, tp.nombre AS tipo_nombre
+    FROM productos p
+    LEFT JOIN unidades_medida um ON um.id = p.id_unidad_medida
+    LEFT JOIN tipos_producto tp  ON tp.id = p.id_tipo_producto
+    WHERE p.estado = 1
+    ORDER BY p.nombre ASC
+";
+$productos = $pdo->query($sqlProd)->fetchAll();
+
+// Mapa de stock: { id_bodega: { id_producto: {stock, costo} } }
+$stockRows = $pdo->query("SELECT id_bodega, id_producto, stock_actual, costo_promedio FROM stock_bodega")->fetchAll();
+$stockMap = array();
+foreach ($stockRows as $r) {
+    $bi = (int)$r['id_bodega'];
+    $pi = (int)$r['id_producto'];
+    if (!isset($stockMap[$bi])) { $stockMap[$bi] = array(); }
+    $stockMap[$bi][$pi] = array(
+        'stock' => (float)$r['stock_actual'],
+        'costo' => (float)$r['costo_promedio'],
+    );
+}
+
+// Params iniciales desde URL (ej: venir desde stock_lista.php con id_bodega + id_producto)
+$origenPre   = (int)get('id_bodega');
+$productoPre = (int)get('id_producto');
+
+// --- POST ---
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $id_bodega_origen  = (int)post('id_bodega_origen');
     $id_bodega_destino = (int)post('id_bodega_destino');
@@ -47,10 +77,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $observacion       = trim(post('observacion'));
 
     $items_producto = isset($_POST['item_id_producto']) ? $_POST['item_id_producto'] : array();
-    $items_cantidad = isset($_POST['item_cantidad']) ? $_POST['item_cantidad'] : array();
+    $items_cantidad = isset($_POST['item_cantidad'])    ? $_POST['item_cantidad']    : array();
 
     if ($id_bodega_origen <= 0 || $id_bodega_destino <= 0 || $fecha === '') {
-        $error = 'Bodega origen, bodega destino y fecha son obligatorios.';
+        $error = 'Bodega origen, destino y fecha son obligatorios.';
     } elseif ($id_bodega_origen === $id_bodega_destino) {
         $error = 'La bodega origen y destino deben ser distintas.';
     } else {
@@ -59,121 +89,85 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         for ($i = 0; $i < $totalItems; $i++) {
             $id_producto = isset($items_producto[$i]) ? (int)$items_producto[$i] : 0;
-            $cantidad    = isset($items_cantidad[$i]) ? (float)$items_cantidad[$i] : 0;
+            $cantidad    = isset($items_cantidad[$i]) ? (float)str_replace(',', '.', $items_cantidad[$i]) : 0;
 
             if ($id_producto > 0 && $cantidad > 0) {
                 $detalleLimpio[] = array(
                     'id_producto' => $id_producto,
-                    'cantidad'    => $cantidad
+                    'cantidad'    => $cantidad,
                 );
             }
         }
 
         if (!$detalleLimpio) {
-            $error = 'Debes ingresar al menos un producto válido para traspasar.';
+            $error = 'Debes seleccionar al menos un producto con cantidad mayor a 0.';
         } else {
             try {
                 $pdo->beginTransaction();
 
                 $stmt = $pdo->prepare("
-                    INSERT INTO traspasos_bodega (
-                        id_bodega_origen,
-                        id_bodega_destino,
-                        fecha,
-                        estado,
-                        observacion,
-                        created_by
-                    ) VALUES (?, ?, ?, 'completado', ?, ?)
+                    INSERT INTO traspasos_bodega
+                        (id_bodega_origen, id_bodega_destino, fecha, estado, observacion, created_by)
+                    VALUES (?, ?, ?, 'completado', ?, ?)
                 ");
-
                 $stmt->execute(array(
                     $id_bodega_origen,
                     $id_bodega_destino,
                     $fecha,
                     ($observacion !== '' ? $observacion : null),
-                    isset($_SESSION['user_id']) ? (int)$_SESSION['user_id'] : null
+                    isset($_SESSION['user_id']) ? (int)$_SESSION['user_id'] : null,
                 ));
-
                 $id_traspaso = (int)$pdo->lastInsertId();
 
                 $stmtDetalle = $pdo->prepare("
-                    INSERT INTO traspasos_bodega_detalle (
-                        id_traspaso,
-                        id_producto,
-                        descripcion_item,
-                        cantidad,
-                        costo_unitario,
-                        subtotal
-                    ) VALUES (?, ?, ?, ?, ?, ?)
+                    INSERT INTO traspasos_bodega_detalle
+                        (id_traspaso, id_producto, descripcion_item, cantidad, costo_unitario, subtotal)
+                    VALUES (?, ?, ?, ?, ?, ?)
                 ");
 
                 $stmtMov = $pdo->prepare("
-                    INSERT INTO movimientos_bodega (
-                        id_bodega,
-                        id_producto,
-                        tipo_movimiento,
-                        cantidad,
-                        precio_unitario,
-                        total,
-                        referencia_tipo,
-                        referencia_id,
-                        fecha_movimiento,
-                        observacion,
-                        id_usuario
-                    ) VALUES (?, ?, ?, ?, ?, ?, 'traslado', ?, NOW(), ?, ?)
+                    INSERT INTO movimientos_bodega
+                        (id_bodega, id_producto, tipo_movimiento, cantidad, precio_unitario, total,
+                         referencia_tipo, referencia_id, fecha_movimiento, observacion, id_usuario)
+                    VALUES (?, ?, ?, ?, ?, ?, 'traslado', ?, NOW(), ?, ?)
                 ");
 
                 $stmtStockOrigen = $pdo->prepare("
-                    SELECT 
-                        sb.id,
-                        sb.stock_actual,
-                        sb.costo_promedio,
-                        p.nombre
+                    SELECT sb.id, sb.stock_actual, sb.costo_promedio, p.nombre
                     FROM stock_bodega sb
                     INNER JOIN productos p ON p.id = sb.id_producto
-                    WHERE sb.id_bodega = ? AND sb.id_producto = ?
-                    LIMIT 1
+                    WHERE sb.id_bodega = ? AND sb.id_producto = ? LIMIT 1
                 ");
-
                 $stmtStockDestino = $pdo->prepare("
-                    SELECT id, stock_actual, costo_promedio
-                    FROM stock_bodega
-                    WHERE id_bodega = ? AND id_producto = ?
-                    LIMIT 1
+                    SELECT id, stock_actual, costo_promedio FROM stock_bodega
+                    WHERE id_bodega = ? AND id_producto = ? LIMIT 1
                 ");
-
                 $stmtUpdateStock = $pdo->prepare("
-                    UPDATE stock_bodega
-                    SET stock_actual = ?, costo_promedio = ?
-                    WHERE id = ?
+                    UPDATE stock_bodega SET stock_actual = ?, costo_promedio = ? WHERE id = ?
                 ");
-
                 $stmtInsertStock = $pdo->prepare("
-                    INSERT INTO stock_bodega (
-                        id_bodega,
-                        id_producto,
-                        stock_actual,
-                        costo_promedio
-                    ) VALUES (?, ?, ?, ?)
+                    INSERT INTO stock_bodega (id_bodega, id_producto, stock_actual, costo_promedio)
+                    VALUES (?, ?, ?, ?)
                 ");
 
-                foreach ($detalleLimpio as $item) {
-                    $id_producto = (int)$item['id_producto'];
-                    $cantidad    = (float)$item['cantidad'];
+                $uid = isset($_SESSION['user_id']) ? (int)$_SESSION['user_id'] : null;
+
+                foreach ($detalleLimpio as $it) {
+                    $id_producto = $it['id_producto'];
+                    $cantidad    = $it['cantidad'];
 
                     $stmtStockOrigen->execute(array($id_bodega_origen, $id_producto));
                     $stockOrigen = $stmtStockOrigen->fetch();
 
                     if (!$stockOrigen) {
-                        throw new Exception('El producto ID ' . $id_producto . ' no existe en la bodega de origen.');
+                        throw new Exception('Producto ID ' . $id_producto . ' no existe en la bodega origen.');
                     }
-
                     if ((float)$stockOrigen['stock_actual'] < $cantidad) {
-                        throw new Exception('Stock insuficiente para el producto ' . $stockOrigen['nombre'] . ' en la bodega de origen.');
+                        throw new Exception('Stock insuficiente para "' . $stockOrigen['nombre'] . '" (disp: ' . $stockOrigen['stock_actual'] . ', pedido: ' . $cantidad . ').');
                     }
 
                     $costoUnitario = (float)$stockOrigen['costo_promedio'];
-                    $subtotal = $cantidad * $costoUnitario;
+                    $subtotal      = $cantidad * $costoUnitario;
 
                     $stmtDetalle->execute(array(
                         $id_traspaso,
@@ -181,423 +175,501 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         $stockOrigen['nombre'],
                         $cantidad,
                         $costoUnitario,
-                        $subtotal
+                        $subtotal,
                     ));
 
                     $nuevoStockOrigen = (float)$stockOrigen['stock_actual'] - $cantidad;
-
-                    $stmtUpdateStock->execute(array(
-                        $nuevoStockOrigen,
-                        $costoUnitario,
-                        (int)$stockOrigen['id']
-                    ));
+                    $stmtUpdateStock->execute(array($nuevoStockOrigen, $costoUnitario, (int)$stockOrigen['id']));
 
                     $stmtStockDestino->execute(array($id_bodega_destino, $id_producto));
                     $stockDestino = $stmtStockDestino->fetch();
 
                     if ($stockDestino) {
                         $nuevoStockDestino = (float)$stockDestino['stock_actual'] + $cantidad;
-
-                        $stmtUpdateStock->execute(array(
-                            $nuevoStockDestino,
-                            $costoUnitario,
-                            (int)$stockDestino['id']
-                        ));
+                        $stmtUpdateStock->execute(array($nuevoStockDestino, $costoUnitario, (int)$stockDestino['id']));
                     } else {
-                        $stmtInsertStock->execute(array(
-                            $id_bodega_destino,
-                            $id_producto,
-                            $cantidad,
-                            $costoUnitario
-                        ));
+                        $stmtInsertStock->execute(array($id_bodega_destino, $id_producto, $cantidad, $costoUnitario));
                     }
 
                     $stmtMov->execute(array(
-                        $id_bodega_origen,
-                        $id_producto,
-                        'traslado_salida',
-                        $cantidad,
-                        $costoUnitario,
-                        $subtotal,
-                        $id_traspaso,
-                        'Salida por traslado a bodega ID ' . $id_bodega_destino,
-                        isset($_SESSION['user_id']) ? (int)$_SESSION['user_id'] : null
+                        $id_bodega_origen, $id_producto, 'traslado_salida', $cantidad, $costoUnitario, $subtotal,
+                        $id_traspaso, 'Salida por traslado a bodega ID ' . $id_bodega_destino, $uid,
                     ));
-
                     $stmtMov->execute(array(
-                        $id_bodega_destino,
-                        $id_producto,
-                        'traslado_entrada',
-                        $cantidad,
-                        $costoUnitario,
-                        $subtotal,
-                        $id_traspaso,
-                        'Entrada por traslado desde bodega ID ' . $id_bodega_origen,
-                        isset($_SESSION['user_id']) ? (int)$_SESSION['user_id'] : null
+                        $id_bodega_destino, $id_producto, 'traslado_entrada', $cantidad, $costoUnitario, $subtotal,
+                        $id_traspaso, 'Entrada por traslado desde bodega ID ' . $id_bodega_origen, $uid,
                     ));
                 }
 
                 $pdo->commit();
-                set_flash('success', 'Traspaso registrado correctamente.');
-                redirect('traspasos_ver.php?id=' . $id_traspaso);
+                set_flash('success', 'Traslado #' . $id_traspaso . ' registrado correctamente.');
+                redirect('movimientos_ver.php?id=' . $id_traspaso);
 
             } catch (Exception $e) {
-                if ($pdo->inTransaction()) {
-                    $pdo->rollBack();
-                }
+                if ($pdo->inTransaction()) { $pdo->rollBack(); }
                 $error = 'Error: ' . $e->getMessage();
             }
         }
     }
 }
 
-$pageTitle = 'Nuevo Traspaso entre Bodegas';
+$pageTitle = 'Nuevo Traslado entre Bodegas';
 require_once __DIR__ . '/../../inc/header.php';
 ?>
 
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h1 class="h3 mb-0 text-gray-800">
-        <i class="bi bi-arrow-left-right text-primary me-2"></i>Nuevo Traspaso entre Bodegas
-    </h1>
-    <a href="traspasos_lista.php" class="btn btn-outline-secondary">
-        <i class="bi bi-arrow-left me-1"></i> Volver
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+    <div>
+        <div class="text-muted small mb-1">
+            <a href="movimientos_lista.php" class="text-decoration-none text-muted">
+                <i class="bi bi-chevron-left"></i> Movimientos
+            </a>
+        </div>
+        <h1 class="h3 mb-0 text-gray-800">
+            <i class="bi bi-arrow-left-right text-primary me-2"></i>Nuevo Traslado entre Bodegas
+        </h1>
+        <p class="text-muted mb-0 small mt-1">Selecciona bodega origen, bodega destino y marca los productos a trasladar.</p>
+    </div>
+    <a href="movimientos_lista.php" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left me-1"></i> Cancelar
     </a>
 </div>
 
 <?php if ($error !== ''): ?>
-    <div class="alert alert-danger">
-        <i class="bi bi-exclamation-triangle-fill me-2"></i><?php echo h($error); ?>
+    <div class="alert alert-danger d-flex align-items-start">
+        <i class="bi bi-exclamation-triangle-fill me-2 mt-1"></i>
+        <div><?php echo h($error); ?></div>
     </div>
 <?php endif; ?>
 
-<form method="post" id="formTraspaso">
+<form method="post" id="formTraslado" autocomplete="off">
+
+    <!-- PASO 1: Origen → Destino -->
     <div class="card shadow-sm border-0 mb-4">
-        <div class="card-header bg-white pt-3 pb-2 border-0">
-            <h5 class="mb-0 fw-bold">Datos del Traspaso</h5>
+        <div class="card-header bg-white border-0 pt-3 pb-0 d-flex align-items-center">
+            <span class="badge bg-primary rounded-circle me-2" style="width:28px;height:28px;line-height:20px;">1</span>
+            <h5 class="mb-0 fw-bold">¿Desde dónde y hacia dónde?</h5>
         </div>
         <div class="card-body">
-            <div class="row g-4">
-                <div class="col-md-4">
-                    <label class="form-label fw-bold text-secondary">Bodega Origen <span class="text-danger">*</span></label>
-                    <select name="id_bodega_origen" id="id_bodega_origen" class="form-select" required>
-                        <option value="">Seleccione</option>
+            <div class="row g-3 align-items-stretch">
+
+                <div class="col-md-5">
+                    <label class="form-label fw-bold text-danger small text-uppercase" style="letter-spacing:.5px;">
+                        <i class="bi bi-box-arrow-up-right me-1"></i>Bodega Origen
+                    </label>
+                    <select name="id_bodega_origen" id="selOrigen" class="form-select form-select-lg" required>
+                        <option value="">Seleccione una bodega…</option>
                         <?php foreach ($bodegas as $b): ?>
-                            <option value="<?php echo (int)$b['id']; ?>" <?php echo ((int)post('id_bodega_origen') === (int)$b['id']) ? 'selected' : ''; ?>>
+                            <option value="<?php echo (int)$b['id']; ?>"
+                                <?php echo ((int)post('id_bodega_origen') === (int)$b['id'] || (!post('id_bodega_origen') && $origenPre === (int)$b['id'])) ? 'selected' : ''; ?>>
                                 <?php echo h($b['nombre'] . ' (' . $b['codigo'] . ')'); ?>
                             </option>
                         <?php endforeach; ?>
                     </select>
+                    <div class="form-text"><i class="bi bi-info-circle me-1"></i>Stock se descuenta desde aquí.</div>
                 </div>
 
-                <div class="col-md-4">
-                    <label class="form-label fw-bold text-secondary">Bodega Destino <span class="text-danger">*</span></label>
-                    <select name="id_bodega_destino" id="id_bodega_destino" class="form-select" required>
-                        <option value="">Seleccione</option>
+                <div class="col-md-2 d-flex flex-column align-items-center justify-content-center">
+                    <i class="bi bi-arrow-right-circle-fill text-primary" style="font-size:2.5rem;"></i>
+                    <span class="small text-muted fw-bold">TRASLADO</span>
+                </div>
+
+                <div class="col-md-5">
+                    <label class="form-label fw-bold text-success small text-uppercase" style="letter-spacing:.5px;">
+                        <i class="bi bi-box-arrow-in-down-left me-1"></i>Bodega Destino
+                    </label>
+                    <select name="id_bodega_destino" id="selDestino" class="form-select form-select-lg" required>
+                        <option value="">Seleccione una bodega…</option>
                         <?php foreach ($bodegas as $b): ?>
                             <option value="<?php echo (int)$b['id']; ?>" <?php echo ((int)post('id_bodega_destino') === (int)$b['id']) ? 'selected' : ''; ?>>
                                 <?php echo h($b['nombre'] . ' (' . $b['codigo'] . ')'); ?>
                             </option>
                         <?php endforeach; ?>
                     </select>
+                    <div class="form-text"><i class="bi bi-info-circle me-1"></i>Stock entra a esta bodega.</div>
                 </div>
 
                 <div class="col-md-4">
-                    <label class="form-label fw-bold text-secondary">Fecha <span class="text-danger">*</span></label>
+                    <label class="form-label fw-bold text-secondary small">Fecha</label>
                     <input type="date" name="fecha" class="form-control" value="<?php echo h(post('fecha', date('Y-m-d'))); ?>" required>
                 </div>
 
-                <div class="col-12">
-                    <label class="form-label fw-bold text-secondary">Observación</label>
-                    <textarea name="observacion" class="form-control" rows="3"><?php echo h(post('observacion')); ?></textarea>
+                <div class="col-md-8">
+                    <label class="form-label fw-bold text-secondary small">Observación <span class="text-muted fw-normal">(opcional)</span></label>
+                    <input type="text" name="observacion" class="form-control" maxlength="500"
+                           placeholder="Motivo del traslado..." value="<?php echo h(post('observacion')); ?>">
                 </div>
             </div>
         </div>
     </div>
 
-    <div class="card shadow-sm border-0 mb-4">
-        <div class="card-header bg-white pt-3 pb-2 border-0 d-flex justify-content-between align-items-center">
-            <h5 class="mb-0 fw-bold">Detalle del Traspaso</h5>
-            <button type="button" class="btn btn-sm btn-success" id="btnAgregarFila">
-                <i class="bi bi-plus-lg me-1"></i> Agregar Producto
-            </button>
+    <!-- PASO 2: Productos -->
+    <div class="card shadow-sm border-0 mb-4" id="cardProductos">
+        <div class="card-header bg-white border-0 pt-3 pb-2 d-flex align-items-center flex-wrap gap-2">
+            <span class="badge bg-primary rounded-circle me-2" style="width:28px;height:28px;line-height:20px;">2</span>
+            <h5 class="mb-0 fw-bold me-auto">Seleccionar productos</h5>
+
+            <div class="input-group" style="max-width: 280px;">
+                <span class="input-group-text bg-light border-end-0"><i class="bi bi-search text-secondary"></i></span>
+                <input type="text" id="buscadorProductos" class="form-control border-start-0 ps-0" placeholder="Buscar producto...">
+            </div>
+
+            <span class="badge bg-light text-dark border" id="badgeDisponibles">0 disponibles</span>
         </div>
 
-        <div class="card-body p-0">
+        <div id="mensajeOrigen" class="card-body text-center text-muted py-5">
+            <i class="bi bi-arrow-up fs-1 d-block mb-2 text-primary"></i>
+            <div class="fw-bold mb-1">Selecciona primero una bodega origen</div>
+            <div class="small">Luego verás aquí los productos disponibles para trasladar.</div>
+        </div>
+
+        <div id="contenidoProductos" style="display:none;">
             <div class="table-responsive">
-                <table class="table table-hover align-middle mb-0" id="tablaDetalle">
-                    <thead class="table-light text-secondary">
-                        <tr>
-                            <th style="width: 34%;">Producto</th>
-                            <th style="width: 14%;">Stock Origen</th>
-                            <th style="width: 14%;">Cantidad</th>
-                            <th style="width: 14%;">Costo Origen</th>
-                            <th style="width: 14%;">Subtotal</th>
-                            <th style="width: 10%;">Estado</th>
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr class="small text-uppercase text-secondary">
+                            <th class="px-3" style="width:5%;"><input type="checkbox" id="chkTodos" class="form-check-input" title="Marcar todos"></th>
+                            <th style="width:12%;">Código</th>
+                            <th>Producto</th>
+                            <th style="width:12%;" class="text-end">Stock Disp.</th>
+                            <th style="width:12%;" class="text-end">Costo</th>
+                            <th style="width:18%;" class="text-center">Cantidad a Trasladar</th>
+                            <th style="width:14%;" class="text-end">Subtotal</th>
                         </tr>
                     </thead>
-                    <tbody id="detalleBody">
-                        <tr>
-                            <td>
-                                <select name="item_id_producto[]" class="form-select item-producto">
-                                    <option value="">Seleccione bodega origen</option>
-                                </select>
-                            </td>
-                            <td><input type="text" class="form-control item-stock bg-light" value="-" readonly></td>
-                            <td><input type="number" step="0.01" min="0.01" name="item_cantidad[]" class="form-control item-cantidad" value="1"></td>
-                            <td><input type="text" class="form-control item-costo bg-light" value="0.00" readonly></td>
-                            <td><input type="text" class="form-control item-subtotal bg-light" value="0.00" readonly></td>
-                            <td>
-                                <div class="d-flex gap-2 align-items-center">
-                                    <span class="small item-estado text-muted">Seleccione</span>
-                                    <button type="button" class="btn btn-sm btn-outline-danger btn-eliminar-fila">&times;</button>
-                                </div>
-                            </td>
-                        </tr>
-                    </tbody>
+                    <tbody id="tbodyProductos"></tbody>
                 </table>
+            </div>
+
+            <div id="sinProductos" class="text-center text-muted py-5" style="display:none;">
+                <i class="bi bi-inbox fs-1 d-block mb-2"></i>
+                <div class="fw-bold">No hay productos con stock disponible</div>
+                <div class="small">La bodega origen no tiene stock para trasladar.</div>
             </div>
         </div>
     </div>
 
-    <div class="row mb-5">
-        <div class="col-md-4 offset-md-8">
-            <div class="card shadow-sm border-0 bg-light">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between fs-5">
-                        <span class="fw-bold text-dark">Total referencial:</span>
-                        <span class="fw-bold text-primary">
-                            $ <input type="text" id="resumenTotal" readonly value="0.00" class="border-0 bg-transparent text-end text-primary fw-bold" style="width: 130px; outline:none;">
-                        </span>
-                    </div>
-                    <div class="form-text mt-2">
-                        Solo se muestran productos con stock en la bodega origen.
-                    </div>
-                    <button type="submit" class="btn btn-primary w-100 mt-4 py-2">
-                        <i class="bi bi-floppy me-2"></i>Registrar Traspaso
-                    </button>
+    <!-- Sticky footer con resumen -->
+    <div class="position-sticky bottom-0 bg-white border-top shadow-lg py-3 px-3 mt-4" style="z-index:100;margin-left:-1rem;margin-right:-1rem;">
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+            <div class="d-flex gap-4 align-items-center flex-wrap">
+                <div>
+                    <div class="small text-muted text-uppercase fw-bold" style="font-size:.7rem;letter-spacing:.5px;">Ítems</div>
+                    <div class="h4 mb-0 fw-bold text-primary" id="resumenItems">0</div>
                 </div>
+                <div class="vr"></div>
+                <div>
+                    <div class="small text-muted text-uppercase fw-bold" style="font-size:.7rem;letter-spacing:.5px;">Cantidad Total</div>
+                    <div class="h4 mb-0 fw-bold" id="resumenCantidad">0,00</div>
+                </div>
+                <div class="vr"></div>
+                <div>
+                    <div class="small text-muted text-uppercase fw-bold" style="font-size:.7rem;letter-spacing:.5px;">Valor Total</div>
+                    <div class="h4 mb-0 fw-bold text-success" id="resumenTotal">$0</div>
+                </div>
+            </div>
+
+            <div class="d-flex gap-2">
+                <a href="movimientos_lista.php" class="btn btn-light border px-4">Cancelar</a>
+                <button type="submit" class="btn btn-primary btn-lg px-4" id="btnConfirmar" disabled>
+                    <i class="bi bi-check-lg me-1"></i> Confirmar Traslado
+                </button>
             </div>
         </div>
     </div>
+
 </form>
 
 <script>
-(function() {
-    var detalleBody = document.getElementById('detalleBody');
-    var btnAgregarFila = document.getElementById('btnAgregarFila');
-    var bodegaOrigen = document.getElementById('id_bodega_origen');
+(function () {
+    var stockMap   = <?php echo json_encode($stockMap); ?>;
+    var productos  = <?php echo json_encode($productos); ?>;
+    var productoPre = <?php echo (int)$productoPre; ?>;
 
-    function recalcularResumen() {
-        var filas = detalleBody.querySelectorAll('tr');
-        var total = 0;
+    var selOrigen      = document.getElementById('selOrigen');
+    var selDestino     = document.getElementById('selDestino');
+    var buscador       = document.getElementById('buscadorProductos');
+    var tbody          = document.getElementById('tbodyProductos');
+    var mensajeOrigen  = document.getElementById('mensajeOrigen');
+    var contenidoProd  = document.getElementById('contenidoProductos');
+    var sinProductos   = document.getElementById('sinProductos');
+    var badgeDisp      = document.getElementById('badgeDisponibles');
+    var chkTodos       = document.getElementById('chkTodos');
+    var btnConfirmar   = document.getElementById('btnConfirmar');
 
-        for (var i = 0; i < filas.length; i++) {
-            total += parseFloat(filas[i].querySelector('.item-subtotal').value || 0);
+    var resumenItems    = document.getElementById('resumenItems');
+    var resumenCantidad = document.getElementById('resumenCantidad');
+    var resumenTotal    = document.getElementById('resumenTotal');
+
+    function fmt(n, dec) {
+        if (isNaN(n)) n = 0;
+        return n.toFixed(dec === undefined ? 2 : dec).replace('.', ',').replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+    }
+
+    function escapeHtml(s) {
+        s = (s == null) ? '' : String(s);
+        return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;');
+    }
+
+    function renderProductos() {
+        var idOrigen = parseInt(selOrigen.value, 10);
+        tbody.innerHTML = '';
+
+        if (!idOrigen) {
+            mensajeOrigen.style.display  = '';
+            contenidoProd.style.display  = 'none';
+            badgeDisp.textContent = '0 disponibles';
+            return;
         }
 
-        document.getElementById('resumenTotal').value = total.toFixed(2);
+        mensajeOrigen.style.display  = 'none';
+        contenidoProd.style.display  = '';
+
+        var stockBodega = stockMap[idOrigen] || {};
+        var disponibles = [];
+
+        for (var i = 0; i < productos.length; i++) {
+            var p   = productos[i];
+            var st  = stockBodega[p.id];
+            if (st && parseFloat(st.stock) > 0) {
+                disponibles.push({
+                    id: p.id,
+                    codigo: p.codigo,
+                    nombre: p.nombre,
+                    unidad: p.unidad_nombre || '',
+                    tipo:   p.tipo_nombre || '',
+                    stock: parseFloat(st.stock),
+                    costo: parseFloat(st.costo)
+                });
+            }
+        }
+
+        if (!disponibles.length) {
+            sinProductos.style.display = '';
+            badgeDisp.textContent = '0 disponibles';
+            return;
+        }
+
+        sinProductos.style.display = 'none';
+        badgeDisp.textContent = disponibles.length + ' disponible' + (disponibles.length === 1 ? '' : 's');
+
+        var html = '';
+        for (var j = 0; j < disponibles.length; j++) {
+            var d = disponibles[j];
+            var pre = (productoPre === d.id) ? ' checked' : '';
+            html += '<tr class="fila-producto" data-id="' + d.id + '" data-stock="' + d.stock + '" data-costo="' + d.costo + '" data-nombre="' + escapeHtml(d.nombre.toLowerCase()) + '" data-codigo="' + escapeHtml(d.codigo.toLowerCase()) + '">' +
+                    '<td class="px-3"><input type="checkbox" class="form-check-input chk-item"' + pre + '></td>' +
+                    '<td><span class="badge bg-light text-dark border">' + escapeHtml(d.codigo) + '</span></td>' +
+                    '<td>' +
+                        '<div class="fw-bold text-dark">' + escapeHtml(d.nombre) + '</div>' +
+                        '<div class="text-muted small">' + (d.unidad ? '<i class="bi bi-ruler me-1"></i>' + escapeHtml(d.unidad) : '') + (d.tipo ? ' · ' + escapeHtml(d.tipo) : '') + '</div>' +
+                    '</td>' +
+                    '<td class="text-end">' +
+                        '<span class="fw-bold text-success">' + fmt(d.stock) + '</span>' +
+                        (d.unidad ? '<div class="text-muted small">' + escapeHtml(d.unidad) + '</div>' : '') +
+                    '</td>' +
+                    '<td class="text-end text-muted">$ ' + fmt(d.costo, 0) + '</td>' +
+                    '<td class="text-center">' +
+                        '<div class="input-group input-group-sm" style="max-width: 180px; margin:0 auto;">' +
+                            '<input type="number" class="form-control form-control-sm inp-cantidad text-end" step="0.01" min="0.01" max="' + d.stock + '" value="' + (pre ? d.stock : '') + '" disabled placeholder="0">' +
+                            '<button type="button" class="btn btn-outline-secondary btn-sm btn-max" title="Usar stock completo" disabled>MAX</button>' +
+                        '</div>' +
+                        '<div class="text-danger small mt-1 mensaje-error" style="display:none;"></div>' +
+                    '</td>' +
+                    '<td class="text-end fw-medium subtotal-fila">$ 0</td>' +
+                    '</tr>';
+        }
+
+        tbody.innerHTML = html;
+        enlazarFilas();
+        recalcular();
+
+        if (productoPre) {
+            productoPre = 0; // una sola vez
+        }
     }
 
-    function limpiarFilaInfo(tr) {
-        tr.querySelector('.item-stock').value = '-';
-        tr.querySelector('.item-costo').value = '0.00';
-        tr.querySelector('.item-subtotal').value = '0.00';
-        tr.querySelector('.item-estado').className = 'small item-estado text-muted';
-        tr.querySelector('.item-estado').textContent = 'Seleccione';
-        recalcularResumen();
+    function enlazarFilas() {
+        var filas = tbody.querySelectorAll('tr.fila-producto');
+        for (var i = 0; i < filas.length; i++) {
+            (function (tr) {
+                var chk  = tr.querySelector('.chk-item');
+                var inp  = tr.querySelector('.inp-cantidad');
+                var btn  = tr.querySelector('.btn-max');
+                var stock = parseFloat(tr.getAttribute('data-stock'));
+
+                chk.addEventListener('change', function () {
+                    inp.disabled = !chk.checked;
+                    btn.disabled = !chk.checked;
+                    if (chk.checked && (!inp.value || parseFloat(inp.value) <= 0)) {
+                        inp.value = stock;
+                    }
+                    if (!chk.checked) {
+                        inp.value = '';
+                        tr.querySelector('.mensaje-error').style.display = 'none';
+                    }
+                    validarFila(tr);
+                    recalcular();
+                });
+
+                inp.addEventListener('input', function () {
+                    validarFila(tr);
+                    recalcular();
+                });
+
+                btn.addEventListener('click', function () {
+                    inp.value = stock;
+                    validarFila(tr);
+                    recalcular();
+                });
+
+                // Inicialización si viene pre-checkeado
+                if (chk.checked) {
+                    inp.disabled = false;
+                    btn.disabled = false;
+                    validarFila(tr);
+                }
+            })(filas[i]);
+        }
     }
 
-    function recalcularFila(tr) {
-        var cantidad = parseFloat(tr.querySelector('.item-cantidad').value || 0);
-        var costo = parseFloat(tr.querySelector('.item-costo').value || 0);
-        var stock = parseFloat(tr.querySelector('.item-stock').value || 0);
-        var estado = tr.querySelector('.item-estado');
+    function validarFila(tr) {
+        var inp    = tr.querySelector('.inp-cantidad');
+        var chk    = tr.querySelector('.chk-item');
+        var msg    = tr.querySelector('.mensaje-error');
+        var stock  = parseFloat(tr.getAttribute('data-stock'));
+        var val    = parseFloat(inp.value);
 
-        if (isNaN(cantidad)) cantidad = 0;
-        if (isNaN(costo)) costo = 0;
-        if (isNaN(stock)) stock = 0;
+        msg.style.display = 'none';
+        inp.classList.remove('is-invalid');
 
-        tr.querySelector('.item-subtotal').value = (cantidad * costo).toFixed(2);
+        if (!chk.checked) return true;
 
-        if (!tr.querySelector('.item-producto').value) {
-            estado.className = 'small item-estado text-muted';
-            estado.textContent = 'Seleccione';
-        } else if (cantidad <= 0) {
-            estado.className = 'small item-estado text-muted';
-            estado.textContent = 'Cantidad inválida';
-        } else if (cantidad > stock) {
-            estado.className = 'small item-estado text-danger';
-            estado.textContent = 'Sin stock';
+        if (isNaN(val) || val <= 0) {
+            msg.textContent = 'Cantidad inválida';
+            msg.style.display = '';
+            inp.classList.add('is-invalid');
+            return false;
+        }
+        if (val > stock) {
+            msg.textContent = 'Excede stock (' + fmt(stock) + ')';
+            msg.style.display = '';
+            inp.classList.add('is-invalid');
+            return false;
+        }
+        return true;
+    }
+
+    function recalcular() {
+        var filas = tbody.querySelectorAll('tr.fila-producto');
+        var items = 0, cant = 0, total = 0, todoOk = true;
+
+        for (var i = 0; i < filas.length; i++) {
+            var tr    = filas[i];
+            var chk   = tr.querySelector('.chk-item');
+            var inp   = tr.querySelector('.inp-cantidad');
+            var costo = parseFloat(tr.getAttribute('data-costo'));
+            var sub   = tr.querySelector('.subtotal-fila');
+
+            if (chk.checked) {
+                var val = parseFloat(inp.value);
+                if (isNaN(val) || val <= 0 || val > parseFloat(tr.getAttribute('data-stock'))) {
+                    todoOk = false;
+                    sub.textContent = '—';
+                } else {
+                    items++;
+                    cant += val;
+                    var subtotal = val * costo;
+                    total += subtotal;
+                    sub.textContent = '$ ' + fmt(subtotal, 0);
+                }
+            } else {
+                sub.textContent = '$ 0';
+            }
+        }
+
+        resumenItems.textContent    = items;
+        resumenCantidad.textContent = fmt(cant);
+        resumenTotal.textContent    = '$ ' + fmt(total, 0);
+
+        btnConfirmar.disabled = (items === 0) || !todoOk || !selOrigen.value || !selDestino.value || (selOrigen.value === selDestino.value);
+    }
+
+    // Buscador
+    buscador.addEventListener('input', function () {
+        var q = buscador.value.trim().toLowerCase();
+        var filas = tbody.querySelectorAll('tr.fila-producto');
+        var visibles = 0;
+        for (var i = 0; i < filas.length; i++) {
+            var tr = filas[i];
+            var nombre = tr.getAttribute('data-nombre');
+            var codigo = tr.getAttribute('data-codigo');
+            var match = (q === '' || nombre.indexOf(q) >= 0 || codigo.indexOf(q) >= 0);
+            tr.style.display = match ? '' : 'none';
+            if (match) visibles++;
+        }
+    });
+
+    // Marcar todos visibles
+    chkTodos.addEventListener('change', function () {
+        var filas = tbody.querySelectorAll('tr.fila-producto');
+        for (var i = 0; i < filas.length; i++) {
+            if (filas[i].style.display !== 'none') {
+                var chk = filas[i].querySelector('.chk-item');
+                if (chk.checked !== chkTodos.checked) {
+                    chk.checked = chkTodos.checked;
+                    chk.dispatchEvent(new Event('change'));
+                }
+            }
+        }
+    });
+
+    // Validación de bodegas iguales
+    function validarBodegas() {
+        if (selOrigen.value && selDestino.value && selOrigen.value === selDestino.value) {
+            selDestino.classList.add('is-invalid');
         } else {
-            estado.className = 'small item-estado text-success';
-            estado.textContent = 'OK';
+            selDestino.classList.remove('is-invalid');
+        }
+        recalcular();
+    }
+
+    selOrigen.addEventListener('change', function () {
+        renderProductos();
+        validarBodegas();
+    });
+    selDestino.addEventListener('change', validarBodegas);
+
+    // Antes de enviar, convertir los seleccionados en name=item_id_producto[] + item_cantidad[]
+    document.getElementById('formTraslado').addEventListener('submit', function (e) {
+        // Limpiar inputs previos
+        var prev = this.querySelectorAll('input[name="item_id_producto[]"], input[name="item_cantidad[]"]');
+        for (var i = 0; i < prev.length; i++) prev[i].remove();
+
+        var filas = tbody.querySelectorAll('tr.fila-producto');
+        var count = 0;
+        for (var j = 0; j < filas.length; j++) {
+            var tr  = filas[j];
+            var chk = tr.querySelector('.chk-item');
+            if (chk.checked && validarFila(tr)) {
+                var idp = document.createElement('input');
+                idp.type = 'hidden'; idp.name = 'item_id_producto[]'; idp.value = tr.getAttribute('data-id');
+                var can = document.createElement('input');
+                can.type = 'hidden'; can.name = 'item_cantidad[]'; can.value = tr.querySelector('.inp-cantidad').value;
+                this.appendChild(idp);
+                this.appendChild(can);
+                count++;
+            }
         }
 
-        recalcularResumen();
-    }
-
-    function cargarInfoProducto(tr) {
-        var idBodega = bodegaOrigen.value;
-        var idProducto = tr.querySelector('.item-producto').value;
-        var estado = tr.querySelector('.item-estado');
-
-        if (!idBodega || !idProducto) {
-            limpiarFilaInfo(tr);
-            return;
+        if (count === 0) {
+            e.preventDefault();
+            alert('Debes seleccionar al menos un producto válido.');
+            return false;
         }
+    });
 
-        estado.className = 'small item-estado text-muted';
-        estado.textContent = 'Consultando...';
-
-        var xhr = new XMLHttpRequest();
-        xhr.open('GET', 'ajax_producto_bodega.php?id_bodega=' + encodeURIComponent(idBodega) + '&id_producto=' + encodeURIComponent(idProducto), true);
-
-        xhr.onreadystatechange = function() {
-            if (xhr.readyState !== 4) return;
-
-            if (xhr.status !== 200) {
-                limpiarFilaInfo(tr);
-                estado.className = 'small item-estado text-danger';
-                estado.textContent = 'Error';
-                return;
-            }
-
-            var resp;
-            try {
-                resp = JSON.parse(xhr.responseText);
-            } catch (e) {
-                limpiarFilaInfo(tr);
-                estado.className = 'small item-estado text-danger';
-                estado.textContent = 'Error';
-                return;
-            }
-
-            if (!resp.ok) {
-                limpiarFilaInfo(tr);
-                estado.className = 'small item-estado text-danger';
-                estado.textContent = resp.error || 'No disponible';
-                return;
-            }
-
-            tr.querySelector('.item-stock').value = parseFloat(resp.stock_actual || 0).toFixed(2);
-            tr.querySelector('.item-costo').value = parseFloat(resp.costo_promedio || 0).toFixed(2);
-            recalcularFila(tr);
-        };
-
-        xhr.send();
-    }
-
-    function cargarProductosFila(tr, selectedValue) {
-        var idBodega = bodegaOrigen.value;
-        var select = tr.querySelector('.item-producto');
-
-        select.innerHTML = '<option value="">Cargando...</option>';
-        limpiarFilaInfo(tr);
-
-        if (!idBodega) {
-            select.innerHTML = '<option value="">Seleccione bodega origen</option>';
-            return;
-        }
-
-        var xhr = new XMLHttpRequest();
-        xhr.open('GET', 'ajax_productos_bodega.php?id_bodega=' + encodeURIComponent(idBodega), true);
-
-        xhr.onreadystatechange = function() {
-            if (xhr.readyState !== 4) return;
-
-            if (xhr.status !== 200) {
-                select.innerHTML = '<option value="">Error al cargar</option>';
-                return;
-            }
-
-            var resp;
-            try {
-                resp = JSON.parse(xhr.responseText);
-            } catch (e) {
-                select.innerHTML = '<option value="">Error al cargar</option>';
-                return;
-            }
-
-            if (!resp.ok || !resp.productos || !resp.productos.length) {
-                select.innerHTML = '<option value="">Sin productos con stock</option>';
-                return;
-            }
-
-            var html = '<option value="">Seleccione</option>';
-            for (var i = 0; i < resp.productos.length; i++) {
-                var p = resp.productos[i];
-                var sel = (selectedValue && String(selectedValue) === String(p.id)) ? ' selected' : '';
-                html += '<option value="' + p.id + '"' + sel + '>';
-                html += escaparHtml(p.codigo + ' - ' + p.nombre);
-                html += '</option>';
-            }
-
-            select.innerHTML = html;
-
-            if (selectedValue) {
-                cargarInfoProducto(tr);
-            }
-        };
-
-        xhr.send();
-    }
-
-    function escaparHtml(txt) {
-        txt = txt == null ? '' : String(txt);
-        return txt
-            .replace(/&/g, '&amp;')
-            .replace(/</g, '&lt;')
-            .replace(/>/g, '&gt;')
-            .replace(/"/g, '&quot;')
-            .replace(/'/g, '&#039;');
-    }
-
-    function enlazarFila(tr) {
-        tr.querySelector('.item-producto').onchange = function() {
-            cargarInfoProducto(tr);
-        };
-
-        tr.querySelector('.item-cantidad').oninput = function() {
-            recalcularFila(tr);
-        };
-
-        tr.querySelector('.btn-eliminar-fila').onclick = function() {
-            if (detalleBody.querySelectorAll('tr').length > 1) {
-                tr.remove();
-                recalcularResumen();
-            }
-        };
-    }
-
-    btnAgregarFila.onclick = function() {
-        var tr = document.createElement('tr');
-        tr.innerHTML = ''
-            + '<td><select name="item_id_producto[]" class="form-select item-producto"><option value="">Seleccione bodega origen</option></select></td>'
-            + '<td><input type="text" class="form-control item-stock bg-light" value="-" readonly></td>'
-            + '<td><input type="number" step="0.01" min="0.01" name="item_cantidad[]" class="form-control item-cantidad" value="1"></td>'
-            + '<td><input type="text" class="form-control item-costo bg-light" value="0.00" readonly></td>'
-            + '<td><input type="text" class="form-control item-subtotal bg-light" value="0.00" readonly></td>'
-            + '<td><div class="d-flex gap-2 align-items-center"><span class="small item-estado text-muted">Seleccione</span><button type="button" class="btn btn-sm btn-outline-danger btn-eliminar-fila">&times;</button></div></td>';
-
-        detalleBody.appendChild(tr);
-        enlazarFila(tr);
-        cargarProductosFila(tr, '');
-    };
-
-    bodegaOrigen.onchange = function() {
-        var filas = detalleBody.querySelectorAll('tr');
-        for (var i = 0; i < filas.length; i++) {
-            cargarProductosFila(filas[i], '');
-        }
-    };
-
-    var filas = detalleBody.querySelectorAll('tr');
-    for (var i = 0; i < filas.length; i++) {
-        enlazarFila(filas[i]);
-        cargarProductosFila(filas[i], filas[i].querySelector('.item-producto').value);
-    }
-
-    recalcularResumen();
+    // Arranque
+    renderProductos();
 })();
 </script>
 
