@@ -151,11 +151,6 @@ $current_script = $_SERVER['PHP_SELF'];
                 </a>
             </li>
             <li>
-                <a href="/Bodega/modulos/ordenes_compra/oc_lista.php" class="nav-link <?php echo (strpos($current_script, '/ordenes_compra/') !== false) ? 'active' : ''; ?>">
-                    <i class="bi bi-cart3"></i> Órdenes de compra
-                </a>
-            </li>
-            <li>
                 <a href="/Bodega/modulos/facturas/facturas_lista.php" class="nav-link <?php echo (strpos($current_script, '/facturas/') !== false) ? 'active' : ''; ?>">
                     <i class="bi bi-receipt"></i> Facturas
                 </a>
