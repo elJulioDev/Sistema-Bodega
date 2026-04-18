@@ -166,9 +166,6 @@ function estado_badge($estado) {
         <a href="movimientos_lista.php" class="btn btn-outline-secondary">
             <i class="bi bi-arrow-left me-1"></i> Volver
         </a>
-        <a href="movimientos_lista.php" class="btn btn-outline-primary">
-            <i class="bi bi-list-ul me-1"></i> Listado Traslados
-        </a>
         <button type="button" class="btn btn-outline-primary" onclick="window.print();">
             <i class="bi bi-printer me-1"></i> Imprimir
         </button>
