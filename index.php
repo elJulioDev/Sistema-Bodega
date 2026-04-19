@@ -406,22 +406,6 @@ $rolTxt = isset($rolLabel[$rol]) ? $rolLabel[$rol] : ucfirst($rol);
             <?php endif; ?>
         </div>
     </div>
-
-    <div class="col-6 col-md-3 col-xl">
-        <div class="card shadow-sm border-0 border-bottom border-danger border-4 h-100">
-            <div class="card-body">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <p class="text-muted text-uppercase mb-1 fw-bold" style="font-size:.7rem;letter-spacing:.5px;">OC Pendientes</p>
-                        <h3 class="mb-0 fw-bold text-dark"><?php echo number_format($data['ocPendientes'], 0, ',', '.'); ?></h3>
-                    </div>
-                    <div class="bg-danger bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center" style="width:48px;height:48px;">
-                        <i class="bi bi-receipt-cutoff text-danger fs-4"></i>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
 </div>
 
 <!-- FILA 2: KPIs OPERACIONALES -->
