@@ -15,9 +15,14 @@ $stmtBC->execute();
 $bodegaCentral = $stmtBC->fetch();
 $idBodegaCentral = $bodegaCentral ? (int)$bodegaCentral['id'] : 0;
 
-// Por defecto filtrar por bodega central si no se ha elegido otra
-if ($id_bodega === null || $id_bodega === '') {
+// Si el usuario envió el filtro explícitamente (incluso vacío = todas), respetarlo.
+// Solo aplicar la central como default en la primera carga (sin parámetro en URL).
+if (!isset($_GET['id_bodega'])) {
+    // Primera carga: mostrar solo bodega central por defecto
     $id_bodega = $idBodegaCentral > 0 ? (string)$idBodegaCentral : '';
+} else {
+    // El usuario eligió explícitamente (vacío = todas las bodegas)
+    $id_bodega = trim((string)$_GET['id_bodega']);
 }
 
 $bodegas = $pdo->query("SELECT id, codigo, nombre FROM bodegas WHERE estado = 1 ORDER BY (codigo='CENTRAL') DESC, nombre ASC")->fetchAll();
@@ -130,9 +135,6 @@ require_once __DIR__ . '/../inc/header.php';
                 <div class="text-muted small text-uppercase fw-semibold">Stock Bajo</div>
                 <div class="h4 mb-0 fw-bold text-warning">
                     <?php echo (int)$stats['stock_bajo']; ?>
-                    <?php if ((int)$stats['stock_bajo'] > 0): ?>
-                        <a href="?alerta=bajo<?php echo $id_bodega ? '&id_bodega=' . (int)$id_bodega : ''; ?>" class="small fs-6 ms-1 text-decoration-none">ver</a>
-                    <?php endif; ?>
                 </div>
             </div>
         </div>
@@ -140,7 +142,7 @@ require_once __DIR__ . '/../inc/header.php';
     <div class="col-6 col-lg-3">
         <div class="card shadow-sm border-0 border-start border-4 border-info">
             <div class="card-body py-2 px-3">
-                <div class="text-muted small text-uppercase fw-semibold">Valor Inventario</div>
+                <div class="text-muted small text-uppercase fw-semibold">Valor stock</div>
                 <div class="h4 mb-0 fw-bold text-info">$<?php echo number_format((float)$stats['valor_total'], 0, ',', '.'); ?></div>
             </div>
         </div>
@@ -176,7 +178,7 @@ require_once __DIR__ . '/../inc/header.php';
             </div>
             <div class="col-md-2 d-flex gap-1">
                 <button type="submit" class="btn btn-sm btn-primary flex-grow-1">Filtrar</button>
-                <?php if ($buscar !== '' || ($id_bodega !== '' && (int)$id_bodega !== $idBodegaCentral) || $filtro_alerta !== ''): ?>
+                <?php if ($buscar !== '' || isset($_GET['id_bodega']) || $filtro_alerta !== ''): ?>
                     <a href="stock_lista.php" class="btn btn-sm btn-light border" title="Limpiar"><i class="bi bi-x-lg"></i></a>
                 <?php endif; ?>
             </div>
