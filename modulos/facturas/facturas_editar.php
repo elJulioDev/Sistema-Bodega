@@ -5,32 +5,43 @@ require_once __DIR__ . '/../../inc/functions.php';
 
 require_login();
 
-$error = '';
-
-$CODIGO_BODEGA_CENTRAL = 'CENTRAL';
-
-$stmt = $pdo->prepare("SELECT id, codigo, nombre FROM bodegas WHERE estado = 1 AND codigo = ? LIMIT 1");
-$stmt->execute(array($CODIGO_BODEGA_CENTRAL));
-$bodegaCentral = $stmt->fetch();
-
-if (!$bodegaCentral) {
-    $bodegaCentral = $pdo->query("SELECT id, codigo, nombre FROM bodegas WHERE estado = 1 ORDER BY id ASC LIMIT 1")->fetch();
-    if (!$bodegaCentral) {
-        die('No existe una bodega activa en el sistema.');
-    }
+$id = (int)get('id');
+if ($id <= 0) {
+    set_flash('error', 'ID inválido.');
+    redirect('facturas_lista.php');
 }
+
+$stmt = $pdo->prepare("SELECT * FROM facturas WHERE id = ? LIMIT 1");
+$stmt->execute(array($id));
+$factura = $stmt->fetch();
+
+if (!$factura) {
+    set_flash('error', 'Factura no encontrada.');
+    redirect('facturas_lista.php');
+}
+
+if (strtolower($factura['estado']) === 'anulada') {
+    set_flash('error', 'No se puede editar una factura anulada. Reactívala primero.');
+    redirect('facturas_ver.php?id=' . $id);
+}
+
+$error = '';
 
 $proveedores = $pdo->query("SELECT id, rut, razon_social FROM proveedores WHERE estado = 1 ORDER BY razon_social ASC")->fetchAll();
 
-$idBC = (int)$bodegaCentral['id'];
+$id_bodega = (int)$factura['id_bodega'];
+
 $productos = $pdo->query("SELECT p.id, p.codigo, p.nombre, p.activo_fijo, um.nombre AS unidad,
-                          COALESCE((SELECT costo_promedio FROM stock_bodega WHERE id_producto = p.id AND id_bodega = $idBC LIMIT 1), 0) AS ultimo_costo
+                          COALESCE((SELECT costo_promedio FROM stock_bodega WHERE id_producto = p.id AND id_bodega = $id_bodega LIMIT 1), 0) AS ultimo_costo
                           FROM productos p 
                           LEFT JOIN unidades_medida um ON um.id = p.id_unidad_medida
                           WHERE p.estado = 1 ORDER BY p.nombre ASC")->fetchAll();
 
+$stmtD = $pdo->prepare("SELECT * FROM facturas_detalle WHERE id_factura = ? ORDER BY id ASC");
+$stmtD->execute(array($id));
+$detalleActual = $stmtD->fetchAll();
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $id_bodega       = $idBC;
     $id_proveedor    = post('id_proveedor');
     $numero_oc       = trim(post('numero_oc'));
     $numero_factura  = trim(post('numero_factura'));
@@ -47,42 +58,39 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($id_proveedor === '' || $numero_factura === '' || $fecha_factura === '') {
         $error = 'Proveedor, número de factura y fecha son obligatorios.';
     } else {
-        $stmt = $pdo->prepare("SELECT id FROM facturas WHERE id_proveedor = ? AND numero_factura = ? LIMIT 1");
-        $stmt->execute(array((int)$id_proveedor, $numero_factura));
-        if ($stmt->fetch()) {
-            $error = 'Ya existe una factura con ese número para el proveedor seleccionado.';
+        $stmtV = $pdo->prepare("SELECT id FROM facturas WHERE id_proveedor = ? AND numero_factura = ? AND id <> ? LIMIT 1");
+        $stmtV->execute(array((int)$id_proveedor, $numero_factura, $id));
+        if ($stmtV->fetch()) {
+            $error = 'Ya existe otra factura con ese número para el proveedor seleccionado.';
         } else {
-            $detalleLimpio = array();
+            $nuevoDetalle = array();
             $monto_neto = 0;
-
             for ($i = 0; $i < count($items_producto); $i++) {
-                $id_producto = isset($items_producto[$i]) ? (int)$items_producto[$i] : 0;
-                $desc        = isset($items_descripcion[$i]) ? trim($items_descripcion[$i]) : '';
-                $cant        = isset($items_cantidad[$i]) ? (float)$items_cantidad[$i] : 0;
-                $precio      = isset($items_precio[$i]) ? (float)$items_precio[$i] : 0;
+                $idP = isset($items_producto[$i]) ? (int)$items_producto[$i] : 0;
+                $desc = isset($items_descripcion[$i]) ? trim($items_descripcion[$i]) : '';
+                $cant = isset($items_cantidad[$i]) ? (float)$items_cantidad[$i] : 0;
+                $prec = isset($items_precio[$i]) ? (float)$items_precio[$i] : 0;
 
-                if ($id_producto > 0 && $cant > 0) {
-                    $subtotal = $cant * $precio;
-                    $monto_neto += $subtotal;
-
+                if ($idP > 0 && $cant > 0) {
+                    $sub = $cant * $prec;
+                    $monto_neto += $sub;
                     if ($desc === '') {
                         foreach ($productos as $prd) {
-                            if ($prd['id'] == $id_producto) { $desc = $prd['nombre']; break; }
+                            if ($prd['id'] == $idP) { $desc = $prd['nombre']; break; }
                         }
                     }
-
-                    $detalleLimpio[] = array(
-                        'id_producto' => $id_producto,
+                    $nuevoDetalle[] = array(
+                        'id_producto' => $idP,
                         'descripcion_item' => $desc,
                         'cantidad' => $cant,
-                        'precio_unitario' => $precio,
-                        'subtotal' => $subtotal
+                        'precio_unitario' => $prec,
+                        'subtotal' => $sub
                     );
                 }
             }
 
-            if (!$detalleLimpio) {
-                $error = 'Debes agregar al menos un producto con cantidad mayor a cero.';
+            if (!$nuevoDetalle) {
+                $error = 'Debes agregar al menos un producto válido.';
             } else {
                 $monto_iva = round($monto_neto * 0.19, 2);
                 $monto_total = $monto_neto + $monto_iva;
@@ -90,38 +98,71 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 try {
                     $pdo->beginTransaction();
 
-                    $stmt = $pdo->prepare("
-                        INSERT INTO facturas 
-                        (id_bodega, id_proveedor, id_orden_compra, numero_oc, numero_factura, fecha_factura, fecha_recepcion,
-                        monto_neto, monto_iva, monto_total, estado, observacion, created_by) 
-                        VALUES (?, ?, NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                    ");
-                    $stmt->execute(array(
-                        $id_bodega, (int)$id_proveedor,
+                    $estabaIngresada = (strtolower($factura['estado']) === 'ingresada');
+
+                    if ($estabaIngresada) {
+                        foreach ($detalleActual as $d) {
+                            if (empty($d['id_producto'])) continue;
+                            $idP = (int)$d['id_producto'];
+                            $cant = (float)$d['cantidad'];
+
+                            $stmtS = $pdo->prepare("SELECT id, stock_actual FROM stock_bodega WHERE id_bodega = ? AND id_producto = ? LIMIT 1");
+                            $stmtS->execute(array($id_bodega, $idP));
+                            $sb = $stmtS->fetch();
+
+                            if (!$sb || (float)$sb['stock_actual'] < $cant) {
+                                $nomStmt = $pdo->prepare("SELECT nombre FROM productos WHERE id = ?");
+                                $nomStmt->execute(array($idP));
+                                $prod = $nomStmt->fetch();
+                                $disp = $sb ? $sb['stock_actual'] : 0;
+                                throw new Exception(
+                                    'No se puede editar: el producto "' . ($prod['nombre'] ?? 'ID ' . $idP) . 
+                                    '" ya fue consumido o trasladado. Stock disponible: ' . $disp . ', requerido para revertir: ' . $cant . '. Anula primero la factura y crea una nueva.'
+                                );
+                            }
+
+                            $pdo->prepare("UPDATE stock_bodega SET stock_actual = stock_actual - ? WHERE id = ?")
+                                ->execute(array($cant, (int)$sb['id']));
+                        }
+
+                        $pdo->prepare("DELETE FROM movimientos_bodega WHERE referencia_tipo = 'factura' AND referencia_id = ?")
+                            ->execute(array($id));
+                    }
+
+                    $pdo->prepare("DELETE FROM facturas_detalle WHERE id_factura = ?")->execute(array($id));
+
+                    $pdo->prepare("
+                        UPDATE facturas SET 
+                        id_proveedor = ?, numero_oc = ?, numero_factura = ?, 
+                        fecha_factura = ?, fecha_recepcion = ?, 
+                        monto_neto = ?, monto_iva = ?, monto_total = ?,
+                        estado = ?, observacion = ?
+                        WHERE id = ?
+                    ")->execute(array(
+                        (int)$id_proveedor,
                         ($numero_oc !== '' ? $numero_oc : null),
                         $numero_factura, $fecha_factura,
                         ($fecha_recepcion !== '' ? $fecha_recepcion : null),
                         $monto_neto, $monto_iva, $monto_total,
                         $estado, $observacion,
-                        isset($_SESSION['user_id']) ? (int)$_SESSION['user_id'] : null
+                        $id
                     ));
-                    $id_factura = $pdo->lastInsertId();
 
-                    $stmtDetalle = $pdo->prepare("INSERT INTO facturas_detalle (id_factura, id_producto, descripcion_item, cantidad, precio_unitario, subtotal) VALUES (?, ?, ?, ?, ?, ?)");
+                    $stmtIns = $pdo->prepare("INSERT INTO facturas_detalle (id_factura, id_producto, descripcion_item, cantidad, precio_unitario, subtotal) VALUES (?, ?, ?, ?, ?, ?)");
                     $stmtMov = $pdo->prepare("
                         INSERT INTO movimientos_bodega (id_bodega, id_producto, tipo_movimiento, cantidad, precio_unitario, total, referencia_tipo, referencia_id, observacion, id_usuario) 
                         VALUES (?, ?, 'entrada_compra', ?, ?, ?, 'factura', ?, ?, ?)
                     ");
 
-                    foreach ($detalleLimpio as $item) {
-                        $stmtDetalle->execute(array($id_factura, $item['id_producto'], $item['descripcion_item'], $item['cantidad'], $item['precio_unitario'], $item['subtotal']));
+                    foreach ($nuevoDetalle as $item) {
+                        $stmtIns->execute(array($id, $item['id_producto'], $item['descripcion_item'], $item['cantidad'], $item['precio_unitario'], $item['subtotal']));
 
                         if ($estado === 'ingresada') {
                             $stmtMov->execute(array(
                                 $id_bodega, $item['id_producto'],
                                 $item['cantidad'], $item['precio_unitario'], $item['subtotal'],
-                                $id_factura,
-                                'Ingreso por factura N° ' . $numero_factura,
+                                $id,
+                                'Ingreso por factura N° ' . $numero_factura . ' (editada)',
                                 isset($_SESSION['user_id']) ? (int)$_SESSION['user_id'] : null
                             ));
 
@@ -140,19 +181,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     }
 
                     $pdo->commit();
-                    set_flash('success', 'Factura registrada. Stock actualizado.');
-                    redirect('facturas_ver.php?id=' . $id_factura);
+                    set_flash('success', 'Factura actualizada correctamente. Stock reajustado.');
+                    redirect('facturas_ver.php?id=' . $id);
 
                 } catch (Exception $e) {
                     $pdo->rollBack();
-                    $error = 'Error al guardar: ' . $e->getMessage();
+                    $error = $e->getMessage();
                 }
             }
         }
     }
+
+    $factura['id_proveedor'] = $id_proveedor;
+    $factura['numero_factura'] = $numero_factura;
+    $factura['numero_oc'] = $numero_oc;
+    $factura['fecha_factura'] = $fecha_factura;
+    $factura['fecha_recepcion'] = $fecha_recepcion;
+    $factura['estado'] = $estado;
+    $factura['observacion'] = $observacion;
 }
 
-// Array JS para búsqueda
+$stmtB = $pdo->prepare("SELECT codigo, nombre FROM bodegas WHERE id = ?");
+$stmtB->execute(array($id_bodega));
+$bodegaInfo = $stmtB->fetch();
+
+// Array JS productos
 $productosJS = array();
 foreach ($productos as $p) {
     $productosJS[] = array(
@@ -165,16 +218,33 @@ foreach ($productos as $p) {
     );
 }
 
-$pageTitle = 'Nueva Factura';
+// Array JS detalle actual para precargar
+$detalleJS = array();
+foreach ($detalleActual as $d) {
+    if ((int)$d['id_producto'] > 0) {
+        $detalleJS[] = array(
+            'id_producto' => (int)$d['id_producto'],
+            'cantidad' => (float)$d['cantidad'],
+            'precio' => (float)$d['precio_unitario']
+        );
+    }
+}
+
+$pageTitle = 'Editar Factura';
 require_once __DIR__ . '/../../inc/header.php';
 ?>
 
 <div class="d-flex justify-content-between align-items-center mb-3">
     <div>
-        <h1 class="h4 mb-0 text-dark fw-bold"><i class="bi bi-receipt text-primary me-2"></i>Ingresar Nueva Factura</h1>
-        <small class="text-muted">Los productos ingresan al stock de la bodega central automáticamente</small>
+        <h1 class="h4 mb-0 text-dark fw-bold"><i class="bi bi-pencil-square text-primary me-2"></i>Editar Factura N° <?php echo h($factura['numero_factura']); ?></h1>
+        <small class="text-muted">Al guardar se revertirá el stock y se recalculará con los nuevos datos</small>
     </div>
-    <a href="facturas_lista.php" class="btn btn-sm btn-outline-secondary"><i class="bi bi-arrow-left me-1"></i> Volver</a>
+    <a href="facturas_ver.php?id=<?php echo $id; ?>" class="btn btn-sm btn-outline-secondary"><i class="bi bi-arrow-left me-1"></i> Cancelar</a>
+</div>
+
+<div class="alert alert-warning py-2 small">
+    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+    <strong>Atención:</strong> Si algún producto original ya fue consumido o trasladado, no podrás editarlo.
 </div>
 
 <?php if ($error): ?>
@@ -190,55 +260,53 @@ require_once __DIR__ . '/../../inc/header.php';
     <div class="card-body p-3">
         <div class="row g-3">
             <div class="col-md-4">
-                <label class="form-label fw-semibold small text-secondary text-uppercase">Bodega Destino</label>
-                <input type="text" class="form-control bg-light" value="<?php echo h($bodegaCentral['nombre']); ?> (<?php echo h($bodegaCentral['codigo']); ?>)" readonly>
-                <small class="text-success"><i class="bi bi-check-circle-fill me-1"></i>Bodega central por defecto</small>
+                <label class="form-label fw-semibold small text-secondary text-uppercase">Bodega</label>
+                <input type="text" class="form-control bg-light" value="<?php echo h($bodegaInfo['nombre']); ?> (<?php echo h($bodegaInfo['codigo']); ?>)" readonly>
             </div>
             <div class="col-md-4">
                 <label class="form-label fw-semibold small text-secondary text-uppercase">Proveedor <span class="text-danger">*</span></label>
                 <select name="id_proveedor" class="form-select" required>
-                    <option value="">Seleccione proveedor...</option>
+                    <option value="">Seleccione...</option>
                     <?php foreach ($proveedores as $p): ?>
-                        <option value="<?php echo (int)$p['id']; ?>" <?php echo (post('id_proveedor') == $p['id']) ? 'selected' : ''; ?>>
-                            <?php echo h($p['razon_social']); ?> <?php echo $p['rut'] ? '- ' . h($p['rut']) : ''; ?>
+                        <option value="<?php echo (int)$p['id']; ?>" <?php echo ($factura['id_proveedor'] == $p['id']) ? 'selected' : ''; ?>>
+                            <?php echo h($p['razon_social']); ?>
                         </option>
                     <?php endforeach; ?>
                 </select>
             </div>
             <div class="col-md-4">
                 <label class="form-label fw-semibold small text-secondary text-uppercase">N° Factura <span class="text-danger">*</span></label>
-                <input type="text" name="numero_factura" value="<?php echo h(post('numero_factura')); ?>" class="form-control" placeholder="Ej: 12345" required>
+                <input type="text" name="numero_factura" value="<?php echo h($factura['numero_factura']); ?>" class="form-control" required>
             </div>
 
             <div class="col-md-3">
                 <label class="form-label fw-semibold small text-secondary text-uppercase">Fecha Emisión <span class="text-danger">*</span></label>
-                <input type="date" name="fecha_factura" value="<?php echo h(post('fecha_factura', date('Y-m-d'))); ?>" class="form-control" required>
+                <input type="date" name="fecha_factura" value="<?php echo h($factura['fecha_factura']); ?>" class="form-control" required>
             </div>
             <div class="col-md-3">
                 <label class="form-label fw-semibold small text-secondary text-uppercase">Fecha Recepción</label>
-                <input type="date" name="fecha_recepcion" value="<?php echo h(post('fecha_recepcion', date('Y-m-d'))); ?>" class="form-control">
+                <input type="date" name="fecha_recepcion" value="<?php echo h($factura['fecha_recepcion']); ?>" class="form-control">
             </div>
             <div class="col-md-3">
-                <label class="form-label fw-semibold small text-secondary text-uppercase">N° OC (ref.)</label>
-                <input type="text" name="numero_oc" value="<?php echo h(post('numero_oc')); ?>" class="form-control" placeholder="Opcional">
+                <label class="form-label fw-semibold small text-secondary text-uppercase">N° OC</label>
+                <input type="text" name="numero_oc" value="<?php echo h($factura['numero_oc']); ?>" class="form-control">
             </div>
             <div class="col-md-3">
                 <label class="form-label fw-semibold small text-secondary text-uppercase">Estado</label>
                 <select name="estado" class="form-select">
-                    <option value="ingresada">Ingresada (afecta stock)</option>
-                    <option value="borrador">Borrador (no afecta)</option>
+                    <option value="ingresada" <?php echo ($factura['estado'] === 'ingresada') ? 'selected' : ''; ?>>Ingresada</option>
+                    <option value="borrador" <?php echo ($factura['estado'] === 'borrador') ? 'selected' : ''; ?>>Borrador</option>
                 </select>
             </div>
 
             <div class="col-12">
                 <label class="form-label fw-semibold small text-secondary text-uppercase">Observación</label>
-                <textarea name="observacion" class="form-control" rows="1" placeholder="Opcional..."><?php echo h(post('observacion')); ?></textarea>
+                <textarea name="observacion" class="form-control" rows="1"><?php echo h($factura['observacion']); ?></textarea>
             </div>
         </div>
     </div>
 </div>
 
-<!-- SELECTOR + DETALLE -->
 <div class="row g-3 mb-3">
     <div class="col-lg-5">
         <div class="card shadow-sm border-0 h-100">
@@ -273,7 +341,7 @@ require_once __DIR__ . '/../../inc/header.php';
             </div>
             <div class="card-body p-0">
                 <div class="table-responsive">
-                    <table class="table table-sm align-middle mb-0" id="tablaDetalle">
+                    <table class="table table-sm align-middle mb-0">
                         <thead class="table-light">
                             <tr class="small text-secondary text-uppercase">
                                 <th class="px-2" style="width: 40%;">Producto</th>
@@ -284,10 +352,10 @@ require_once __DIR__ . '/../../inc/header.php';
                             </tr>
                         </thead>
                         <tbody id="detalleBody">
-                            <tr id="filaVacia">
+                            <tr id="filaVacia" style="display:none;">
                                 <td colspan="5" class="text-center py-5 text-muted">
                                     <i class="bi bi-arrow-left-circle display-5 d-block mb-2 opacity-50"></i>
-                                    Busca productos en el panel izquierdo y agrégalos
+                                    Busca productos en el panel izquierdo
                                 </td>
                             </tr>
                         </tbody>
@@ -315,8 +383,9 @@ require_once __DIR__ . '/../../inc/header.php';
                     <span class="fw-bold text-dark">Total:</span>
                     <span class="fw-bold text-primary">$ <span id="resumenTotal">0</span></span>
                 </div>
-                <button type="submit" class="btn btn-primary w-100 mt-3 py-2 fw-semibold" id="btnGuardar">
-                    <i class="bi bi-check-circle me-2"></i>Registrar e Ingresar a Stock
+                <button type="submit" class="btn btn-primary w-100 mt-3 py-2 fw-semibold"
+                    onclick="return confirm('¿Guardar cambios?\n\nSe revertirá el stock anterior y se recalculará.');">
+                    <i class="bi bi-check-circle me-2"></i>Guardar cambios
                 </button>
             </div>
         </div>
@@ -326,12 +395,7 @@ require_once __DIR__ . '/../../inc/header.php';
 </form>
 
 <style>
-.producto-item {
-    cursor: pointer;
-    transition: background .15s;
-    padding: 6px 10px;
-    border-bottom: 1px solid #e9ecef;
-}
+.producto-item { cursor: pointer; transition: background .15s; padding: 6px 10px; border-bottom: 1px solid #e9ecef; }
 .producto-item:hover { background: #e7f1ff; }
 .producto-item.ya-agregado { background: #d1e7dd; }
 .producto-item .btn-add { opacity: 0.7; transition: all .15s; font-size: 1.35rem; }
@@ -342,6 +406,7 @@ kbd { background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 3px; paddin
 <script>
 (function() {
     var PRODUCTOS = <?php echo json_encode($productosJS); ?>;
+    var DETALLE_INICIAL = <?php echo json_encode($detalleJS); ?>;
     var buscador = document.getElementById('buscadorProducto');
     var btnLimpiar = document.getElementById('btnLimpiarBuscador');
     var listaDiv = document.getElementById('listaProductos');
@@ -410,7 +475,7 @@ kbd { background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 3px; paddin
         return null;
     }
 
-    function agregarProducto(id) {
+    function agregarProducto(id, cantidadInicial, precioInicial) {
         var p = buscarProducto(id);
         if (!p) return;
 
@@ -424,6 +489,9 @@ kbd { background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 3px; paddin
 
         if (filaVacia) filaVacia.style.display = 'none';
 
+        var cant = cantidadInicial !== undefined ? cantidadInicial : 1;
+        var prec = precioInicial !== undefined ? precioInicial : (p.ultimo_costo || 0);
+
         var tr = document.createElement('tr');
         tr.setAttribute('data-pid', id);
         tr.innerHTML = ''
@@ -434,8 +502,8 @@ kbd { background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 3px; paddin
             + '<div class="small fw-semibold text-dark text-truncate" style="max-width:260px;" title="' + escapeHtml(p.nombre) + '">' + escapeHtml(p.nombre) + '</div>'
             + '<div class="small text-muted">' + (p.unidad ? escapeHtml(p.unidad) : '—') + '</div>'
             + '</td>'
-            + '<td><input type="number" step="0.01" min="0.01" name="item_cantidad[]" value="1" class="form-control form-control-sm item-cantidad text-end"></td>'
-            + '<td><input type="number" step="0.01" min="0" name="item_precio[]" value="' + (p.ultimo_costo || 0) + '" class="form-control form-control-sm item-precio text-end"></td>'
+            + '<td><input type="number" step="0.01" min="0.01" name="item_cantidad[]" value="' + cant + '" class="form-control form-control-sm item-cantidad text-end"></td>'
+            + '<td><input type="number" step="0.01" min="0" name="item_precio[]" value="' + prec + '" class="form-control form-control-sm item-precio text-end"></td>'
             + '<td class="text-end fw-bold item-subtotal">0</td>'
             + '<td class="text-center px-2"><button type="button" class="btn btn-sm btn-outline-danger btn-eliminar-fila" title="Quitar"><i class="bi bi-x-lg"></i></button></td>';
 
@@ -453,7 +521,7 @@ kbd { background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 3px; paddin
         };
 
         recalcularFila(tr);
-        destacarFila(tr);
+        if (cantidadInicial === undefined) destacarFila(tr);
         renderLista(buscador.value);
     }
 
@@ -524,7 +592,13 @@ kbd { background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 3px; paddin
         }
     });
 
+    // PRECARGAR DETALLE EXISTENTE
+    for (var k = 0; k < DETALLE_INICIAL.length; k++) {
+        agregarProducto(DETALLE_INICIAL[k].id_producto, DETALLE_INICIAL[k].cantidad, DETALLE_INICIAL[k].precio);
+    }
+
     renderLista('');
+    if (Object.keys(agregados).length === 0 && filaVacia) filaVacia.style.display = '';
     setTimeout(function() { buscador.focus(); }, 100);
 })();
 </script>
