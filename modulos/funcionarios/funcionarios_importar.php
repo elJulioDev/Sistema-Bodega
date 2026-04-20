@@ -46,7 +46,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['archivo_csv'])) {
         $unidadMap = array();
         $rs = $pdo->query("SELECT id, codigo, nombre FROM unidades_organizacionales WHERE estado = 1");
         foreach ($rs as $u) {
-            $key = normalizar_texto($u['nombre']);
+            $key = _normalizar_texto($u['nombre']);
             $unidadMap[$key] = (int)$u['id'];
             $unidadMap[strtolower($u['codigo'])] = (int)$u['id'];
         }
@@ -56,6 +56,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['archivo_csv'])) {
         $insertados = 0;
         $actualizados = 0;
         $omitidos = 0;
+        $usuariosCreados = 0;
         $errores = array();
 
         try {
@@ -63,25 +64,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['archivo_csv'])) {
             $stmtInsert = $pdo->prepare("INSERT INTO funcionarios (codigo, rut, nombre, id_unidad, cargo, programa, estado)
                                          VALUES (?, ?, ?, ?, ?, ?, 1)");
             $stmtUpdate = $pdo->prepare("UPDATE funcionarios SET codigo=?, nombre=?, id_unidad=?, cargo=?, programa=? WHERE rut=?");
-            
-            // Agregar junto a los otros prepare, antes del while:
+
+            // Busca usuario por RUT (campo usuario) O por id_funcionario
             $stmtChkUsuario = $pdo->prepare("SELECT id FROM usuarios WHERE usuario = ? LIMIT 1");
             $stmtInsertUsuario = $pdo->prepare("
                 INSERT INTO usuarios
                     (id_funcionario, nombre, email, usuario, clave_hash, rol, id_unidad, id_bodega, estado)
                 VALUES (?, ?, NULL, ?, ?, 'solicitante', ?, NULL, 1)
             ");
+            // Actualiza id_funcionario si el usuario ya existe pero apunta a funcionario eliminado
+            $stmtLinkUsuario = $pdo->prepare("UPDATE usuarios SET id_funcionario=?, id_unidad=? WHERE usuario=?");
 
             while (($datos = fgetcsv($f, 2000, ';')) !== FALSE) {
                 $fila++;
                 if (empty(array_filter($datos))) continue;
 
-                // --- INICIO SOLUCIÓN: Forzar conversión a UTF-8 ---
                 $datos = array_map(function($valor) {
-                    // Intenta convertir a UTF-8 desde formatos comunes de Excel/Windows
                     return mb_convert_encoding(trim($valor), 'UTF-8', 'UTF-8, ISO-8859-1, Windows-1252');
                 }, $datos);
-                // --- FIN SOLUCIÓN ---
 
                 if (count($datos) < 6) {
                     $errores[] = "Fila $fila: debe tener 6 columnas.";
@@ -89,13 +89,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['archivo_csv'])) {
                     continue;
                 }
 
-                // Ya no es necesario usar trim() aquí porque se aplicó en el array_map
-                $codigo      = $datos[0];
-                $rut         = $datos[1];
-                $nombre      = $datos[2];
-                $unidadTxt   = $datos[3];
-                $cargo       = $datos[4];
-                $programa    = $datos[5];
+                $codigo    = $datos[0];
+                $rut       = $datos[1];
+                $nombre    = $datos[2];
+                $unidadTxt = $datos[3];
+                $cargo     = $datos[4];
+                $programa  = $datos[5];
 
                 if ($rut === '' || $nombre === '') {
                     $errores[] = "Fila $fila: RUT y nombre son obligatorios.";
@@ -106,7 +105,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['archivo_csv'])) {
                 // Mapear unidad
                 $id_unidad = null;
                 if ($unidadTxt !== '') {
-                    $key = normalizar_texto($unidadTxt);
+                    $key = _normalizar_texto($unidadTxt);
                     if (isset($unidadMap[$key])) {
                         $id_unidad = $unidadMap[$key];
                     } else {
@@ -114,36 +113,45 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['archivo_csv'])) {
                     }
                 }
 
-                // Existe ya?
+                // ¿Existe el funcionario?
                 $stmtCheck->execute(array($rut));
-                $existe = $stmtCheck->fetch();
+                $existe = $stmtCheck->fetch(PDO::FETCH_ASSOC);
+                $stmtCheck->closeCursor(); // [FIX] cerrar cursor antes de continuar
 
                 if ($existe) {
                     $stmtUpdate->execute(array($codigo, $nombre, $id_unidad, $cargo, $programa, $rut));
                     $actualizados++;
-
-                    // Auto-crear usuario si todavía no tiene acceso
-                    $stmtChkUsuario->execute(array($rut));
-                    if (!$stmtChkUsuario->fetch()) {
-                        $claveAuto = ($codigo !== '') ? $codigo : $rut;
-                        $hashAuto  = password_hash($claveAuto, PASSWORD_BCRYPT);
-                        $stmtInsertUsuario->execute(array(
-                            (int)$existe['id'], $nombre, $rut, $hashAuto, $id_unidad
-                        ));
-                    }
+                    $idFuncionario = (int)$existe['id'];
                 } else {
                     $stmtInsert->execute(array($codigo, $rut, $nombre, $id_unidad, $cargo, $programa));
-                    $idFuncNuevo = (int)$pdo->lastInsertId();
+                    $idFuncionario = (int)$pdo->lastInsertId();
                     $insertados++;
+                }
 
-                    // Auto-crear usuario con rol solicitante
-                    $stmtChkUsuario->execute(array($rut));
-                    if (!$stmtChkUsuario->fetch()) {
-                        $claveAuto = ($codigo !== '') ? $codigo : $rut;
-                        $hashAuto  = password_hash($claveAuto, PASSWORD_BCRYPT);
-                        $stmtInsertUsuario->execute(array(
-                            $idFuncNuevo, $nombre, $rut, $hashAuto, $id_unidad
-                        ));
+                // ¿Ya tiene cuenta de usuario?
+                $stmtChkUsuario->execute(array($rut));
+                $usuarioExiste = $stmtChkUsuario->fetch(PDO::FETCH_ASSOC);
+                $stmtChkUsuario->closeCursor(); // [FIX] cerrar cursor
+
+                $claveAuto = ($codigo !== '') ? $codigo : $rut;
+                $hashAuto  = password_hash($claveAuto, PASSWORD_BCRYPT);
+
+                if (!$usuarioExiste) {
+                    // Crear cuenta nueva
+                    $ok = $stmtInsertUsuario->execute(array(
+                        $idFuncionario, $nombre, $rut, $hashAuto, $id_unidad
+                    ));
+                    if ($ok) {
+                        $usuariosCreados++;
+                    } else {
+                        // [FIX] capturar error silencioso de PDO
+                        $info = $stmtInsertUsuario->errorInfo();
+                        $errores[] = "Fila $fila: no se pudo crear usuario ($rut): " . $info[2];
+                    }
+                } else {
+                    // [FIX] Re-vincular si el id_funcionario quedó huérfano (ej: DB fue limpiada parcialmente)
+                    if ((int)$usuarioExiste['id'] !== $idFuncionario) {
+                        $stmtLinkUsuario->execute(array($idFuncionario, $id_unidad, $rut));
                     }
                 }
             }
@@ -152,10 +160,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['archivo_csv'])) {
             fclose($f);
 
             $resultado = array(
-                'insertados'   => $insertados,
-                'actualizados' => $actualizados,
-                'omitidos'     => $omitidos,
-                'errores'      => $errores
+                'insertados'      => $insertados,
+                'actualizados'    => $actualizados,
+                'omitidos'        => $omitidos,
+                'usuariosCreados' => $usuariosCreados,
+                'errores'         => $errores
             );
 
         } catch (Exception $e) {
@@ -167,8 +176,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['archivo_csv'])) {
 }
 
 // Helper para normalizar texto (remueve acentos, minusculas)
-function normalizar_texto($txt) {
-    // Especificar explícitamente 'UTF-8' aquí
+// Prefijo _normalizar_texto para evitar colision con functions.php
+function _normalizar_texto($txt) {
     $txt = mb_strtolower(trim($txt), 'UTF-8');
     $txt = str_replace(
         array('á','é','í','ó','ú','ñ','Á','É','Í','Ó','Ú','Ñ'),
@@ -208,6 +217,7 @@ require_once __DIR__ . '/../../inc/header.php';
                             <li><strong><?php echo $resultado['insertados']; ?></strong> funcionarios nuevos insertados</li>
                             <li><strong><?php echo $resultado['actualizados']; ?></strong> funcionarios existentes actualizados (por RUT)</li>
                             <li><strong><?php echo $resultado['omitidos']; ?></strong> filas omitidas</li>
+                            <li><strong><?php echo $resultado['usuariosCreados']; ?></strong> cuentas de acceso creadas</li>
                         </ul>
                     </div>
 
@@ -251,7 +261,8 @@ require_once __DIR__ . '/../../inc/header.php';
                     <li class="mb-2">Descarga la plantilla CSV con las columnas correctas.</li>
                     <li class="mb-2">Completa los datos respetando los nombres exactos de las unidades.</li>
                     <li class="mb-2">Si un RUT ya existe, se actualizarán sus datos (no se duplica).</li>
-                    <li>Sube el archivo y procesa.</li>
+                    <li class="mb-2">Cada funcionario recibe acceso automático con rol <strong>solicitante</strong>.</li>
+                    <li>La contraseña inicial es el <strong>código RRHH</strong> (o el RUT si no tiene código).</li>
                 </ol>
 
                 <a href="?plantilla=1" class="btn btn-outline-success w-100 mb-3">
@@ -262,8 +273,8 @@ require_once __DIR__ . '/../../inc/header.php';
 
                 <h6 class="fw-bold text-dark mb-2 small">Columnas requeridas</h6>
                 <ul class="small text-muted ps-3 mb-0">
-                    <li><code>Codigo</code> — Código interno RRHH</li>
-                    <li><code>RUT</code> — Formato 12345678-9 (obligatorio)</li>
+                    <li><code>Codigo</code> — Código interno RRHH (contraseña inicial)</li>
+                    <li><code>RUT</code> — Formato 12345678-9 (nombre de usuario)</li>
                     <li><code>Nombre</code> — Nombre completo (obligatorio)</li>
                     <li><code>Unidad</code> — Nombre exacto o código</li>
                     <li><code>Cargo</code> — Cargo del funcionario</li>
