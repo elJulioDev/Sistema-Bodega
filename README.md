@@ -26,8 +26,8 @@ Es el rol de superusuario con acceso global a las configuraciones y mantenedores
 
 ### 2. Encargado de Bodega (`bodega`)
 Rol operativo enfocado en el manejo físico y lógico del inventario.
-* **Módulos Permitidos:** Stock, Movimientos (Entradas/Salidas) y Solicitudes.
-* **Funciones:** Revisar el stock disponible, registrar los movimientos diarios de los productos y aprobar/despachar las solicitudes de materiales.
+* **Módulos Permitidos:** Stock, Movimientos (Entradas/Salidas/Traslados) y Solicitudes.
+* **Funciones:** Revisar el stock disponible, registrar los movimientos diarios de los productos, gestionar traslados entre bodegas y aprobar/despachar las solicitudes de materiales.
 
 ### 3. Solicitante (`solicitante`)
 Rol destinado a los funcionarios que requieren pedir materiales a la bodega.
@@ -46,10 +46,15 @@ Rol destinado a los funcionarios que requieren pedir materiales a la bodega.
 
 ### Módulos Operativos (Admin y Encargado)
 * **Stock:** Tablero en tiempo real que refleja las cantidades actuales de cada producto por bodega.
-* **Movimientos:** Historial donde se registran las entradas (ingresos por compra) y las salidas (entregas por solicitud).
+* **Movimientos y Ajustes:** Historial donde se registran las entradas (ingresos por compra), las salidas (entregas por solicitud) y los ajustes de inventario.
 
 ### Módulos de Flujo (Todos los roles)
-* **Solicitudes:** El corazón del autoservicio. Los *Solicitantes* generan listas de productos requeridos. Los *Encargados* reciben la alerta, preparan el pedido y al confirmar la entrega, el sistema genera automáticamente un *Movimiento* de salida, descontando el *Stock*.
+* **Solicitudes de Consumo (Mejorado):** El corazón del autoservicio. Los *Solicitantes* generan listas de productos requeridos. El flujo incluye características avanzadas:
+  * **Sistema de Caducidad:** Las solicitudes tienen un plazo límite para ser gestionadas (por defecto 3 días). Si se supera la fecha límite sin respuesta, pasan automáticamente a estado *Caducada*.
+  * **Aprobaciones Parciales y Ajustes:** Los encargados pueden aprobar o rechazar de manera individual cada ítem solicitado, ajustando las cantidades a entregar y justificando el motivo, permitiendo que una solicitud general quede *Procesada Parcialmente*.
+  * **Trazabilidad (Logs):** Cada interacción (creación, revisión, rechazo o proceso) genera un registro de auditoría automático que guarda la fecha, el usuario y la acción realizada.
+  * **Despacho Automatizado:** Al confirmar la entrega, el sistema genera automáticamente un movimiento de salida, descontando el stock.
+* **Solicitudes de Traslado:** Permite a las bodegas solicitar el movimiento de mercadería hacia otras bodegas o unidades, manteniendo un ciclo de aprobación propio (borrador, pendiente, aprobada, ejecutada) y previniendo errores de transferencias a la misma bodega de origen.
 
 ---
 
@@ -78,5 +83,5 @@ La variable global `current_user()` almacena la sesión actual con todos los cam
 - [ ] **Módulo de Reportes:** Creación de dashboards gráficos con métricas de consumo por unidad, productos más solicitados y proyecciones de quiebre de stock.
 - [ ] **Alertas de Stock Crítico:** Implementar notificaciones visuales (y por correo) cuando un producto alcance su nivel de stock mínimo definido.
 - [ ] **Exportación de Datos:** Añadir botones para exportar tablas (Stock, Movimientos, Facturas) a formatos Excel y PDF.
-- [ ] **Auditoría Avanzada (Logs):** Crear un registro (bitácora) invisible que guarde qué usuario creó, editó o eliminó un registro específico junto con la fecha y hora.
+- [ ] **Auditoría Avanzada Global:** Extender la bitácora invisible (actualmente operativa en Solicitudes) para guardar qué usuario creó, editó o eliminó registros en todas las tablas del sistema.
 - [ ] **Gestión de Devoluciones:** Implementar un flujo para que los solicitantes devuelvan materiales no utilizados a la bodega y el stock se reintegre.

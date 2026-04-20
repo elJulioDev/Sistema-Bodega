@@ -1,4 +1,9 @@
 <?php
+/**
+ * solicitudes_crear.php
+ * Muestra stock libre (stock_actual - reservado en solicitudes pendientes).
+ * Permite seleccionar días límite para aprobación (1–7, default 3).
+ */
 require_once __DIR__ . '/../../inc/db.php';
 require_once __DIR__ . '/../../inc/auth.php';
 require_once __DIR__ . '/../../inc/functions.php';
@@ -6,104 +11,110 @@ require_once __DIR__ . '/../../inc/functions.php';
 require_login();
 require_role(array('admin', 'bodega', 'solicitante'));
 
-$error = '';
+$user  = current_user();
+$miUid = (int)$user['id'];
 
-// ============================================================
-// DESTINO SEGUN ROL
-// ============================================================
-// - Encargado: destino = su bodega (bloqueado)
-// - Solicitante: destino = bodega de su unidad (bloqueado)
-// - Admin: destino libre
-$destinoFijo     = null;   // array bodega si esta bloqueado
-$destinoFijoId   = 0;
-$destinoLabel    = '';
+// ── Destino fijo para encargado / solicitante ───────────────
+$destinoFijo   = null;
+$destinoFijoId = 0;
 
-if (is_encargado()) {
-    $destinoFijoId = user_bodega_id();
-    if ($destinoFijoId <= 0) {
-        set_flash('error', 'Tu usuario no tiene una bodega asignada. Contacta al administrador.');
-        redirect('/Bodega/index.php');
+if (is_encargado() || is_solicitante()) {
+    $uniId = (int)(isset($user['id_unidad']) ? $user['id_unidad'] : 0);
+
+    if (is_encargado()) {
+        $bid = user_bodega_id();
+        $stmt = $pdo->prepare("SELECT id, codigo, nombre FROM bodegas WHERE id = ? AND estado = 1 LIMIT 1");
+        $stmt->execute(array($bid));
+        $destinoFijo = $stmt->fetch();
+        $destinoFijoId = $destinoFijo ? (int)$destinoFijo['id'] : 0;
+    } elseif ($uniId > 0) {
+        $stmt = $pdo->prepare("SELECT id, codigo, nombre FROM bodegas WHERE id_unidad = ? AND estado = 1 LIMIT 1");
+        $stmt->execute(array($uniId));
+        $destinoFijo = $stmt->fetch();
+        $destinoFijoId = $destinoFijo ? (int)$destinoFijo['id'] : 0;
     }
-    $stmt = $pdo->prepare("SELECT id, codigo, nombre FROM bodegas WHERE id = ? AND estado = 1 LIMIT 1");
-    $stmt->execute(array($destinoFijoId));
-    $destinoFijo = $stmt->fetch();
-    $destinoLabel = 'Tu bodega';
-}
-elseif (is_solicitante()) {
-    $uniId = user_unidad_id();
-    if ($uniId <= 0) {
-        set_flash('error', 'Tu usuario no tiene una unidad asignada. Contacta al administrador.');
-        redirect('/Bodega/index.php');
-    }
-    $stmt = $pdo->prepare("SELECT id, codigo, nombre FROM bodegas WHERE id_unidad = ? AND estado = 1 LIMIT 1");
-    $stmt->execute(array($uniId));
-    $destinoFijo = $stmt->fetch();
+
     if (!$destinoFijo) {
-        set_flash('error', 'Tu unidad no tiene una bodega asociada. Contacta al administrador.');
+        set_flash('error', 'Tu unidad/bodega no tiene destino configurado. Contacta al administrador.');
         redirect('/Bodega/index.php');
     }
-    $destinoFijoId = (int)$destinoFijo['id'];
-    $destinoLabel  = 'Bodega de tu unidad';
 }
 
-// ============================================================
-// BODEGAS (para origen y, si admin, destino)
-// ============================================================
+// ── Bodegas origen ──────────────────────────────────────────
 $bodegas = $pdo->query("
     SELECT id, codigo, nombre
-    FROM bodegas
-    WHERE estado = 1
-    ORDER BY (codigo='CENTRAL') DESC, nombre ASC
+    FROM   bodegas
+    WHERE  estado = 1
+    ORDER  BY (codigo = 'CENTRAL') DESC, nombre ASC
 ")->fetchAll();
 
-// Bodega central (sugerencia de origen por defecto)
 $idCentral = 0;
 foreach ($bodegas as $b) {
     if ($b['codigo'] === 'CENTRAL') { $idCentral = (int)$b['id']; break; }
 }
 
-// ============================================================
-// PRODUCTOS + MAPA DE STOCK POR BODEGA
-// ============================================================
+// ── Productos ───────────────────────────────────────────────
 $productos = $pdo->query("
     SELECT p.id, p.codigo, p.nombre,
            um.nombre AS unidad_nombre,
            tp.nombre AS tipo_nombre
-    FROM productos p
-    LEFT JOIN unidades_medida um ON um.id = p.id_unidad_medida
-    LEFT JOIN tipos_producto tp  ON tp.id = p.id_tipo_producto
-    WHERE p.estado = 1 AND p.controla_stock = 1
-    ORDER BY p.nombre ASC
+    FROM   productos p
+    LEFT   JOIN unidades_medida um ON um.id = p.id_unidad_medida
+    LEFT   JOIN tipos_producto  tp ON tp.id = p.id_tipo_producto
+    WHERE  p.estado = 1 AND p.controla_stock = 1
+    ORDER  BY p.nombre ASC
 ")->fetchAll();
 
+// ── Stock real por bodega ───────────────────────────────────
 $stockRows = $pdo->query("
     SELECT id_bodega, id_producto, stock_actual, costo_promedio
-    FROM stock_bodega
+    FROM   stock_bodega
 ")->fetchAll();
 
 $stockMap = array();
 foreach ($stockRows as $r) {
     $bi = (int)$r['id_bodega'];
     $pi = (int)$r['id_producto'];
-    if (!isset($stockMap[$bi])) { $stockMap[$bi] = array(); }
+    if (!isset($stockMap[$bi])) $stockMap[$bi] = array();
     $stockMap[$bi][$pi] = array(
         'stock' => (float)$r['stock_actual'],
-        'costo' => (float)$r['costo_promedio']
+        'costo' => (float)$r['costo_promedio'],
     );
 }
 
-// ============================================================
-// POST
-// ============================================================
+// ── Stock reservado por bodega (solicitudes pendientes) ─────
+// Para cada bodega origen, qué cantidades ya están comprometidas
+// en solicitudes pendientes / en_revision aún no ejecutadas.
+$reservadoRows = $pdo->query("
+    SELECT s.id_bodega_origen, sd.id_producto, SUM(sd.cantidad) AS reservado
+    FROM   solicitudes_detalle sd
+    INNER  JOIN solicitudes s ON s.id = sd.id_solicitud
+    WHERE  s.estado IN ('pendiente', 'en_revision')
+      AND  (sd.estado IS NULL OR sd.estado = 'pendiente')
+    GROUP  BY s.id_bodega_origen, sd.id_producto
+")->fetchAll();
+
+$reservadoMap = array(); // [id_bodega][id_producto] = qty_reservada
+foreach ($reservadoRows as $r) {
+    $bi = (int)$r['id_bodega_origen'];
+    $pi = (int)$r['id_producto'];
+    if (!isset($reservadoMap[$bi])) $reservadoMap[$bi] = array();
+    $reservadoMap[$bi][$pi] = (float)$r['reservado'];
+}
+
+// ── POST: guardar solicitud ─────────────────────────────────
+$error = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $id_origen  = (int)post('id_bodega_origen');
     $id_destino = (int)post('id_bodega_destino');
     $motivo     = trim(post('observacion'));
+    $dias_lim   = (int)post('dias_limite');
+    if ($dias_lim < 1 || $dias_lim > 7) $dias_lim = 3;
+
     $items_prod = isset($_POST['item_id_producto']) ? $_POST['item_id_producto'] : array();
     $items_cant = isset($_POST['item_cantidad'])    ? $_POST['item_cantidad']    : array();
     $items_obs  = isset($_POST['item_obs'])         ? $_POST['item_obs']         : array();
 
-    // Forzar destino segun rol
     if (is_encargado() || is_solicitante()) {
         $id_destino = $destinoFijoId;
     }
@@ -113,11 +124,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } elseif ($id_destino <= 0) {
         $error = 'Bodega destino no definida.';
     } elseif ($id_origen === $id_destino) {
-        $error = 'La bodega origen y destino no pueden ser la misma.';
+        $error = 'Bodega origen y destino no pueden ser la misma.';
     } elseif ($motivo === '') {
         $error = 'Debes ingresar un motivo para la solicitud.';
     } else {
-        // Construir detalle limpio
         $detalle = array();
         $n = count($items_prod);
         for ($i = 0; $i < $n; $i++) {
@@ -132,18 +142,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (!$detalle) {
             $error = 'Agrega al menos un producto con cantidad válida.';
         } else {
+            // Advertir si algún ítem supera stock libre
+            $advertencias = array();
+            foreach ($detalle as $d) {
+                $stockReal = isset($stockMap[$id_origen][$d['p']]) ? $stockMap[$id_origen][$d['p']]['stock'] : 0;
+                $reservado = isset($reservadoMap[$id_origen][$d['p']]) ? $reservadoMap[$id_origen][$d['p']] : 0;
+                $libre     = max(0, $stockReal - $reservado);
+                if ($d['c'] > $libre) {
+                    // Solo advertir, no bloquear (el encargado decide al aprobar)
+                    $advertencias[] = $d['p'];
+                }
+            }
+
             try {
                 $pdo->beginTransaction();
-                $uid = isset($_SESSION['user_id']) ? (int)$_SESSION['user_id'] : null;
+
+                $fechaLimite = date('Y-m-d', strtotime('+' . $dias_lim . ' days'));
 
                 $pdo->prepare("
                     INSERT INTO solicitudes
-                        (numero_solicitud, id_bodega_origen, id_bodega_destino, id_usuario, observacion)
-                    VALUES ('PENDIENTE', ?, ?, ?, ?)
-                ")->execute(array($id_origen, $id_destino, $uid, $motivo));
+                        (numero_solicitud, id_bodega_origen, id_bodega_destino,
+                         id_usuario, observacion, dias_limite, fecha_limite)
+                    VALUES ('PENDIENTE', ?, ?, ?, ?, ?, ?)
+                ")->execute(array($id_origen, $id_destino, $miUid, $motivo, $dias_lim, $fechaLimite));
 
-                $id_sol = (int)$pdo->lastInsertId();
-                $numero = 'SOL-' . date('Y') . '-' . str_pad($id_sol, 5, '0', STR_PAD_LEFT);
+                $id_sol  = (int)$pdo->lastInsertId();
+                $numero  = 'SOL-' . date('Y') . '-' . str_pad($id_sol, 5, '0', STR_PAD_LEFT);
                 $pdo->prepare("UPDATE solicitudes SET numero_solicitud = ? WHERE id = ?")
                     ->execute(array($numero, $id_sol));
 
@@ -155,8 +179,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $stmtD->execute(array($id_sol, $d['p'], $d['c'], $d['obs']));
                 }
 
+                // Log creación
+                $pdo->prepare("INSERT INTO solicitudes_log (id_solicitud, id_usuario, accion, detalle) VALUES (?,?,?,?)")
+                    ->execute(array(
+                        $id_sol, $miUid, 'creada',
+                        'Fecha límite: ' . date('d/m/Y', strtotime($fechaLimite)) . ' (' . $dias_lim . ' días)'
+                    ));
+
                 $pdo->commit();
-                set_flash('success', 'Solicitud ' . $numero . ' enviada. Queda pendiente de aprobación.');
+
+                $msg = 'Solicitud ' . $numero . ' enviada. Vence el '
+                     . date('d/m/Y', strtotime($fechaLimite)) . '.';
+                if ($advertencias) {
+                    $msg .= ' ⚠️ Algunos productos tienen stock reservado: el encargado revisará disponibilidad al aprobar.';
+                }
+                set_flash('success', $msg);
                 redirect('solicitudes_lista.php');
 
             } catch (Exception $e) {
@@ -183,139 +220,151 @@ require_once __DIR__ . '/../../inc/header.php';
         </h1>
         <p class="text-muted mb-0 small mt-1">
             <?php if (is_encargado() || is_solicitante()): ?>
-                Solicita productos desde otra bodega hacia <strong><?php echo h($destinoFijo['nombre']); ?></strong>.
+                Solicita productos hacia <strong><?php echo h($destinoFijo['nombre']); ?></strong>.
             <?php else: ?>
                 Crea una solicitud de traslado entre bodegas.
             <?php endif; ?>
         </p>
     </div>
-    <a href="solicitudes_lista.php" class="btn btn-outline-secondary">
-        <i class="bi bi-arrow-left me-1"></i> Cancelar
-    </a>
 </div>
 
-<?php if ($error !== ''): ?>
-    <div class="alert alert-danger d-flex align-items-start">
-        <i class="bi bi-exclamation-triangle-fill me-2 mt-1"></i>
-        <div><?php echo h($error); ?></div>
-    </div>
+<?php if ($error): ?>
+    <div class="alert alert-danger"><i class="bi bi-exclamation-triangle me-2"></i><?php echo h($error); ?></div>
 <?php endif; ?>
 
-<form method="post" id="formSolicitud" autocomplete="off">
+<!-- Aviso stock reservado -->
+<div class="alert alert-info d-flex gap-2 align-items-start border-0 shadow-sm mb-4" id="alertaReservado" style="display:none!important">
+    <i class="bi bi-info-circle-fill fs-5 flex-shrink-0 mt-1"></i>
+    <div>
+        <strong>Stock con reservas activas</strong> — el stock libre mostrado descuenta cantidades comprometidas
+        en solicitudes pendientes de otros funcionarios. La cantidad disponible puede variar si esas solicitudes
+        se aprueban o caducan antes que la tuya.
+    </div>
+</div>
 
-    <!-- PASO 1: ORIGEN -> DESTINO + MOTIVO -->
-    <div class="card shadow-sm border-0 mb-4">
-        <div class="card-header bg-white border-0 pt-3 pb-0 d-flex align-items-center">
-            <span class="badge bg-primary rounded-circle me-2" style="width:28px;height:28px;line-height:20px;">1</span>
-            <h5 class="mb-0 fw-bold">¿Desde dónde y por qué motivo?</h5>
+<form method="post" id="formSolicitud">
+
+    <!-- PASO 1: Origen / Destino / Motivo / Días límite -->
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-header bg-white py-3">
+            <h6 class="mb-0 fw-bold">
+                <span class="badge bg-primary rounded-circle me-2">1</span> Datos de la solicitud
+            </h6>
         </div>
         <div class="card-body">
-            <div class="row g-3 align-items-stretch">
+            <div class="row g-3">
 
-                <!-- ORIGEN -->
-                <div class="col-md-5">
-                    <label class="form-label fw-bold text-primary small text-uppercase" style="letter-spacing:.5px;">
-                        <i class="bi bi-box-arrow-up-right me-1"></i>Bodega Origen (de dónde saco)
-                    </label>
-                    <select name="id_bodega_origen" id="selOrigen" class="form-select form-select-lg" required>
-                        <option value="">Seleccione una bodega…</option>
-                        <?php foreach ($bodegas as $b):
-                            // Excluir bodega destino si esta bloqueada
-                            if ($destinoFijoId > 0 && (int)$b['id'] === $destinoFijoId) continue;
-                            $sel = ((int)post('id_bodega_origen') === (int)$b['id'] || (!post('id_bodega_origen') && $idCentral === (int)$b['id']));
-                        ?>
-                            <option value="<?php echo (int)$b['id']; ?>" <?php echo $sel ? 'selected' : ''; ?>>
-                                <?php echo h($b['nombre'] . ' (' . $b['codigo'] . ')'); ?>
-                                <?php echo ($b['codigo'] === 'CENTRAL') ? ' ★' : ''; ?>
+                <!-- Bodega origen -->
+                <div class="col-md-<?php echo (is_encargado() || is_solicitante()) ? '6' : '4'; ?>">
+                    <label class="form-label fw-semibold">Bodega Origen <span class="text-danger">*</span></label>
+                    <select name="id_bodega_origen" id="selOrigen" class="form-select" required>
+                        <option value="">— Seleccionar —</option>
+                        <?php foreach ($bodegas as $b): ?>
+                            <option value="<?php echo (int)$b['id']; ?>"
+                                <?php echo ((int)$b['id'] === $idCentral) ? ' selected' : ''; ?>>
+                                <?php echo h($b['nombre']); ?>
+                                <?php echo ((int)$b['id'] === $idCentral) ? ' ★' : ''; ?>
                             </option>
                         <?php endforeach; ?>
                     </select>
-                    <div class="form-text"><i class="bi bi-info-circle me-1"></i>Solo verás productos con stock disponible aquí.</div>
                 </div>
 
-                <div class="col-md-2 d-flex flex-column align-items-center justify-content-center">
-                    <i class="bi bi-arrow-right-circle-fill text-primary" style="font-size:2.5rem;"></i>
-                    <span class="small text-muted fw-bold">SOLICITA</span>
-                </div>
-
-                <!-- DESTINO -->
-                <div class="col-md-5">
-                    <label class="form-label fw-bold text-success small text-uppercase" style="letter-spacing:.5px;">
-                        <i class="bi bi-box-arrow-in-down-left me-1"></i>Bodega Destino (a dónde llega)
-                    </label>
-
+                <!-- Bodega destino -->
+                <div class="col-md-<?php echo (is_encargado() || is_solicitante()) ? '6' : '4'; ?>">
+                    <label class="form-label fw-semibold">Bodega Destino <span class="text-danger">*</span></label>
                     <?php if ($destinoFijo): ?>
-                        <div class="form-control form-control-lg bg-light d-flex align-items-center justify-content-between" style="min-height:58px;">
-                            <div>
-                                <div class="fw-bold text-dark"><?php echo h($destinoFijo['nombre']); ?></div>
-                                <small class="text-muted"><?php echo h($destinoFijo['codigo']); ?> · <?php echo h($destinoLabel); ?></small>
-                            </div>
-                            <i class="bi bi-lock-fill text-muted"></i>
-                        </div>
-                        <input type="hidden" name="id_bodega_destino" id="selDestino" value="<?php echo (int)$destinoFijoId; ?>">
+                        <input type="hidden" name="id_bodega_destino" value="<?php echo (int)$destinoFijoId; ?>">
+                        <input type="text" class="form-control bg-light" value="<?php echo h($destinoFijo['nombre']); ?>" readonly>
                     <?php else: ?>
-                        <!-- Admin: destino libre -->
-                        <select name="id_bodega_destino" id="selDestino" class="form-select form-select-lg" required>
-                            <option value="">Seleccione una bodega…</option>
+                        <select name="id_bodega_destino" class="form-select" required>
+                            <option value="">— Seleccionar —</option>
                             <?php foreach ($bodegas as $b): ?>
-                                <option value="<?php echo (int)$b['id']; ?>" <?php echo ((int)post('id_bodega_destino') === (int)$b['id']) ? 'selected' : ''; ?>>
-                                    <?php echo h($b['nombre'] . ' (' . $b['codigo'] . ')'); ?>
-                                </option>
+                                <option value="<?php echo (int)$b['id']; ?>"><?php echo h($b['nombre']); ?></option>
                             <?php endforeach; ?>
                         </select>
                     <?php endif; ?>
                 </div>
 
-                <!-- MOTIVO -->
-                <div class="col-12">
-                    <label class="form-label fw-bold text-secondary small">
-                        Motivo de la solicitud <span class="text-danger">*</span>
+                <?php if (!is_encargado() && !is_solicitante()): ?>
+                <!-- Días límite — solo visible para admin -->
+                <div class="col-md-4">
+                    <label class="form-label fw-semibold">
+                        Plazo de aprobación
+                        <span class="text-muted fw-normal small ms-1">(días)</span>
                     </label>
+                    <select name="dias_limite" class="form-select">
+                        <?php for ($d = 1; $d <= 7; $d++): ?>
+                            <option value="<?php echo $d; ?>" <?php echo ($d === 3) ? 'selected' : ''; ?>>
+                                <?php echo $d; ?> día<?php echo $d > 1 ? 's' : ''; ?>
+                            </option>
+                        <?php endfor; ?>
+                    </select>
+                    <div class="form-text">La solicitud caduca si no se aprueba en este plazo.</div>
+                </div>
+                <?php else: ?>
+                <!-- Días límite fijo para encargado/solicitante -->
+                <input type="hidden" name="dias_limite" value="3">
+                <?php endif; ?>
+
+                <!-- Motivo -->
+                <div class="col-12">
+                    <label class="form-label fw-semibold">Motivo / Descripción <span class="text-danger">*</span></label>
                     <textarea name="observacion" class="form-control" rows="2"
-                              placeholder="Ej: Reposición mensual, materiales para proyecto X, mantenimiento…"
-                              required><?php echo h(post('observacion')); ?></textarea>
+                              placeholder="Ej: Reposición mensual de insumos de oficina, evento..." required></textarea>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- PASO 2: PRODUCTOS -->
-    <div class="card shadow-sm border-0 mb-4">
-        <div class="card-header bg-white border-0 pt-3 pb-2 d-flex align-items-center flex-wrap gap-2">
-            <span class="badge bg-primary rounded-circle me-2" style="width:28px;height:28px;line-height:20px;">2</span>
-            <h5 class="mb-0 fw-bold me-auto">Seleccionar productos a solicitar</h5>
-
-            <div class="input-group" style="max-width: 280px;">
-                <span class="input-group-text bg-light border-end-0"><i class="bi bi-search text-secondary"></i></span>
-                <input type="text" id="buscadorProductos" class="form-control border-start-0 ps-0" placeholder="Buscar producto...">
+    <!-- PASO 2: Selección de productos -->
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-header bg-white d-flex justify-content-between align-items-center py-3">
+            <h6 class="mb-0 fw-bold">
+                <span class="badge bg-primary rounded-circle me-2">2</span>
+                Productos a solicitar
+                <span class="badge bg-secondary ms-2" id="badgeDisponibles">—</span>
+            </h6>
+            <div class="d-flex gap-2 align-items-center">
+                <!-- Leyenda stock -->
+                <span class="d-none d-md-flex align-items-center gap-1 me-2 small text-muted">
+                    <i class="bi bi-circle-fill text-success" style="font-size:.55rem"></i> libre
+                    <i class="bi bi-circle-fill text-warning ms-2" style="font-size:.55rem"></i> reservado
+                </span>
+                <input type="text" id="buscadorProductos" class="form-control form-control-sm"
+                       style="max-width:200px" placeholder="Buscar producto...">
             </div>
-
-            <span class="badge bg-light text-dark border" id="badgeDisponibles">0 disponibles</span>
         </div>
 
-        <div id="mensajeOrigen" class="card-body text-center text-muted py-5" style="display:none;">
-            <i class="bi bi-arrow-up fs-1 d-block mb-2 text-primary"></i>
-            <div class="fw-bold mb-1">Selecciona primero una bodega origen</div>
-            <div class="small">Luego verás aquí los productos disponibles para solicitar.</div>
+        <!-- Mensaje sin origen -->
+        <div class="text-center text-muted py-5" id="mensajeOrigen">
+            <i class="bi bi-arrow-up-circle fs-1 d-block mb-2 text-primary opacity-50"></i>
+            Selecciona la bodega origen para ver productos disponibles.
         </div>
 
-        <div id="sinProductos" class="card-body text-center text-muted py-5" style="display:none;">
-            <i class="bi bi-inbox fs-1 d-block mb-2"></i>
-            <div class="fw-bold mb-1">No hay productos con stock</div>
-            <div class="small">La bodega seleccionada no tiene productos con stock disponible.</div>
+        <!-- Sin productos -->
+        <div class="text-center text-muted py-5" id="sinProductos" style="display:none">
+            <i class="bi bi-box-seam fs-1 d-block mb-2 opacity-25"></i>
+            No hay stock disponible en la bodega seleccionada.
         </div>
 
-        <div id="contenidoProductos" style="display:none;">
+        <!-- Tabla productos -->
+        <div id="contenidoProductos" style="display:none">
             <div class="table-responsive">
                 <table class="table table-hover align-middle mb-0">
-                    <thead class="table-light">
-                        <tr class="small text-uppercase text-secondary">
-                            <th class="px-3" style="width:5%;"><input type="checkbox" id="chkTodos" class="form-check-input" title="Marcar todos"></th>
-                            <th style="width:12%;">Código</th>
+                    <thead class="table-light small text-uppercase text-muted">
+                        <tr>
+                            <th style="width:36px">
+                                <input type="checkbox" class="form-check-input" id="chkTodos">
+                            </th>
+                            <th>Código</th>
                             <th>Producto</th>
-                            <th style="width:12%;" class="text-end">Stock Disp.</th>
-                            <th style="width:18%;" class="text-center">Cantidad solicitada</th>
-                            <th style="width:25%;">Especificación</th>
+                            <th class="text-end">
+                                Stock libre
+                                <i class="bi bi-info-circle ms-1" title="Stock disponible descontando reservas en solicitudes pendientes"
+                                   data-bs-toggle="tooltip"></i>
+                            </th>
+                            <th class="text-end" style="width:130px">Cantidad</th>
+                            <th class="d-none d-md-table-cell">Nota</th>
                         </tr>
                     </thead>
                     <tbody id="tbodyProductos"></tbody>
@@ -324,10 +373,10 @@ require_once __DIR__ . '/../../inc/header.php';
         </div>
     </div>
 
-    <!-- FOOTER STICKY -->
-    <div class="card shadow-sm border-0 mb-5" style="position:sticky; bottom:0; z-index:5;">
-        <div class="card-body d-flex flex-wrap gap-3 align-items-center justify-content-between">
-            <div class="d-flex gap-4 flex-wrap">
+    <!-- Pie: resumen + enviar -->
+    <div class="card border-0 shadow-sm sticky-bottom bg-white">
+        <div class="card-body d-flex justify-content-between align-items-center flex-wrap gap-3 py-3">
+            <div class="d-flex gap-4">
                 <div>
                     <div class="text-muted small text-uppercase fw-bold" style="font-size:.65rem;letter-spacing:.5px;">Productos</div>
                     <div class="h5 mb-0 fw-bold" id="resumenItems">0</div>
@@ -336,8 +385,11 @@ require_once __DIR__ . '/../../inc/header.php';
                     <div class="text-muted small text-uppercase fw-bold" style="font-size:.65rem;letter-spacing:.5px;">Cantidad total</div>
                     <div class="h5 mb-0 fw-bold text-primary" id="resumenCantidad">0,00</div>
                 </div>
+                <div id="resumenFecha" class="d-none">
+                    <div class="text-muted small text-uppercase fw-bold" style="font-size:.65rem;letter-spacing:.5px;">Caduca</div>
+                    <div class="h5 mb-0 fw-bold text-warning" id="resumenFechaVal">—</div>
+                </div>
             </div>
-
             <div class="d-flex gap-2">
                 <a href="solicitudes_lista.php" class="btn btn-light border px-4">Cancelar</a>
                 <button type="submit" class="btn btn-primary btn-lg px-4" id="btnConfirmar" disabled>
@@ -351,31 +403,58 @@ require_once __DIR__ . '/../../inc/header.php';
 
 <script>
 (function () {
-    var stockMap  = <?php echo json_encode($stockMap); ?>;
-    var productos = <?php echo json_encode($productos); ?>;
+    // Datos PHP → JS
+    var stockMap    = <?php echo json_encode($stockMap); ?>;
+    var reservadoMap = <?php echo json_encode($reservadoMap); ?>;
+    var productos   = <?php echo json_encode(array_values($productos)); ?>;
 
-    var selOrigen      = document.getElementById('selOrigen');
-    var selDestino     = document.getElementById('selDestino');
-    var buscador       = document.getElementById('buscadorProductos');
-    var tbody          = document.getElementById('tbodyProductos');
-    var mensajeOrigen  = document.getElementById('mensajeOrigen');
-    var contenidoProd  = document.getElementById('contenidoProductos');
-    var sinProductos   = document.getElementById('sinProductos');
-    var badgeDisp      = document.getElementById('badgeDisponibles');
-    var chkTodos       = document.getElementById('chkTodos');
-    var btnConfirmar   = document.getElementById('btnConfirmar');
-
+    var selOrigen     = document.getElementById('selOrigen');
+    var buscador      = document.getElementById('buscadorProductos');
+    var tbody         = document.getElementById('tbodyProductos');
+    var mensajeOrigen = document.getElementById('mensajeOrigen');
+    var contenidoProd = document.getElementById('contenidoProductos');
+    var sinProductos  = document.getElementById('sinProductos');
+    var badgeDisp     = document.getElementById('badgeDisponibles');
+    var chkTodos      = document.getElementById('chkTodos');
+    var btnConfirmar  = document.getElementById('btnConfirmar');
     var resumenItems    = document.getElementById('resumenItems');
     var resumenCantidad = document.getElementById('resumenCantidad');
+    var selDias       = document.querySelector('select[name="dias_limite"]');
+    var resumenFecha  = document.getElementById('resumenFecha');
+    var resumenFechaVal = document.getElementById('resumenFechaVal');
+    var alertaReservado = document.getElementById('alertaReservado');
 
     function fmt(n, dec) {
         if (isNaN(n)) n = 0;
-        return n.toFixed(dec === undefined ? 2 : dec).replace('.', ',').replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+        return n.toFixed(dec === undefined ? 2 : dec)
+                .replace('.', ',')
+                .replace(/\B(?=(\d{3})+(?!\d))/g, '.');
     }
 
     function escapeHtml(s) {
         s = (s == null) ? '' : String(s);
-        return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;');
+        return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+                .replace(/"/g,'&quot;').replace(/'/g,'&#039;');
+    }
+
+    function addDays(n) {
+        var d = new Date();
+        d.setDate(d.getDate() + n);
+        return ('0' + d.getDate()).slice(-2) + '/' +
+               ('0' + (d.getMonth()+1)).slice(-2) + '/' +
+               d.getFullYear();
+    }
+
+    function actualizarFecha() {
+        if (!selDias) return;
+        var n = parseInt(selDias.value, 10);
+        resumenFechaVal.textContent = addDays(n);
+        resumenFecha.classList.remove('d-none');
+    }
+
+    if (selDias) {
+        selDias.addEventListener('change', actualizarFecha);
+        actualizarFecha();
     }
 
     function renderProductos() {
@@ -386,29 +465,44 @@ require_once __DIR__ . '/../../inc/header.php';
             mensajeOrigen.style.display = '';
             sinProductos.style.display  = 'none';
             contenidoProd.style.display = 'none';
-            badgeDisp.textContent = '0 disponibles';
+            badgeDisp.textContent = '—';
+            alertaReservado.style.removeProperty('display');
+            alertaReservado.style.display = 'none';
             return;
         }
 
         mensajeOrigen.style.display = 'none';
 
-        var stockBodega = stockMap[idOrigen] || {};
-        var disponibles = [];
+        var stockBodega    = stockMap[idOrigen]     || {};
+        var reservadoBodega = reservadoMap[idOrigen] || {};
+        var hayReservas    = false;
+        var disponibles    = [];
 
         for (var i = 0; i < productos.length; i++) {
             var p  = productos[i];
             var st = stockBodega[p.id];
-            if (st && parseFloat(st.stock) > 0) {
+            if (!st) continue;
+            var stockReal = parseFloat(st.stock);
+            var reservado = parseFloat(reservadoBodega[p.id] || 0);
+            var libre     = Math.max(0, stockReal - reservado);
+            // Mostrar si hay stock real (aunque libre sea 0, para info)
+            if (stockReal > 0) {
                 disponibles.push({
-                    id: p.id,
-                    codigo: p.codigo,
-                    nombre: p.nombre,
-                    unidad: p.unidad_nombre || '',
-                    tipo:   p.tipo_nombre || '',
-                    stock: parseFloat(st.stock)
+                    id:       p.id,
+                    codigo:   p.codigo,
+                    nombre:   p.nombre,
+                    unidad:   p.unidad_nombre || '',
+                    tipo:     p.tipo_nombre   || '',
+                    stockReal: stockReal,
+                    reservado: reservado,
+                    libre:     libre
                 });
+                if (reservado > 0) hayReservas = true;
             }
         }
+
+        // Mostrar alerta reservas
+        alertaReservado.style.display = hayReservas ? '' : 'none';
 
         if (!disponibles.length) {
             sinProductos.style.display  = '';
@@ -419,218 +513,152 @@ require_once __DIR__ . '/../../inc/header.php';
 
         sinProductos.style.display  = 'none';
         contenidoProd.style.display = '';
-        badgeDisp.textContent = disponibles.length + ' disponible' + (disponibles.length === 1 ? '' : 's');
+        var libres = disponibles.filter(function(d){ return d.libre > 0; }).length;
+        badgeDisp.textContent = libres + ' con stock libre';
 
         var html = '';
         for (var j = 0; j < disponibles.length; j++) {
             var d = disponibles[j];
-            html += '<tr class="fila-producto" data-id="' + d.id + '" data-stock="' + d.stock + '" data-nombre="' + escapeHtml(d.nombre.toLowerCase()) + '" data-codigo="' + escapeHtml(d.codigo.toLowerCase()) + '">' +
-                    '<td class="px-3"><input type="checkbox" class="form-check-input chk-item"></td>' +
-                    '<td><span class="badge bg-light text-dark border">' + escapeHtml(d.codigo) + '</span></td>' +
-                    '<td>' +
-                        '<div class="fw-bold text-dark">' + escapeHtml(d.nombre) + '</div>' +
-                        '<div class="text-muted small">' + (d.unidad ? '<i class="bi bi-ruler me-1"></i>' + escapeHtml(d.unidad) : '') + (d.tipo ? ' · ' + escapeHtml(d.tipo) : '') + '</div>' +
-                    '</td>' +
-                    '<td class="text-end">' +
-                        '<span class="fw-bold text-success">' + fmt(d.stock) + '</span>' +
-                        (d.unidad ? '<div class="text-muted small">' + escapeHtml(d.unidad) + '</div>' : '') +
-                    '</td>' +
-                    '<td class="text-center">' +
-                        '<div class="input-group input-group-sm" style="max-width: 180px; margin:0 auto;">' +
-                            '<input type="number" class="form-control form-control-sm inp-cantidad text-end" step="0.01" min="0.01" max="' + d.stock + '" value="" disabled placeholder="0">' +
-                            '<button type="button" class="btn btn-outline-secondary btn-sm btn-max" title="Usar stock completo" disabled>MAX</button>' +
-                        '</div>' +
-                        '<div class="text-danger small mt-1 mensaje-error" style="display:none;"></div>' +
-                    '</td>' +
-                    '<td>' +
-                        '<input type="text" class="form-control form-control-sm inp-obs" placeholder="Opcional: color, talla, etc." disabled>' +
-                    '</td>' +
-                    '</tr>';
-        }
+            var agotado = (d.libre <= 0);
 
-        tbody.innerHTML = html;
-        enlazarFilas();
-        recalcular();
-    }
-
-    function enlazarFilas() {
-        var filas = tbody.querySelectorAll('tr.fila-producto');
-        for (var i = 0; i < filas.length; i++) {
-            (function (tr) {
-                var chk   = tr.querySelector('.chk-item');
-                var inp   = tr.querySelector('.inp-cantidad');
-                var btn   = tr.querySelector('.btn-max');
-                var obs   = tr.querySelector('.inp-obs');
-                var stock = parseFloat(tr.getAttribute('data-stock'));
-
-                chk.addEventListener('change', function () {
-                    inp.disabled = !chk.checked;
-                    btn.disabled = !chk.checked;
-                    obs.disabled = !chk.checked;
-                    if (chk.checked && (!inp.value || parseFloat(inp.value) <= 0)) {
-                        inp.value = 1;
-                    }
-                    if (!chk.checked) {
-                        inp.value = '';
-                        obs.value = '';
-                        tr.querySelector('.mensaje-error').style.display = 'none';
-                    }
-                    validarFila(tr);
-                    recalcular();
-                });
-
-                inp.addEventListener('input', function () {
-                    validarFila(tr);
-                    recalcular();
-                });
-
-                btn.addEventListener('click', function () {
-                    inp.value = stock;
-                    validarFila(tr);
-                    recalcular();
-                });
-            })(filas[i]);
-        }
-    }
-
-    function validarFila(tr) {
-        var chk   = tr.querySelector('.chk-item');
-        var inp   = tr.querySelector('.inp-cantidad');
-        var stock = parseFloat(tr.getAttribute('data-stock'));
-        var msg   = tr.querySelector('.mensaje-error');
-
-        if (!chk.checked) {
-            inp.classList.remove('is-invalid');
-            msg.style.display = 'none';
-            return true;
-        }
-
-        var val = parseFloat(inp.value);
-        if (isNaN(val) || val <= 0) {
-            inp.classList.add('is-invalid');
-            msg.textContent   = 'Cantidad inválida';
-            msg.style.display = '';
-            return false;
-        }
-        if (val > stock) {
-            inp.classList.add('is-invalid');
-            msg.textContent   = 'Máximo: ' + fmt(stock);
-            msg.style.display = '';
-            return false;
-        }
-
-        inp.classList.remove('is-invalid');
-        msg.style.display = 'none';
-        return true;
-    }
-
-    function recalcular() {
-        var filas = tbody.querySelectorAll('tr.fila-producto');
-        var items = 0, cant = 0, todoOk = true;
-
-        for (var i = 0; i < filas.length; i++) {
-            var tr  = filas[i];
-            var chk = tr.querySelector('.chk-item');
-            var inp = tr.querySelector('.inp-cantidad');
-
-            if (chk.checked) {
-                var val = parseFloat(inp.value);
-                if (isNaN(val) || val <= 0 || val > parseFloat(tr.getAttribute('data-stock'))) {
-                    todoOk = false;
-                } else {
-                    items++;
-                    cant += val;
+            // Columna stock libre con info de reserva
+            var colStock = '';
+            if (agotado) {
+                colStock = '<span class="text-danger fw-bold"><i class="bi bi-exclamation-circle me-1"></i>Sin stock libre</span>';
+                if (d.reservado > 0) {
+                    colStock += '<br><small class="text-muted">'
+                             + fmt(d.stockReal) + ' total · '
+                             + '<span class="text-warning"><i class="bi bi-clock me-1"></i>' + fmt(d.reservado) + ' reservado</span>'
+                             + '</small>';
+                }
+            } else {
+                colStock = '<span class="fw-bold text-success">' + fmt(d.libre) + '</span>';
+                if (d.reservado > 0) {
+                    colStock += '<br><small class="text-warning"><i class="bi bi-clock me-1"></i>' + fmt(d.reservado) + ' reservado</small>';
                 }
             }
+
+            html += '<tr class="fila-producto'+ (agotado ? ' table-secondary opacity-75' : '') +'"'
+                  + ' data-id="' + d.id + '"'
+                  + ' data-stock="' + d.libre + '"'
+                  + ' data-nombre="' + escapeHtml(d.nombre.toLowerCase()) + '"'
+                  + ' data-codigo="' + escapeHtml(d.codigo.toLowerCase()) + '"'
+                  + ' data-agotado="' + (agotado ? '1' : '0') + '">'
+                  + '<td class="px-3">'
+                  +   '<input type="checkbox" class="form-check-input chk-item"'
+                  +   (agotado ? ' disabled title="Sin stock libre"' : '') + '>'
+                  + '</td>'
+                  + '<td><span class="badge bg-light text-dark border">' + escapeHtml(d.codigo) + '</span></td>'
+                  + '<td>'
+                  +   '<div class="fw-bold">' + escapeHtml(d.nombre) + '</div>'
+                  +   '<div class="text-muted small">' + (d.unidad ? '<i class="bi bi-ruler me-1"></i>' + escapeHtml(d.unidad) : '')
+                  +     (d.tipo ? ' · ' + escapeHtml(d.tipo) : '') + '</div>'
+                  + '</td>'
+                  + '<td class="text-end">' + colStock + '</td>'
+                  + '<td class="text-end" style="min-width:110px">'
+                  +   (agotado
+                        ? '<span class="text-muted small">No disponible</span>'
+                        : '<input type="number" class="form-control form-control-sm text-end input-cantidad" '
+                          + 'name="item_cantidad[]" step="0.01" min="0.01" max="' + d.libre + '" '
+                          + 'placeholder="0,00" style="min-width:90px">'
+                          + '<input type="hidden" name="item_id_producto[]" value="' + d.id + '">'
+                          + '<input type="hidden" name="item_obs[]" value="">'
+                      )
+                  + '</td>'
+                  + '<td class="d-none d-md-table-cell">'
+                  +   (agotado ? '' : '<input type="text" class="form-control form-control-sm" name="item_obs[]" placeholder="Nota opcional" maxlength="200">')
+                  + '</td>'
+                  + '</tr>';
         }
+        tbody.innerHTML = html;
+        bindFilas();
+        actualizarResumen();
+    }
 
-        resumenItems.textContent    = items;
-        resumenCantidad.textContent = fmt(cant);
+    function bindFilas() {
+        // Checkbox
+        tbody.querySelectorAll('.chk-item').forEach(function (chk) {
+            chk.addEventListener('change', function () {
+                var fila   = this.closest('tr');
+                var cantIn = fila.querySelector('.input-cantidad');
+                if (this.checked && cantIn) {
+                    if (!cantIn.value) cantIn.value = '1';
+                } else if (cantIn) {
+                    cantIn.value = '';
+                }
+                actualizarResumen();
+            });
+        });
 
-        var origenVal  = selOrigen.value;
-        var destinoVal = selDestino.value;
+        // Cantidad
+        tbody.querySelectorAll('.input-cantidad').forEach(function (inp) {
+            inp.addEventListener('input', function () {
+                var chk  = this.closest('tr').querySelector('.chk-item');
+                var max  = parseFloat(this.max);
+                var val  = parseFloat(this.value);
 
-        btnConfirmar.disabled = (items === 0) || !todoOk || !origenVal || !destinoVal || (origenVal === destinoVal);
+                this.classList.remove('is-invalid');
+                if (this.value && val > 0) {
+                    chk.checked = true;
+                    if (val > max) {
+                        this.classList.add('is-invalid');
+                        this.title = 'Máximo disponible: ' + fmt(max);
+                    }
+                } else {
+                    chk.checked = false;
+                }
+                actualizarResumen();
+            });
+        });
+
+        // Chk todos
+        chkTodos.addEventListener('change', function () {
+            tbody.querySelectorAll('.chk-item:not(:disabled)').forEach(function (c) {
+                c.checked = this.checked;
+                var cantIn = c.closest('tr').querySelector('.input-cantidad');
+                if (this.checked && cantIn && !cantIn.value) cantIn.value = '1';
+                else if (!this.checked && cantIn) cantIn.value = '';
+            }.bind(this));
+            actualizarResumen();
+        });
+    }
+
+    function actualizarResumen() {
+        var nItems = 0;
+        var total  = 0;
+        tbody.querySelectorAll('.chk-item').forEach(function (chk) {
+            if (chk.checked) {
+                nItems++;
+                var cantIn = chk.closest('tr').querySelector('.input-cantidad');
+                var v      = cantIn ? parseFloat(cantIn.value) : 0;
+                if (!isNaN(v)) total += v;
+            }
+        });
+        resumenItems.textContent    = nItems;
+        resumenCantidad.textContent = fmt(total);
+        btnConfirmar.disabled       = (nItems === 0);
     }
 
     // Buscador
     buscador.addEventListener('input', function () {
-        var q = buscador.value.trim().toLowerCase();
-        var filas = tbody.querySelectorAll('tr.fila-producto');
-        for (var i = 0; i < filas.length; i++) {
-            var tr = filas[i];
-            var nombre = tr.getAttribute('data-nombre');
-            var codigo = tr.getAttribute('data-codigo');
-            var match = (q === '' || nombre.indexOf(q) >= 0 || codigo.indexOf(q) >= 0);
+        var q = this.value.toLowerCase().trim();
+        tbody.querySelectorAll('tr.fila-producto').forEach(function (tr) {
+            var match = !q
+                     || tr.dataset.nombre.includes(q)
+                     || tr.dataset.codigo.includes(q);
             tr.style.display = match ? '' : 'none';
-        }
+        });
     });
 
-    // Marcar todos visibles
-    chkTodos.addEventListener('change', function () {
-        var filas = tbody.querySelectorAll('tr.fila-producto');
-        for (var i = 0; i < filas.length; i++) {
-            if (filas[i].style.display !== 'none') {
-                var chk = filas[i].querySelector('.chk-item');
-                if (chk.checked !== chkTodos.checked) {
-                    chk.checked = chkTodos.checked;
-                    chk.dispatchEvent(new Event('change'));
-                }
-            }
+    selOrigen.addEventListener('change', renderProductos);
+    renderProductos(); // Inicial
+
+    // Tooltips Bootstrap
+    document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(function (el) {
+        if (typeof bootstrap !== 'undefined') {
+            new bootstrap.Tooltip(el);
         }
     });
-
-    // Validación bodegas iguales
-    function validarBodegas() {
-        if (selOrigen.value && selDestino.value && selOrigen.value === selDestino.value) {
-            if (selDestino.tagName === 'SELECT') selDestino.classList.add('is-invalid');
-        } else {
-            if (selDestino.tagName === 'SELECT') selDestino.classList.remove('is-invalid');
-        }
-        recalcular();
-    }
-
-    selOrigen.addEventListener('change', function () {
-        renderProductos();
-        validarBodegas();
-    });
-    if (selDestino.tagName === 'SELECT') {
-        selDestino.addEventListener('change', validarBodegas);
-    }
-
-    // Submit: serializar items seleccionados
-    document.getElementById('formSolicitud').addEventListener('submit', function (e) {
-        var prev = this.querySelectorAll('input[name="item_id_producto[]"], input[name="item_cantidad[]"], input[name="item_obs[]"]');
-        for (var i = 0; i < prev.length; i++) prev[i].remove();
-
-        var filas = tbody.querySelectorAll('tr.fila-producto');
-        var count = 0;
-        for (var j = 0; j < filas.length; j++) {
-            var tr  = filas[j];
-            var chk = tr.querySelector('.chk-item');
-            if (chk.checked && validarFila(tr)) {
-                var idp = document.createElement('input');
-                idp.type = 'hidden'; idp.name = 'item_id_producto[]'; idp.value = tr.getAttribute('data-id');
-                var can = document.createElement('input');
-                can.type = 'hidden'; can.name = 'item_cantidad[]'; can.value = tr.querySelector('.inp-cantidad').value;
-                var ob = document.createElement('input');
-                ob.type = 'hidden'; ob.name = 'item_obs[]'; ob.value = tr.querySelector('.inp-obs').value;
-                this.appendChild(idp);
-                this.appendChild(can);
-                this.appendChild(ob);
-                count++;
-            }
-        }
-
-        if (count === 0) {
-            e.preventDefault();
-            alert('Debes seleccionar al menos un producto válido.');
-            return false;
-        }
-    });
-
-    // Arranque
-    renderProductos();
 })();
 </script>
 
