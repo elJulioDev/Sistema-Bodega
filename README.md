@@ -1,11 +1,11 @@
-# 📦 Sistema de Gestión de Bodegas e Inventario
+# Sistema de Gestión de Bodegas e Inventario
 
-## 📖 Descripción General
+## Descripción General
 El Sistema de Gestión de Bodegas es una plataforma web modular diseñada para la administración eficiente del inventario, control de stock y seguimiento de solicitudes de materiales. Construido para ser escalable, seguro y fácil de usar, permite a las organizaciones tener una trazabilidad completa desde que se genera una orden de compra hasta que un funcionario solicita y recibe un producto.
 
 ---
 
-## 🏗️ Arquitectura y Seguridad
+## Arquitectura y Seguridad
 El proyecto sigue una estructura modular, separando las lógicas de negocio en directorios específicos (Bodegas, Productos, Movimientos, Facturas, etc.). 
 
 A nivel de seguridad, el sistema cuenta con:
@@ -15,7 +15,7 @@ A nivel de seguridad, el sistema cuenta con:
 
 ---
 
-## 👥 Roles y Permisos (Manual de Acceso)
+## Roles y Permisos (Manual de Acceso)
 
 El acceso a los diferentes módulos está estrictamente gobernado por el rol del usuario autenticado:
 
@@ -36,7 +36,7 @@ Rol destinado a los funcionarios que requieren pedir materiales a la bodega.
 
 ---
 
-## 📚 Manual de Usuario por Módulos
+## Manual de Usuario por Módulos
 
 ### Módulos Administrativos (Solo Admin)
 * **Usuarios y Funcionarios:** Permite registrar al personal y asignarles credenciales de acceso. Al crear un usuario, se le vincula un rol, una bodega (si es encargado) o una unidad/departamento específico.
@@ -58,7 +58,7 @@ Rol destinado a los funcionarios que requieren pedir materiales a la bodega.
 
 ---
 
-## ⚙️ Documentación Técnica para Desarrolladores
+## Documentación Técnica para Desarrolladores
 
 ### Helpers de Autorización y Contexto
 Para facilitar el desarrollo de nuevas vistas, el sistema expone funciones de validación integradas:
@@ -78,7 +78,7 @@ La variable global `current_user()` almacena la sesión actual con todos los cam
 
 ---
 
-## 🚀 Hoja de Ruta (Cosas por hacerse / To-Do)
+## Hoja de Ruta (Cosas por hacerse / To-Do)
 
 - [ ] **Módulo de Reportes:** Creación de dashboards gráficos con métricas de consumo por unidad, productos más solicitados y proyecciones de quiebre de stock.
 - [ ] **Alertas de Stock Crítico:** Implementar notificaciones visuales (y por correo) cuando un producto alcance su nivel de stock mínimo definido.
