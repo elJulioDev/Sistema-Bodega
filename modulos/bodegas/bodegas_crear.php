@@ -61,11 +61,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 ));
                 $idBodega = (int)$pdo->lastInsertId();
 
-                // Sincronizar usuario encargado -> id_bodega, liberar bodega anterior
+                // Asignar encargado: liberar bodega anterior + promover rol
                 if ($id_encargado > 0) {
+                    // Si el usuario estaba asignado a otra bodega, liberarla
                     $pdo->prepare("UPDATE bodegas SET id_encargado = NULL WHERE id_encargado = ? AND id <> ?")
                         ->execute(array($id_encargado, $idBodega));
-                    $pdo->prepare("UPDATE usuarios SET id_bodega = ? WHERE id = ?")
+                    // Asignar esta bodega y promover a rol encargado
+                    $pdo->prepare("UPDATE usuarios SET rol = 'bodega', id_bodega = ? WHERE id = ?")
                         ->execute(array($idBodega, $id_encargado));
                 }
 
@@ -80,9 +82,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-// Encargados disponibles: usuarios con rol 'bodega' activos
+// Todos los usuarios activos con acceso (excluyendo admin)
 $encargados = $pdo->query("
-    SELECT u.id, u.usuario, COALESCE(f.nombre, u.nombre) AS nombre,
+    SELECT u.id, u.usuario, u.rol AS usuario_rol,
+           COALESCE(f.nombre, u.nombre) AS nombre,
            f.rut, f.cargo, un.nombre AS unidad_nombre,
            b.id AS bodega_asignada_id, b.codigo AS bodega_asignada_codigo,
            b.nombre AS bodega_asignada_nombre
@@ -90,7 +93,7 @@ $encargados = $pdo->query("
     LEFT JOIN funcionarios f ON f.id = u.id_funcionario
     LEFT JOIN unidades_organizacionales un ON un.id = f.id_unidad
     LEFT JOIN bodegas b ON b.id_encargado = u.id
-    WHERE u.rol = 'bodega' AND u.estado = 1
+    WHERE u.estado = 1 AND u.rol <> 'admin'
     ORDER BY COALESCE(f.nombre, u.nombre) ASC
 ")->fetchAll();
 
@@ -145,7 +148,6 @@ require_once __DIR__ . '/../../inc/header.php';
                        value="<?php echo h($ubicacion); ?>">
             </div>
 
-            <!-- Selector de encargado -->
             <div class="col-12">
                 <label class="form-label fw-bold text-secondary">Encargado de bodega</label>
 
@@ -158,8 +160,9 @@ require_once __DIR__ . '/../../inc/header.php';
                     <?php if (!$encargados): ?>
                         <div class="p-3 text-center text-muted small">
                             <i class="bi bi-info-circle me-1"></i>
-                            No hay encargados registrados.
-                            <a href="../funcionarios/funcionarios_crear.php" class="alert-link">Crea un funcionario con rol Encargado</a>.
+                            No hay usuarios con acceso al sistema registrados.
+                            <a href="../funcionarios/funcionarios_crear.php" class="alert-link">Crea un funcionario</a>
+                            para habilitarlo automáticamente.
                         </div>
                     <?php else: ?>
                         <div class="list-group list-group-flush" id="listaEncargados">

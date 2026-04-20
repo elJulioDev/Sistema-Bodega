@@ -180,9 +180,14 @@ require_once __DIR__ . '/../../inc/header.php';
         </h1>
         <p class="text-muted small mb-0 mt-1">Registro único de funcionarios y sus accesos al sistema.</p>
     </div>
-    <a href="funcionarios_crear.php" class="btn btn-primary">
-        <i class="bi bi-person-plus me-1"></i> Nuevo Funcionario
-    </a>
+    <div class="d-flex gap-2">
+        <a href="funcionarios_importar.php" class="btn btn-success">
+            <i class="bi bi-file-earmark-arrow-up me-1"></i> Importar CSV
+        </a>
+        <a href="funcionarios_crear.php" class="btn btn-primary">
+            <i class="bi bi-person-plus me-1"></i> Nuevo Funcionario
+        </a>
+    </div>
 </div>
 
 <!-- KPIs -->

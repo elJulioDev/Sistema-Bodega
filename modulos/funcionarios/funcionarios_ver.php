@@ -88,7 +88,7 @@ require_once __DIR__ . '/../../inc/header.php';
             </div>
             <div class="card-body p-4">
                 <dl class="row mb-0 small">
-                    <dt class="col-sm-4 text-muted">Código RRHH</dt>
+                    <dt class="col-sm-4 text-muted">Código</dt>
                     <dd class="col-sm-8 fw-medium"><?php echo h($f['codigo'] ? $f['codigo'] : '—'); ?></dd>
 
                     <dt class="col-sm-4 text-muted">RUT</dt>

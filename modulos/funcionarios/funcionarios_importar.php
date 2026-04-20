@@ -63,6 +63,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['archivo_csv'])) {
             $stmtInsert = $pdo->prepare("INSERT INTO funcionarios (codigo, rut, nombre, id_unidad, cargo, programa, estado)
                                          VALUES (?, ?, ?, ?, ?, ?, 1)");
             $stmtUpdate = $pdo->prepare("UPDATE funcionarios SET codigo=?, nombre=?, id_unidad=?, cargo=?, programa=? WHERE rut=?");
+            
+            // Agregar junto a los otros prepare, antes del while:
+            $stmtChkUsuario = $pdo->prepare("SELECT id FROM usuarios WHERE usuario = ? LIMIT 1");
+            $stmtInsertUsuario = $pdo->prepare("
+                INSERT INTO usuarios
+                    (id_funcionario, nombre, email, usuario, clave_hash, rol, id_unidad, id_bodega, estado)
+                VALUES (?, ?, NULL, ?, ?, 'solicitante', ?, NULL, 1)
+            ");
 
             while (($datos = fgetcsv($f, 2000, ';')) !== FALSE) {
                 $fila++;
@@ -105,9 +113,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['archivo_csv'])) {
                 if ($existe) {
                     $stmtUpdate->execute(array($codigo, $nombre, $id_unidad, $cargo, $programa, $rut));
                     $actualizados++;
+
+                    // Auto-crear usuario si todavía no tiene acceso
+                    $stmtChkUsuario->execute(array($rut));
+                    if (!$stmtChkUsuario->fetch()) {
+                        $claveAuto = ($codigo !== '') ? $codigo : $rut;
+                        $hashAuto  = password_hash($claveAuto, PASSWORD_BCRYPT);
+                        $stmtInsertUsuario->execute(array(
+                            (int)$existe['id'], $nombre, $rut, $hashAuto, $id_unidad
+                        ));
+                    }
                 } else {
                     $stmtInsert->execute(array($codigo, $rut, $nombre, $id_unidad, $cargo, $programa));
+                    $idFuncNuevo = (int)$pdo->lastInsertId();
                     $insertados++;
+
+                    // Auto-crear usuario con rol solicitante
+                    $stmtChkUsuario->execute(array($rut));
+                    if (!$stmtChkUsuario->fetch()) {
+                        $claveAuto = ($codigo !== '') ? $codigo : $rut;
+                        $hashAuto  = password_hash($claveAuto, PASSWORD_BCRYPT);
+                        $stmtInsertUsuario->execute(array(
+                            $idFuncNuevo, $nombre, $rut, $hashAuto, $id_unidad
+                        ));
+                    }
                 }
             }
 

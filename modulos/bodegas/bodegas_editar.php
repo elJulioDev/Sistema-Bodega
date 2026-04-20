@@ -64,25 +64,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     ':id'           => $id
                 ));
 
-                // Sincronizar usuarios.id_bodega
+                // Manejar cambio de encargado
+                $viejoEncargado = (int)$bodega['id_encargado'];
+
                 if ($id_encargado > 0) {
-                    // Liberar al anterior encargado de esta bodega si era distinto
-                    if ((int)$bodega['id_encargado'] > 0 && (int)$bodega['id_encargado'] !== $id_encargado) {
-                        $pdo->prepare("UPDATE usuarios SET id_bodega = NULL WHERE id = ?")
-                            ->execute(array((int)$bodega['id_encargado']));
+                    // Revertir rol del encargado anterior si es distinto al nuevo
+                    if ($viejoEncargado > 0 && $viejoEncargado !== $id_encargado) {
+                        $pdo->prepare("UPDATE usuarios SET rol = 'solicitante', id_bodega = NULL WHERE id = ?")
+                            ->execute(array($viejoEncargado));
                     }
-                    // Liberar al nuevo encargado de otras bodegas
+                    // Liberar al nuevo encargado de su bodega anterior (si tenía)
                     $pdo->prepare("UPDATE bodegas SET id_encargado = NULL WHERE id_encargado = ? AND id <> ?")
-                        ->execute(array($id_encargado, $id));
-                    // Asignarle esta bodega
-                    $pdo->prepare("UPDATE usuarios SET id_bodega = ? WHERE id = ?")
-                        ->execute(array($id, $id_encargado));
-                } else {
-                    // Removido: liberar al encargado que tenía
-                    if ((int)$bodega['id_encargado'] > 0) {
-                        $pdo->prepare("UPDATE usuarios SET id_bodega = NULL WHERE id = ?")
-                            ->execute(array((int)$bodega['id_encargado']));
-                    }
+                        ->execute(array($id_encargado, $bodega['id']));
+                    // Asignar esta bodega y promover rol
+                    $pdo->prepare("UPDATE usuarios SET rol = 'bodega', id_bodega = ? WHERE id = ?")
+                        ->execute(array($bodega['id'], $id_encargado));
+
+                } elseif ($viejoEncargado > 0) {
+                    // Se quitó el encargado: revertir su rol a solicitante
+                    $pdo->prepare("UPDATE usuarios SET rol = 'solicitante', id_bodega = NULL WHERE id = ?")
+                        ->execute(array($viejoEncargado));
                 }
 
                 $pdo->commit();
@@ -103,9 +104,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-// Encargados disponibles
+// Todos los usuarios activos con acceso (excluyendo admin)
 $encargados = $pdo->query("
-    SELECT u.id, u.usuario, COALESCE(f.nombre, u.nombre) AS nombre,
+    SELECT u.id, u.usuario, u.rol AS usuario_rol,
+           COALESCE(f.nombre, u.nombre) AS nombre,
            f.rut, f.cargo, un.nombre AS unidad_nombre,
            b.id AS bodega_asignada_id, b.codigo AS bodega_asignada_codigo,
            b.nombre AS bodega_asignada_nombre
@@ -113,7 +115,7 @@ $encargados = $pdo->query("
     LEFT JOIN funcionarios f ON f.id = u.id_funcionario
     LEFT JOIN unidades_organizacionales un ON un.id = f.id_unidad
     LEFT JOIN bodegas b ON b.id_encargado = u.id
-    WHERE u.rol = 'bodega' AND u.estado = 1
+    WHERE u.estado = 1 AND u.rol <> 'admin'
     ORDER BY COALESCE(f.nombre, u.nombre) ASC
 ")->fetchAll();
 
@@ -174,7 +176,6 @@ require_once __DIR__ . '/../../inc/header.php';
                 <input type="text" name="ubicacion_referencial" value="<?php echo h($bodega['ubicacion_referencial']); ?>" class="form-control">
             </div>
 
-            <!-- Selector de encargado -->
             <div class="col-12">
                 <label class="form-label fw-bold text-secondary">Encargado de bodega</label>
 
