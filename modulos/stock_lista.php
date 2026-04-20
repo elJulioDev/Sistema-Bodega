@@ -3,22 +3,33 @@ require_once __DIR__ . '/../inc/db.php';
 require_once __DIR__ . '/../inc/auth.php';
 require_once __DIR__ . '/../inc/functions.php';
 
-require_login();
-require_role(array('admin', 'bodega'));
+// 1. Añadir 'solicitante' a los roles permitidos
+require_role(array('admin', 'bodega', 'solicitante'));
 
 $buscar        = trim((string)get('buscar'));
 $id_bodega     = get('id_bodega');
 $filtro_alerta = get('alerta', '');
 
 // ============================================================
-// BLOQUEO POR ROL ENCARGADO
+// BLOQUEO POR ROL (ENCARGADO O SOLICITANTE)
 // ============================================================
-// Encargado solo puede ver stock de SU bodega. Ignora cualquier
-// intento de filtrar otra bodega por URL.
-if (is_encargado()) {
-    $id_bodega = (string)user_bodega_id();
+// Creamos una variable para saber si el usuario tiene vista restringida
+$is_restricted = is_encargado() || is_solicitante();
+
+if ($is_restricted) {
+    if (is_solicitante()) {
+        // Obtener la bodega ligada a la unidad del solicitante
+        $stmtUnidad = $pdo->prepare("SELECT id FROM bodegas WHERE id_unidad = ? AND estado = 1 LIMIT 1");
+        $stmtUnidad->execute(array(user_unidad_id()));
+        $b_id = $stmtUnidad->fetchColumn();
+        $id_bodega = $b_id ? (string)$b_id : '0';
+    } else {
+        // El encargado ve su propia bodega asignada
+        $id_bodega = (string)user_bodega_id();
+    }
+
     if ((int)$id_bodega <= 0) {
-        set_flash('error', 'Tu usuario no tiene una bodega asignada. Contacta al administrador.');
+        set_flash('error', 'Tu usuario o unidad no tiene una bodega asignada. Contacta al administrador.');
         redirect('/Bodega/index.php');
     }
 }
@@ -39,10 +50,10 @@ if (is_admin()) {
 }
 
 // Bodegas disponibles en el selector
-if (is_encargado()) {
-    // Solo su bodega
+if ($is_restricted) {
+    // Solo su bodega asignada/ligada
     $stmtB = $pdo->prepare("SELECT id, codigo, nombre FROM bodegas WHERE id = ? AND estado = 1 LIMIT 1");
-    $stmtB->execute(array(user_bodega_id()));
+    $stmtB->execute(array($id_bodega));
     $bodegas = $stmtB->fetchAll();
     $miBodega = !empty($bodegas[0]) ? $bodegas[0] : null;
 } else {
@@ -117,7 +128,7 @@ $stocks = $stmt->fetchAll();
 
 $canOperate = has_role(array('admin', 'bodega'));
 
-$pageTitle = is_encargado() ? 'Stock de mi Bodega' : 'Control de Stock';
+$pageTitle = $is_restricted ? 'Stock de mi Bodega' : 'Control de Stock';
 require_once __DIR__ . '/../inc/header.php';
 ?>
 
@@ -125,9 +136,9 @@ require_once __DIR__ . '/../inc/header.php';
     <div>
         <h1 class="h4 mb-0 text-dark fw-bold">
             <i class="bi bi-inboxes text-primary me-2"></i>
-            <?php echo is_encargado() ? 'Stock de mi Bodega' : 'Control de Stock'; ?>
+            <?php echo $is_restricted ? 'Stock de mi Bodega' : 'Control de Stock'; ?>
         </h1>
-        <?php if (is_encargado() && $miBodega): ?>
+        <?php if ($is_restricted && $miBodega): ?>
             <small class="text-muted">
                 <i class="bi bi-geo-alt-fill me-1"></i>
                 <?php echo h($miBodega['nombre'] . ' (' . $miBodega['codigo'] . ')'); ?>
@@ -191,14 +202,14 @@ require_once __DIR__ . '/../inc/header.php';
 <div class="card shadow-sm border-0 mb-3">
     <div class="card-body py-2 px-3">
         <form method="get" class="row g-2 align-items-center">
-            <div class="col-md-<?php echo is_encargado() ? '8' : '4'; ?>">
+            <div class="col-md-<?php echo $is_restricted ? '8' : '4'; ?>">
                 <div class="input-group input-group-sm">
                     <span class="input-group-text bg-light text-secondary border-end-0"><i class="bi bi-search"></i></span>
                     <input type="text" name="buscar" value="<?php echo h($buscar); ?>" class="form-control border-start-0 ps-0" placeholder="Buscar por código o nombre...">
                 </div>
             </div>
 
-            <?php if (!is_encargado()): ?>
+            <?php if (!$is_restricted): ?>
             <div class="col-md-3">
                 <select name="id_bodega" class="form-select form-select-sm">
                     <option value="">Todas las bodegas</option>
@@ -220,7 +231,7 @@ require_once __DIR__ . '/../inc/header.php';
                     <option value="sin"  <?php echo $filtro_alerta === 'sin'  ? 'selected' : ''; ?>>✗ Sin stock</option>
                 </select>
             </div>
-            <div class="col-md-<?php echo is_encargado() ? '1' : '2'; ?> d-flex gap-1">
+            <div class="col-md-<?php echo $is_restricted ? '1' : '2'; ?> d-flex gap-1">
                 <button type="submit" class="btn btn-sm btn-primary flex-grow-1">Filtrar</button>
                 <?php if ($buscar !== '' || (is_admin() && isset($_GET['id_bodega'])) || $filtro_alerta !== ''): ?>
                     <a href="stock_lista.php" class="btn btn-sm btn-light border" title="Limpiar"><i class="bi bi-x-lg"></i></a>
@@ -237,10 +248,10 @@ require_once __DIR__ . '/../inc/header.php';
             <table class="table table-hover align-middle mb-0" style="font-size: 0.9rem;">
                 <thead class="table-light text-secondary" style="font-size: 0.75rem;">
                     <tr>
-                        <?php if (!is_encargado()): ?>
+                        <?php if (!$is_restricted): ?>
                             <th class="px-3 py-2">BODEGA</th>
                         <?php endif; ?>
-                        <th class="py-2 <?php echo is_encargado() ? 'px-3' : ''; ?>">PRODUCTO</th>
+                        <th class="py-2 <?php echo $is_restricted ? 'px-3' : ''; ?>">PRODUCTO</th>
                         <th class="py-2 text-center">UNIDAD</th>
                         <th class="py-2 text-end">STOCK</th>
                         <th class="py-2 text-end">MÍN.</th>
@@ -254,7 +265,7 @@ require_once __DIR__ . '/../inc/header.php';
                 </thead>
                 <tbody>
                 <?php if (!$stocks): ?>
-                    <?php $colspan = is_encargado() ? 7 : 8; if ($canOperate) $colspan++; ?>
+                    <?php $colspan = $is_restricted ? 7 : 8; if ($canOperate) $colspan++; ?>
                     <tr>
                         <td colspan="<?php echo $colspan; ?>" class="text-center py-5">
                             <i class="bi bi-inbox display-4 text-muted d-block mb-2"></i>
@@ -280,7 +291,7 @@ require_once __DIR__ . '/../inc/header.php';
                         elseif ($bajoMin)  $rowClass = 'table-warning';
                     ?>
                         <tr<?php echo $rowClass ? ' class="' . $rowClass . '"' : ''; ?>>
-                            <?php if (!is_encargado()): ?>
+                            <?php if (!$is_restricted): ?>
                                 <td class="px-3">
                                     <div class="fw-semibold small"><?php echo h($s['bodega_nombre']); ?></div>
                                     <small class="text-muted">
@@ -289,7 +300,7 @@ require_once __DIR__ . '/../inc/header.php';
                                     </small>
                                 </td>
                             <?php endif; ?>
-                            <td class="<?php echo is_encargado() ? 'px-3' : ''; ?>">
+                            <td class="<?php echo $is_restricted ? 'px-3' : ''; ?>">
                                 <div class="fw-medium small"><?php echo h($s['producto_nombre']); ?></div>
                                 <small class="text-muted"><?php echo h($s['producto_codigo']); ?></small>
                             </td>

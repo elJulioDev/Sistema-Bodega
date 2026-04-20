@@ -388,9 +388,17 @@ $rolLabel = ($user && isset($rolLabels[$user['rol']])) ? $rolLabels[$user['rol']
                 </li>
 
                 <?php /* ==================================================
-                        SOLICITANTE: solo solicitudes
+                        SOLICITANTE: consultas y solicitudes
                         ================================================== */ ?>
                 <?php if (is_solicitante()): ?>
+
+                    <li class="nav-section">Consultas</li>
+
+                    <li>
+                        <a href="/Bodega/modulos/stock_lista.php" class="nav-link <?php echo nav_active('stock_lista'); ?>">
+                            <i class="bi bi-inboxes"></i> Stock de mi Unidad
+                        </a>
+                    </li>
 
                     <li class="nav-section">Mis Solicitudes</li>
 
