@@ -76,18 +76,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['archivo_csv'])) {
                 $fila++;
                 if (empty(array_filter($datos))) continue;
 
+                // --- INICIO SOLUCIÓN: Forzar conversión a UTF-8 ---
+                $datos = array_map(function($valor) {
+                    // Intenta convertir a UTF-8 desde formatos comunes de Excel/Windows
+                    return mb_convert_encoding(trim($valor), 'UTF-8', 'UTF-8, ISO-8859-1, Windows-1252');
+                }, $datos);
+                // --- FIN SOLUCIÓN ---
+
                 if (count($datos) < 6) {
                     $errores[] = "Fila $fila: debe tener 6 columnas.";
                     $omitidos++;
                     continue;
                 }
 
-                $codigo      = trim($datos[0]);
-                $rut         = trim($datos[1]);
-                $nombre      = trim($datos[2]);
-                $unidadTxt   = trim($datos[3]);
-                $cargo       = trim($datos[4]);
-                $programa    = trim($datos[5]);
+                // Ya no es necesario usar trim() aquí porque se aplicó en el array_map
+                $codigo      = $datos[0];
+                $rut         = $datos[1];
+                $nombre      = $datos[2];
+                $unidadTxt   = $datos[3];
+                $cargo       = $datos[4];
+                $programa    = $datos[5];
 
                 if ($rut === '' || $nombre === '') {
                     $errores[] = "Fila $fila: RUT y nombre son obligatorios.";
@@ -160,7 +168,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['archivo_csv'])) {
 
 // Helper para normalizar texto (remueve acentos, minusculas)
 function normalizar_texto($txt) {
-    $txt = mb_strtolower(trim($txt));
+    // Especificar explícitamente 'UTF-8' aquí
+    $txt = mb_strtolower(trim($txt), 'UTF-8');
     $txt = str_replace(
         array('á','é','í','ó','ú','ñ','Á','É','Í','Ó','Ú','Ñ'),
         array('a','e','i','o','u','n','a','e','i','o','u','n'),
