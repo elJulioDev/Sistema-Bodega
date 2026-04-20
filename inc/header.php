@@ -180,24 +180,7 @@ $rolLabel = ($user && isset($rolLabels[$user['rol']])) ? $rolLabels[$user['rol']
         .sidebar-header hr {
             border-color: var(--sidebar-border) !important;
             opacity: 1;
-            margin: 0 0 0.5rem;
-        }
-
-        /* Badge de rol en header */
-        .sidebar-role-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: .35rem;
-            background: rgba(220, 53, 69, 0.12);
-            border: 1px solid rgba(220, 53, 69, 0.35);
-            color: #ff8b95;
-            font-size: .65rem;
-            font-weight: 700;
-            letter-spacing: .5px;
-            text-transform: uppercase;
-            padding: .18rem .5rem;
-            border-radius: .35rem;
-            margin-bottom: .5rem;
+            margin: 0;
         }
 
         /* Navegación scrolleable */
@@ -205,7 +188,7 @@ $rolLabel = ($user && isset($rolLabels[$user['rol']])) ? $rolLabels[$user['rol']
             flex: 1;
             overflow-y: auto;
             overflow-x: hidden;
-            padding: 0.5rem 1rem 1rem;
+            padding: 0.75rem 1rem 1rem;
         }
 
         .sidebar-nav::-webkit-scrollbar { width: 4px; }
@@ -250,19 +233,6 @@ $rolLabel = ($user && isset($rolLabels[$user['rol']])) ? $rolLabels[$user['rol']
             padding-left: calc(1rem - 3px);
         }
 
-        /* Nav link destacado (CTA) */
-        .sidebar .nav-link.nav-cta {
-            background-color: rgba(220, 53, 69, 0.1);
-            color: #ff8b95;
-            border: 1px solid rgba(220, 53, 69, 0.25);
-            font-weight: 600;
-        }
-        .sidebar .nav-link.nav-cta:hover {
-            background-color: rgba(220, 53, 69, 0.2);
-            color: #fff;
-            border-color: rgba(220, 53, 69, 0.5);
-        }
-
         /* Footer fijo del sidebar */
         .sidebar-footer {
             flex-shrink: 0;
@@ -274,8 +244,22 @@ $rolLabel = ($user && isset($rolLabels[$user['rol']])) ? $rolLabels[$user['rol']
         .sidebar-footer .user-info {
             display: flex;
             align-items: center;
-            gap: 0.6rem;
+            gap: 0.65rem;
             margin-bottom: 0.65rem;
+        }
+
+        .sidebar-footer .user-avatar {
+            flex-shrink: 0;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background-color: #161b22;
+            border: 1px solid var(--sidebar-border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--sidebar-text);
+            font-size: 1.15rem;
         }
 
         .sidebar-footer .user-details { flex: 1; min-width: 0; }
@@ -295,6 +279,9 @@ $rolLabel = ($user && isset($rolLabels[$user['rol']])) ? $rolLabels[$user['rol']
             letter-spacing: 0.5px;
             text-transform: uppercase;
             color: var(--sidebar-muted);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
         .sidebar-footer .btn-logout {
@@ -319,6 +306,8 @@ $rolLabel = ($user && isset($rolLabels[$user['rol']])) ? $rolLabels[$user['rol']
             border-color: rgba(248, 81, 73, 0.5);
             color: #ff6b6b;
         }
+
+        .sidebar-footer .btn-logout .bi { font-size: 1rem; }
 
         /* ====== CONTENIDO ====== */
         .content-scrollable {
@@ -385,11 +374,6 @@ $rolLabel = ($user && isset($rolLabels[$user['rol']])) ? $rolLabels[$user['rol']
                     <i class="bi bi-x-lg"></i>
                 </button>
             </div>
-            <?php if ($rolLabel): ?>
-                <div class="sidebar-role-badge">
-                    <i class="bi bi-shield-lock-fill"></i> <?php echo h($rolLabel); ?>
-                </div>
-            <?php endif; ?>
             <hr>
         </div>
 
@@ -411,7 +395,7 @@ $rolLabel = ($user && isset($rolLabels[$user['rol']])) ? $rolLabels[$user['rol']
                     <li class="nav-section">Mis Solicitudes</li>
 
                     <li>
-                        <a href="/Bodega/modulos/movimientos/solicitudes_crear.php" class="nav-link nav-cta <?php echo nav_active('solicitudes_crear'); ?>">
+                        <a href="/Bodega/modulos/movimientos/solicitudes_crear.php" class="nav-link <?php echo nav_active('solicitudes_crear'); ?>">
                             <i class="bi bi-plus-circle"></i> Nueva Solicitud
                         </a>
                     </li>
@@ -429,22 +413,22 @@ $rolLabel = ($user && isset($rolLabels[$user['rol']])) ? $rolLabels[$user['rol']
                         ================================================== */ ?>
                 <?php if (is_encargado()): ?>
 
+                    <li class="nav-section">Operaciones</li>
+
                     <li>
                         <a href="/Bodega/modulos/stock_lista.php" class="nav-link <?php echo nav_active('stock_lista'); ?>">
                             <i class="bi bi-inboxes"></i> Stock de mi Bodega
                         </a>
                     </li>
 
-                    <li class="nav-section">Operaciones</li>
-
                     <li>
-                        <a href="/Bodega/modulos/movimientos/movimientos_lista.php" class="nav-link <?php echo nav_active('movimientos_'); ?>">
+                        <a href="/Bodega/modulos/movimientos/movimientos_lista.php" class="nav-link <?php echo nav_active('movimientos_lista'); ?>">
                             <i class="bi bi-arrow-left-right"></i> Movimientos
                         </a>
                     </li>
 
                     <li>
-                        <a href="/Bodega/modulos/movimientos/movimientos_crear.php" class="nav-link nav-cta <?php echo nav_active('movimientos_crear'); ?>">
+                        <a href="/Bodega/modulos/movimientos/movimientos_crear.php" class="nav-link <?php echo nav_active('movimientos_crear'); ?>">
                             <i class="bi bi-box-arrow-right"></i> Nuevo Traslado
                         </a>
                     </li>
@@ -470,32 +454,13 @@ $rolLabel = ($user && isset($rolLabels[$user['rol']])) ? $rolLabels[$user['rol']
                         ================================================== */ ?>
                 <?php if (is_admin()): ?>
 
+                    <li class="nav-section">Operaciones</li>
+
                     <li>
                         <a href="/Bodega/modulos/stock_lista.php" class="nav-link <?php echo nav_active('stock_lista'); ?>">
                             <i class="bi bi-inboxes"></i> Stock
                         </a>
                     </li>
-
-                    <li class="nav-section">Maestros</li>
-
-                    <li>
-                        <a href="/Bodega/modulos/proveedores/proveedores_lista.php" class="nav-link <?php echo nav_active('/proveedores/'); ?>">
-                            <i class="bi bi-truck"></i> Proveedores
-                        </a>
-                    </li>
-                    <li>
-                        <a href="/Bodega/modulos/productos/productos_lista.php" class="nav-link <?php echo nav_active('/productos/'); ?>">
-                            <i class="bi bi-boxes"></i> Productos
-                        </a>
-                    </li>
-                    <li>
-                        <a href="/Bodega/modulos/facturas/facturas_lista.php" class="nav-link <?php echo nav_active('/facturas/'); ?>">
-                            <i class="bi bi-receipt"></i> Facturas
-                        </a>
-                    </li>
-
-                    <li class="nav-section">Operaciones</li>
-
                     <li>
                         <a href="/Bodega/modulos/movimientos/movimientos_lista.php" class="nav-link <?php echo nav_active('movimientos_'); ?>">
                             <i class="bi bi-arrow-left-right"></i> Movimientos
@@ -507,13 +472,31 @@ $rolLabel = ($user && isset($rolLabels[$user['rol']])) ? $rolLabels[$user['rol']
                         </a>
                     </li>
 
-                    <li class="nav-section">Configuración</li>
+                    <li class="nav-section">Maestros</li>
 
                     <li>
                         <a href="/Bodega/modulos/bodegas/bodegas_lista.php" class="nav-link <?php echo nav_active('/bodegas/'); ?>">
                             <i class="bi bi-buildings"></i> Bodegas
                         </a>
                     </li>
+                    <li>
+                        <a href="/Bodega/modulos/productos/productos_lista.php" class="nav-link <?php echo nav_active('/productos/'); ?>">
+                            <i class="bi bi-boxes"></i> Productos
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/Bodega/modulos/proveedores/proveedores_lista.php" class="nav-link <?php echo nav_active('/proveedores/'); ?>">
+                            <i class="bi bi-truck"></i> Proveedores
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/Bodega/modulos/facturas/facturas_lista.php" class="nav-link <?php echo nav_active('/facturas/'); ?>">
+                            <i class="bi bi-receipt"></i> Facturas
+                        </a>
+                    </li>
+
+                    <li class="nav-section">Administración</li>
+
                     <li>
                         <a href="/Bodega/modulos/funcionarios/funcionarios_lista.php" class="nav-link <?php echo nav_active('/funcionarios/'); ?>">
                             <i class="bi bi-person-badge"></i> Funcionarios
@@ -527,7 +510,9 @@ $rolLabel = ($user && isset($rolLabels[$user['rol']])) ? $rolLabels[$user['rol']
 
         <div class="sidebar-footer">
             <div class="user-info">
-                <i class="bi bi-person-circle fs-4 text-secondary"></i>
+                <div class="user-avatar">
+                    <i class="bi bi-person-fill"></i>
+                </div>
                 <div class="user-details">
                     <div class="user-name"><?php echo h($user['nombre']); ?></div>
                     <div class="user-role"><?php echo h($rolLabel ? $rolLabel : $user['rol']); ?></div>
