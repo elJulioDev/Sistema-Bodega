@@ -2,13 +2,14 @@
 require_once __DIR__ . '/../../inc/db.php';
 require_once __DIR__ . '/../../inc/auth.php';
 require_once __DIR__ . '/../../inc/functions.php';
+require_once __DIR__ . '/../../inc/bodegas_helpers.php';
 
 require_login();
 require_role('admin');
 
 /*
 |--------------------------------------------------------------------------
-| Toggle estado (activar / desactivar)
+| Toggle estado
 |--------------------------------------------------------------------------
 */
 if (isset($_GET['toggle'])) {
@@ -23,11 +24,7 @@ if (isset($_GET['toggle'])) {
             $estadoActual = (int)$bodega['estado'];
 
             if ($estadoActual === 1) {
-                // Validar sin stock
-                $stmtStock = $pdo->prepare("
-                    SELECT COALESCE(SUM(stock_actual), 0) AS total_stock
-                    FROM stock_bodega WHERE id_bodega = :id_bodega
-                ");
+                $stmtStock = $pdo->prepare("SELECT COALESCE(SUM(stock_actual), 0) FROM stock_bodega WHERE id_bodega = :id_bodega");
                 $stmtStock->execute(array(':id_bodega' => $id));
                 $totalStock = (float)$stmtStock->fetchColumn();
 
@@ -58,7 +55,7 @@ if (isset($_GET['delete'])) {
     $id = (int)$_GET['delete'];
 
     if ($id > 0) {
-        $stmt = $pdo->prepare("SELECT id, nombre, estado, id_encargado FROM bodegas WHERE id = :id LIMIT 1");
+        $stmt = $pdo->prepare("SELECT id, nombre, estado FROM bodegas WHERE id = :id LIMIT 1");
         $stmt->execute(array(':id' => $id));
         $bodega = $stmt->fetch(PDO::FETCH_ASSOC);
 
@@ -72,7 +69,6 @@ if (isset($_GET['delete'])) {
             redirect('bodegas_lista.php');
         }
 
-        // Validar sin stock
         $stmtStock = $pdo->prepare("
             SELECT COALESCE(SUM(stock_actual), 0) AS total_stock,
                    COUNT(*) AS total_filas
@@ -85,13 +81,11 @@ if (isset($_GET['delete'])) {
             set_flash('danger', 'No se puede eliminar: tiene productos en existencia.');
             redirect('bodegas_lista.php');
         }
-
         if ((int)$r['total_filas'] > 0) {
             set_flash('danger', 'No se puede eliminar: tiene registros de stock asociados.');
             redirect('bodegas_lista.php');
         }
 
-        // Validar sin movimientos
         $stmtMov = $pdo->prepare("SELECT COUNT(*) FROM movimientos_bodega WHERE id_bodega = :id_bodega");
         $stmtMov->execute(array(':id_bodega' => $id));
         if ((int)$stmtMov->fetchColumn() > 0) {
@@ -100,12 +94,24 @@ if (isset($_GET['delete'])) {
         }
 
         try {
-            // Liberar al encargado si lo tenía
-            if (!empty($bodega['id_encargado'])) {
-                $pdo->prepare("UPDATE usuarios SET id_bodega = NULL WHERE id = ?")
-                    ->execute(array((int)$bodega['id_encargado']));
+            // Desasignar todos los encargados (M:N) y degradar si quedan sin bodegas
+            $stE = $pdo->prepare("SELECT id_usuario FROM usuarios_bodegas WHERE id_bodega = ?");
+            $stE->execute(array($id));
+            $uids = $stE->fetchAll(PDO::FETCH_COLUMN);
+
+            $pdo->prepare("DELETE FROM usuarios_bodegas WHERE id_bodega = ?")->execute(array($id));
+
+            // Limpiar legacy id_encargado y id_bodega en los usuarios liberados
+            foreach ($uids as $u) {
+                $stR = $pdo->prepare("SELECT COUNT(*) FROM usuarios_bodegas WHERE id_usuario = ?");
+                $stR->execute(array((int)$u));
+                if ((int)$stR->fetchColumn() === 0) {
+                    $pdo->prepare("UPDATE usuarios SET id_bodega = NULL, rol = 'solicitante' WHERE id = ?")
+                        ->execute(array((int)$u));
+                }
             }
 
+            $pdo->prepare("UPDATE bodegas SET id_encargado = NULL WHERE id = ?")->execute(array($id));
             $pdo->prepare("DELETE FROM bodegas WHERE id = :id")->execute(array(':id' => $id));
             set_flash('success', 'Bodega eliminada correctamente.');
         } catch (Exception $e) {
@@ -126,7 +132,7 @@ $where  = array("1=1");
 $params = array();
 
 if ($q !== '') {
-    $where[] = "(b.nombre LIKE :q OR b.codigo LIKE :q OR f.nombre LIKE :q)";
+    $where[] = "(b.nombre LIKE :q OR b.codigo LIKE :q)";
     $params[':q'] = '%' . $q . '%';
 }
 
@@ -135,21 +141,43 @@ $whereSql = implode(' AND ', $where);
 $sqlBase = "
     SELECT b.*,
            un.nombre AS unidad_nombre,
-           COALESCE(f.nombre, u.nombre) AS encargado_nombre,
-           f.rut AS encargado_rut,
-           u.id AS encargado_usuario_id,
+           (SELECT COUNT(*) FROM usuarios_bodegas WHERE id_bodega = b.id) AS total_encargados,
            (SELECT COALESCE(SUM(stock_actual), 0) FROM stock_bodega WHERE id_bodega = b.id) AS total_stock,
            (SELECT COUNT(DISTINCT id_producto) FROM stock_bodega WHERE id_bodega = b.id AND stock_actual > 0) AS total_productos
-    FROM bodegas b
-    LEFT JOIN unidades_organizacionales un ON un.id = b.id_unidad
-    LEFT JOIN usuarios u ON u.id = b.id_encargado
-    LEFT JOIN funcionarios f ON f.id = u.id_funcionario
-    WHERE $whereSql
-    ORDER BY b.es_central DESC, b.nombre ASC
+    FROM   bodegas b
+    LEFT   JOIN unidades_organizacionales un ON un.id = b.id_unidad
+    WHERE  $whereSql
+    ORDER  BY b.es_central DESC, b.nombre ASC
 ";
 $stmt = $pdo->prepare($sqlBase);
 $stmt->execute($params);
 $todas = $stmt->fetchAll();
+
+// Cargar encargados (top 3 visibles) por bodega
+$mapaEncargados = array();
+if ($todas) {
+    $ids = array();
+    foreach ($todas as $b) { $ids[] = (int)$b['id']; }
+    if ($ids) {
+        $ph = implode(',', array_fill(0, count($ids), '?'));
+        $sqlE = "
+            SELECT ub.id_bodega, ub.es_principal,
+                   COALESCE(f.nombre, u.nombre) AS nombre
+            FROM   usuarios_bodegas ub
+            INNER  JOIN usuarios u ON u.id = ub.id_usuario
+            LEFT   JOIN funcionarios f ON f.id = u.id_funcionario
+            WHERE  ub.id_bodega IN ($ph) AND u.estado = 1
+            ORDER  BY ub.es_principal DESC, nombre ASC
+        ";
+        $stE = $pdo->prepare($sqlE);
+        $stE->execute($ids);
+        foreach ($stE->fetchAll() as $r) {
+            $bid = (int)$r['id_bodega'];
+            if (!isset($mapaEncargados[$bid])) $mapaEncargados[$bid] = array();
+            $mapaEncargados[$bid][] = $r;
+        }
+    }
+}
 
 $bodegasActivas   = array();
 $bodegasInactivas = array();
@@ -167,19 +195,18 @@ require_once __DIR__ . '/../../inc/header.php';
         <h1 class="h3 mb-0 text-gray-800">
             <i class="bi bi-buildings text-primary me-2"></i>Gestión de Bodegas
         </h1>
-        <p class="text-muted small mb-0 mt-1">Administra las bodegas y sus encargados.</p>
+        <p class="text-muted small mb-0 mt-1">Cada bodega puede tener uno o más encargados. Un encargado puede gestionar varias bodegas.</p>
     </div>
     <a href="bodegas_crear.php" class="btn btn-primary">
         <i class="bi bi-building-add me-1"></i> Nueva Bodega
     </a>
 </div>
 
-<!-- Filtro -->
 <div class="card shadow-sm border-0 mb-3">
     <div class="card-body py-2">
         <form method="get" class="row g-2 align-items-end">
             <div class="col-md-8">
-                <input type="text" name="q" value="<?php echo h($q); ?>" class="form-control form-control-sm" placeholder="Buscar por nombre, código o encargado...">
+                <input type="text" name="q" value="<?php echo h($q); ?>" class="form-control form-control-sm" placeholder="Buscar por nombre o código...">
             </div>
             <div class="col-md-4 d-flex gap-1">
                 <button type="submit" class="btn btn-sm btn-primary flex-grow-1">
@@ -209,7 +236,7 @@ require_once __DIR__ . '/../../inc/header.php';
                         <th class="px-3 py-2">CÓDIGO</th>
                         <th class="py-2">NOMBRE</th>
                         <th class="py-2 d-none d-md-table-cell">UNIDAD</th>
-                        <th class="py-2">ENCARGADO</th>
+                        <th class="py-2">ENCARGADOS</th>
                         <th class="py-2 text-end d-none d-sm-table-cell">STOCK</th>
                         <th class="px-3 py-2 text-end">ACCIONES</th>
                     </tr>
@@ -222,6 +249,8 @@ require_once __DIR__ . '/../../inc/header.php';
                 <?php else: ?>
                     <?php foreach ($bodegasActivas as $b):
                         $puedeDesactivar = ((float)$b['total_stock'] <= 0);
+                        $encs            = isset($mapaEncargados[(int)$b['id']]) ? $mapaEncargados[(int)$b['id']] : array();
+                        $totalEnc        = (int)$b['total_encargados'];
                     ?>
                         <tr>
                             <td class="px-3">
@@ -239,14 +268,31 @@ require_once __DIR__ . '/../../inc/header.php';
                             <td class="small text-muted d-none d-md-table-cell">
                                 <?php echo h($b['unidad_nombre'] ? $b['unidad_nombre'] : '—'); ?>
                             </td>
-                            <td class="small">
-                                <?php if (!empty($b['encargado_nombre'])): ?>
-                                    <div class="fw-medium"><i class="bi bi-person me-1 text-muted"></i><?php echo h($b['encargado_nombre']); ?></div>
-                                    <?php if (!empty($b['encargado_rut'])): ?>
-                                        <div class="text-muted" style="font-size:.7rem;"><?php echo h($b['encargado_rut']); ?></div>
-                                    <?php endif; ?>
-                                <?php else: ?>
+                            <td class="small" style="min-width:200px;">
+                                <?php if ($totalEnc === 0): ?>
                                     <span class="text-muted fst-italic">Sin asignar</span>
+                                <?php else: ?>
+                                    <div class="d-flex flex-wrap gap-1">
+                                        <?php
+                                        $mostrados = 0;
+                                        foreach ($encs as $e):
+                                            if ($mostrados >= 2) break;
+                                            $mostrados++;
+                                            $cls = ((int)$e['es_principal'] === 1)
+                                                ? 'bg-primary bg-opacity-10 text-primary border border-primary-subtle'
+                                                : 'bg-secondary bg-opacity-10 text-secondary border';
+                                        ?>
+                                            <span class="badge <?php echo $cls; ?>" style="font-size:.68rem;">
+                                                <?php if ((int)$e['es_principal'] === 1): ?><i class="bi bi-star-fill me-1"></i><?php endif; ?>
+                                                <?php echo h($e['nombre']); ?>
+                                            </span>
+                                        <?php endforeach; ?>
+                                        <?php if ($totalEnc > $mostrados): ?>
+                                            <span class="badge bg-light text-dark border" style="font-size:.68rem;">
+                                                +<?php echo ($totalEnc - $mostrados); ?> más
+                                            </span>
+                                        <?php endif; ?>
+                                    </div>
                                 <?php endif; ?>
                             </td>
                             <td class="text-end small d-none d-sm-table-cell">
@@ -258,6 +304,10 @@ require_once __DIR__ . '/../../inc/header.php';
                                     <a href="bodegas_ver.php?id=<?php echo (int)$b['id']; ?>"
                                        class="btn btn-sm btn-outline-secondary" title="Ver detalle">
                                         <i class="bi bi-eye"></i>
+                                    </a>
+                                    <a href="bodegas_encargados.php?id=<?php echo (int)$b['id']; ?>"
+                                       class="btn btn-sm btn-outline-success" title="Gestionar encargados">
+                                        <i class="bi bi-people-fill"></i>
                                     </a>
                                     <a href="bodegas_editar.php?id=<?php echo (int)$b['id']; ?>"
                                        class="btn btn-sm btn-outline-primary" title="Editar">
@@ -301,7 +351,7 @@ require_once __DIR__ . '/../../inc/header.php';
                     <tr>
                         <th class="px-3 py-2">CÓDIGO</th>
                         <th class="py-2">NOMBRE</th>
-                        <th class="py-2">ENCARGADO</th>
+                        <th class="py-2">ENCARGADOS</th>
                         <th class="py-2 text-end d-none d-sm-table-cell">STOCK</th>
                         <th class="px-3 py-2 text-end">ACCIONES</th>
                     </tr>
@@ -315,12 +365,12 @@ require_once __DIR__ . '/../../inc/header.php';
                     <?php foreach ($bodegasInactivas as $b):
                         $puedeEliminar = ((float)$b['total_stock'] <= 0);
                         if ($puedeEliminar) {
-                            // Verificación extra: sin filas stock y sin movimientos
                             $chk = (int)$pdo->query("SELECT
                                 (SELECT COUNT(*) FROM stock_bodega WHERE id_bodega={$b['id']}) +
                                 (SELECT COUNT(*) FROM movimientos_bodega WHERE id_bodega={$b['id']})")->fetchColumn();
                             $puedeEliminar = ($chk === 0);
                         }
+                        $totalEnc = (int)$b['total_encargados'];
                     ?>
                         <tr>
                             <td class="px-3"><span class="badge bg-light text-dark border"><?php echo h($b['codigo']); ?></span></td>
@@ -328,8 +378,10 @@ require_once __DIR__ . '/../../inc/header.php';
                                 <div class="fw-bold text-dark small"><?php echo h($b['nombre']); ?></div>
                             </td>
                             <td class="small">
-                                <?php if (!empty($b['encargado_nombre'])): ?>
-                                    <i class="bi bi-person me-1 text-muted"></i><?php echo h($b['encargado_nombre']); ?>
+                                <?php if ($totalEnc > 0): ?>
+                                    <span class="badge bg-secondary bg-opacity-10 text-secondary border">
+                                        <i class="bi bi-people me-1"></i><?php echo $totalEnc; ?>
+                                    </span>
                                 <?php else: ?>
                                     <span class="text-muted fst-italic">Sin asignar</span>
                                 <?php endif; ?>

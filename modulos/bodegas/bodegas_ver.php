@@ -1,8 +1,8 @@
 <?php
-// modulos/bodegas/bodegas_ver.php
 require_once __DIR__ . '/../../inc/db.php';
 require_once __DIR__ . '/../../inc/auth.php';
 require_once __DIR__ . '/../../inc/functions.php';
+require_once __DIR__ . '/../../inc/bodegas_helpers.php';
 
 require_login();
 require_role('admin');
@@ -10,16 +10,9 @@ require_role('admin');
 $id = (int)get('id');
 
 $stmt = $pdo->prepare("
-    SELECT b.*,
-           un.nombre AS unidad_nombre,
-           u.id AS encargado_id, u.usuario AS encargado_usuario,
-           COALESCE(f.nombre, u.nombre) AS encargado_nombre,
-           f.rut AS encargado_rut, f.email AS encargado_email, f.cargo AS encargado_cargo,
-           f.id AS encargado_funcionario_id
+    SELECT b.*, un.nombre AS unidad_nombre
     FROM bodegas b
     LEFT JOIN unidades_organizacionales un ON un.id = b.id_unidad
-    LEFT JOIN usuarios u ON u.id = b.id_encargado
-    LEFT JOIN funcionarios f ON f.id = u.id_funcionario
     WHERE b.id = ?
     LIMIT 1
 ");
@@ -27,6 +20,9 @@ $stmt->execute(array($id));
 $b = $stmt->fetch();
 
 if (!$b) { die('Bodega no encontrada.'); }
+
+// Encargados M:N
+$encargados = encargados_de_bodega($id);
 
 // KPIs
 $sqlKpi = "
@@ -44,7 +40,6 @@ $stmt = $pdo->prepare($sqlKpi);
 $stmt->execute(array(':idb' => $id));
 $kpi = $stmt->fetch();
 
-// Stock completo
 $sqlStock = "
     SELECT sb.id_producto, sb.stock_actual, sb.costo_promedio,
            p.codigo, p.nombre, p.stock_minimo,
@@ -59,7 +54,6 @@ $stmt = $pdo->prepare($sqlStock);
 $stmt->execute(array(':idb' => $id));
 $stock = $stmt->fetchAll();
 
-// Movimientos recientes (últimos 10)
 $sqlMov = "
     SELECT m.id, m.tipo_movimiento, m.cantidad, m.precio_unitario, m.total,
            m.fecha_movimiento, m.observacion,
@@ -76,14 +70,12 @@ $stmt = $pdo->prepare($sqlMov);
 $stmt->execute(array(':idb' => $id));
 $movimientos = $stmt->fetchAll();
 
-$totalMov = (int)$pdo->query("SELECT COUNT(*) FROM movimientos_bodega WHERE id_bodega = " . (int)$id)->fetchColumn();
+$totalMov       = (int)$pdo->query("SELECT COUNT(*) FROM movimientos_bodega WHERE id_bodega = " . (int)$id)->fetchColumn();
 $totalStockRows = (int)$pdo->query("SELECT COUNT(*) FROM stock_bodega WHERE id_bodega = " . (int)$id)->fetchColumn();
 
-// Determinar si se puede desactivar/eliminar
 $puedeDesactivar = ((float)$kpi['unidades'] <= 0);
 $puedeEliminar   = ((int)$b['estado'] === 0) && ((float)$kpi['unidades'] <= 0) && ($totalStockRows === 0) && ($totalMov === 0);
 
-// Labels para tipos de movimiento
 $tipoLabel = array(
     'entrada_compra'   => array('Entrada compra',  'bg-success bg-opacity-10 text-success border-success-subtle'),
     'salida_consumo'   => array('Salida consumo',  'bg-danger bg-opacity-10 text-danger border-danger-subtle'),
@@ -114,6 +106,9 @@ require_once __DIR__ . '/../../inc/header.php';
         </h1>
     </div>
     <div class="d-flex gap-2 flex-wrap">
+        <a href="bodegas_encargados.php?id=<?php echo (int)$b['id']; ?>" class="btn btn-success">
+            <i class="bi bi-people-fill me-1"></i> Gestionar encargados
+        </a>
         <a href="bodegas_editar.php?id=<?php echo (int)$b['id']; ?>" class="btn btn-primary">
             <i class="bi bi-pencil me-1"></i> Editar
         </a>
@@ -143,10 +138,6 @@ require_once __DIR__ . '/../../inc/header.php';
                    onclick="return confirm('¿Eliminar definitivamente esta bodega? Esta acción no se puede deshacer.');">
                     <i class="bi bi-trash me-1"></i> Eliminar
                 </a>
-            <?php else: ?>
-                <button type="button" class="btn btn-outline-danger" disabled title="Solo se puede eliminar si está inactiva y sin stock ni movimientos registrados">
-                    <i class="bi bi-trash me-1"></i> Eliminar
-                </button>
             <?php endif; ?>
         <?php endif; ?>
 
@@ -192,7 +183,7 @@ require_once __DIR__ . '/../../inc/header.php';
     </div>
 </div>
 
-<!-- Información + Encargado -->
+<!-- Información + Encargados (M:N) -->
 <div class="row g-3 mb-3">
     <div class="col-lg-6">
         <div class="card shadow-sm border-0 h-100">
@@ -236,51 +227,52 @@ require_once __DIR__ . '/../../inc/header.php';
 
     <div class="col-lg-6">
         <div class="card shadow-sm border-0 h-100">
-            <div class="card-header bg-white border-bottom">
+            <div class="card-header bg-white border-bottom d-flex justify-content-between align-items-center">
                 <h5 class="mb-0 fw-bold text-dark">
-                    <i class="bi bi-person-badge text-success me-2"></i>Encargado
+                    <i class="bi bi-people-fill text-success me-2"></i>Encargados
+                    <span class="badge bg-secondary bg-opacity-10 text-secondary ms-2"><?php echo count($encargados); ?></span>
                 </h5>
+                <a href="bodegas_encargados.php?id=<?php echo (int)$b['id']; ?>" class="btn btn-sm btn-outline-success">
+                    <i class="bi bi-pencil-square me-1"></i> Gestionar
+                </a>
             </div>
             <div class="card-body p-4">
-                <?php if (empty($b['encargado_id'])): ?>
+                <?php if (!$encargados): ?>
                     <div class="text-center py-4">
                         <i class="bi bi-person-x fs-1 text-muted d-block mb-2"></i>
-                        <p class="text-muted mb-3">Esta bodega no tiene encargado asignado.</p>
-                        <a href="bodegas_editar.php?id=<?php echo (int)$b['id']; ?>" class="btn btn-sm btn-success">
-                            <i class="bi bi-person-plus me-1"></i> Asignar encargado
+                        <p class="text-muted mb-3">Sin encargados asignados.</p>
+                        <a href="bodegas_encargados.php?id=<?php echo (int)$b['id']; ?>" class="btn btn-sm btn-success">
+                            <i class="bi bi-person-plus me-1"></i> Asignar encargados
                         </a>
                     </div>
                 <?php else: ?>
-                    <dl class="row mb-0 small">
-                        <dt class="col-sm-4 text-muted">Nombre</dt>
-                        <dd class="col-sm-8 fw-bold text-dark"><?php echo h($b['encargado_nombre']); ?></dd>
-
-                        <?php if (!empty($b['encargado_rut'])): ?>
-                        <dt class="col-sm-4 text-muted">RUT</dt>
-                        <dd class="col-sm-8"><?php echo h($b['encargado_rut']); ?></dd>
-                        <?php endif; ?>
-
-                        <?php if (!empty($b['encargado_email'])): ?>
-                        <dt class="col-sm-4 text-muted">Email</dt>
-                        <dd class="col-sm-8"><?php echo h($b['encargado_email']); ?></dd>
-                        <?php endif; ?>
-
-                        <?php if (!empty($b['encargado_cargo'])): ?>
-                        <dt class="col-sm-4 text-muted">Cargo</dt>
-                        <dd class="col-sm-8"><?php echo h($b['encargado_cargo']); ?></dd>
-                        <?php endif; ?>
-
-                        <dt class="col-sm-4 text-muted">Usuario</dt>
-                        <dd class="col-sm-8"><code><?php echo h($b['encargado_usuario']); ?></code></dd>
-                    </dl>
-
-                    <?php if (!empty($b['encargado_funcionario_id'])): ?>
-                    <div class="mt-3 pt-3 border-top">
-                        <a href="../funcionarios/funcionarios_ver.php?id=<?php echo (int)$b['encargado_funcionario_id']; ?>" class="btn btn-sm btn-outline-primary">
-                            <i class="bi bi-eye me-1"></i> Ver ficha del funcionario
-                        </a>
+                    <div class="list-group list-group-flush">
+                        <?php foreach ($encargados as $e): ?>
+                            <div class="list-group-item px-0 py-2 d-flex justify-content-between align-items-center">
+                                <div>
+                                    <div class="fw-medium text-dark small">
+                                        <?php if ((int)$e['es_principal'] === 1): ?>
+                                            <i class="bi bi-star-fill text-warning me-1" title="Principal"></i>
+                                        <?php else: ?>
+                                            <i class="bi bi-person me-1 text-muted"></i>
+                                        <?php endif; ?>
+                                        <?php echo h($e['nombre']); ?>
+                                    </div>
+                                    <div class="text-muted" style="font-size:.72rem;">
+                                        <?php if (!empty($e['rut'])): ?>
+                                            <i class="bi bi-person-badge me-1"></i><?php echo h($e['rut']); ?>
+                                        <?php endif; ?>
+                                        <?php if (!empty($e['cargo'])): ?>
+                                            · <?php echo h($e['cargo']); ?>
+                                        <?php endif; ?>
+                                    </div>
+                                </div>
+                                <?php if ((int)$e['es_principal'] === 1): ?>
+                                    <span class="badge bg-primary bg-opacity-10 text-primary border border-primary-subtle" style="font-size:.65rem;">PRINCIPAL</span>
+                                <?php endif; ?>
+                            </div>
+                        <?php endforeach; ?>
                     </div>
-                    <?php endif; ?>
                 <?php endif; ?>
             </div>
         </div>
@@ -399,20 +391,5 @@ require_once __DIR__ . '/../../inc/header.php';
         <?php endif; ?>
     </div>
 </div>
-
-<?php if (!$puedeDesactivar || !$puedeEliminar): ?>
-<div class="alert alert-light border mt-3 small">
-    <i class="bi bi-info-circle me-1"></i>
-    <strong>Notas:</strong>
-    <ul class="mb-0 mt-1">
-        <?php if (!$puedeDesactivar && (int)$b['estado'] === 1): ?>
-            <li>Para <strong>desactivar</strong> esta bodega, primero debe estar <strong>sin stock en existencia</strong>.</li>
-        <?php endif; ?>
-        <?php if (!$puedeEliminar && (int)$b['estado'] === 0): ?>
-            <li>Para <strong>eliminar definitivamente</strong> esta bodega, debe estar inactiva y sin stock ni movimientos registrados.</li>
-        <?php endif; ?>
-    </ul>
-</div>
-<?php endif; ?>
 
 <?php require_once __DIR__ . '/../../inc/footer.php'; ?>

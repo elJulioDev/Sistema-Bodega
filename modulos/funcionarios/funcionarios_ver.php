@@ -3,6 +3,7 @@
 require_once __DIR__ . '/../../inc/db.php';
 require_once __DIR__ . '/../../inc/auth.php';
 require_once __DIR__ . '/../../inc/functions.php';
+require_once __DIR__ . '/../../inc/bodegas_helpers.php';
 
 require_login();
 require_role('admin');
@@ -13,14 +14,12 @@ $stmt = $pdo->prepare("
     SELECT f.*,
            un.nombre AS unidad_nombre,
            u.id AS usuario_id, u.usuario, u.rol AS usuario_rol,
-           u.estado AS usuario_estado, u.id_bodega, u.id_unidad AS uid_unidad,
+           u.estado AS usuario_estado, u.id_unidad AS uid_unidad,
            u.created_at AS usuario_created,
-           b.codigo AS bodega_codigo, b.nombre AS bodega_nombre,
            ub.nombre AS unidad_usuario_nombre
     FROM funcionarios f
     LEFT JOIN unidades_organizacionales un ON un.id = f.id_unidad
     LEFT JOIN usuarios u ON u.id_funcionario = f.id
-    LEFT JOIN bodegas b ON b.id = u.id_bodega
     LEFT JOIN unidades_organizacionales ub ON ub.id = u.id_unidad
     WHERE f.id = ?
     LIMIT 1
@@ -31,17 +30,23 @@ $f = $stmt->fetch();
 if (!$f) { die('Funcionario no encontrado.'); }
 
 $tieneUsuario = !empty($f['usuario_id']);
+$uid          = $tieneUsuario ? (int)$f['usuario_id'] : 0;
 
-// Estadísticas (si tiene usuario)
+// Bodegas M:N del usuario
+$misBodegas = array();
+if ($uid > 0) {
+    $misBodegas = user_bodegas($uid);
+}
+
 $movimientos = 0;
 $solicitudes = 0;
 if ($tieneUsuario) {
     $stmt = $pdo->prepare("SELECT COUNT(*) FROM movimientos_bodega WHERE id_usuario = ?");
-    $stmt->execute(array($f['usuario_id']));
+    $stmt->execute(array($uid));
     $movimientos = (int)$stmt->fetchColumn();
 
     $stmt = $pdo->prepare("SELECT COUNT(*) FROM solicitudes WHERE id_usuario = ?");
-    $stmt->execute(array($f['usuario_id']));
+    $stmt->execute(array($uid));
     $solicitudes = (int)$stmt->fetchColumn();
 }
 
@@ -151,9 +156,22 @@ require_once __DIR__ . '/../../inc/header.php';
                             <span class="badge <?php echo $rolInfo[1]; ?> border px-2 py-1"><?php echo $rolInfo[0]; ?></span>
                         </dd>
 
-                        <?php if ($f['usuario_rol'] === 'bodega' && !empty($f['bodega_nombre'])): ?>
-                        <dt class="col-sm-4 text-muted">Bodega</dt>
-                        <dd class="col-sm-8"><?php echo h($f['bodega_codigo'] . ' — ' . $f['bodega_nombre']); ?></dd>
+                        <?php if ($f['usuario_rol'] === 'bodega'): ?>
+                        <dt class="col-sm-4 text-muted">Bodegas</dt>
+                        <dd class="col-sm-8">
+                            <?php if (!$misBodegas): ?>
+                                <span class="text-muted fst-italic">Sin asignar</span>
+                            <?php else: ?>
+                                <div class="d-flex flex-wrap gap-1">
+                                    <?php foreach ($misBodegas as $mb): ?>
+                                        <span class="badge <?php echo ((int)$mb['es_principal'] === 1) ? 'bg-primary bg-opacity-10 text-primary border border-primary-subtle' : 'bg-light text-dark border'; ?>" style="font-size:.7rem;">
+                                            <?php if ((int)$mb['es_principal'] === 1): ?><i class="bi bi-star-fill me-1"></i><?php endif; ?>
+                                            <?php echo h($mb['codigo']); ?> — <?php echo h($mb['nombre']); ?>
+                                        </span>
+                                    <?php endforeach; ?>
+                                </div>
+                            <?php endif; ?>
+                        </dd>
                         <?php endif; ?>
 
                         <?php if ($f['usuario_rol'] === 'solicitante' && !empty($f['unidad_usuario_nombre'])): ?>
@@ -176,7 +194,7 @@ require_once __DIR__ . '/../../inc/header.php';
 
                     <div class="mt-3 pt-3 border-top d-flex gap-2">
                         <a href="funcionarios_editar.php?id=<?php echo (int)$f['id']; ?>" class="btn btn-sm btn-outline-primary">
-                            <i class="bi bi-key me-1"></i> Cambiar rol / contraseña
+                            <i class="bi bi-key me-1"></i> Cambiar rol / bodegas / contraseña
                         </a>
                         <a href="funcionarios_lista.php?revocar_acceso=<?php echo (int)$f['id']; ?>"
                            class="btn btn-sm btn-outline-warning"
@@ -190,7 +208,6 @@ require_once __DIR__ . '/../../inc/header.php';
     </div>
 
     <?php if ($tieneUsuario): ?>
-    <!-- Actividad -->
     <div class="col-12">
         <div class="card shadow-sm border-0">
             <div class="card-header bg-white border-bottom">

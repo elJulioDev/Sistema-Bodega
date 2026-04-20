@@ -3,6 +3,7 @@
 require_once __DIR__ . '/../../inc/db.php';
 require_once __DIR__ . '/../../inc/auth.php';
 require_once __DIR__ . '/../../inc/functions.php';
+require_once __DIR__ . '/../../inc/bodegas_helpers.php';
 
 require_login();
 require_role('admin');
@@ -24,10 +25,16 @@ $f = $stmt->fetch();
 if (!$f) { die('Funcionario no encontrado.'); }
 
 $tieneUsuario = !empty($f['usuario_id']);
+$uidActual    = $tieneUsuario ? (int)$f['usuario_id'] : 0;
 $error = '';
 
+// Bodegas que ya gestiona el usuario actual (M:N) — para pre-seleccionar
+$bodegasAsignadas = array();
+if ($uidActual > 0) {
+    $bodegasAsignadas = user_bodegas_ids($uidActual);
+}
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    // Datos funcionario
     $codigo    = trim((string)post('codigo'));
     $rut       = trim((string)post('rut'));
     $nombre    = trim((string)post('nombre'));
@@ -36,35 +43,36 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $programa  = trim((string)post('programa'));
     $email     = trim((string)post('email'));
 
-    // Datos acceso
     $crear_acceso = (int)post('crear_acceso');
     $clave        = (string)post('clave');
     $rol          = (string)post('rol');
-    $id_bodega    = (int)post('id_bodega');
     $id_unidad_u  = (int)post('id_unidad_usuario');
+    // Lista de bodegas M:N para rol 'bodega'
+    $bodegasSel   = isset($_POST['bodegas']) && is_array($_POST['bodegas']) ? $_POST['bodegas'] : array();
+    $bodegasSel   = array_map('intval', $bodegasSel);
+    $bodegaPrincipalId = (int)post('bodega_principal');
 
     if ($rut === '' || $nombre === '') {
         $error = 'RUT y nombre son obligatorios.';
     } else {
-        // RUT duplicado en otros funcionarios
         $stmt = $pdo->prepare("SELECT id FROM funcionarios WHERE rut = ? AND id <> ? LIMIT 1");
         $stmt->execute(array($rut, $id));
         if ($stmt->fetch()) {
             $error = 'Ya existe otro funcionario con ese RUT.';
         } elseif ($crear_acceso === 1) {
-            // Validar datos de acceso
             if (!$tieneUsuario && ($clave === '' || strlen($clave) < 4)) {
                 $error = 'La contraseña debe tener al menos 4 caracteres.';
             } elseif ($clave !== '' && strlen($clave) < 4) {
                 $error = 'La nueva contraseña debe tener al menos 4 caracteres.';
             } elseif (!in_array($rol, array('admin', 'bodega', 'solicitante'), true)) {
                 $error = 'Rol inválido.';
-            } elseif ($rol === 'bodega' && $id_bodega <= 0) {
-                $error = 'Para rol Encargado debes asignar una bodega.';
+            } elseif ($rol === 'bodega' && !$bodegasSel) {
+                $error = 'Para rol Encargado debes asignar al menos una bodega.';
+            } elseif ($rol === 'bodega' && $bodegaPrincipalId > 0 && !in_array($bodegaPrincipalId, $bodegasSel, true)) {
+                $error = 'La bodega principal debe estar dentro de las bodegas asignadas.';
             } elseif ($rol === 'solicitante' && $id_unidad_u <= 0) {
                 $error = 'Para rol Solicitante debes asignar una unidad.';
             } elseif (!$tieneUsuario) {
-                // Crear nuevo: validar RUT no exista como usuario
                 $stmt = $pdo->prepare("SELECT id FROM usuarios WHERE usuario = ? LIMIT 1");
                 $stmt->execute(array($rut));
                 if ($stmt->fetch()) {
@@ -97,39 +105,36 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                 // 2) Gestionar acceso
                 if ($crear_acceso === 1) {
-                    $bodFinal = ($rol === 'bodega') ? $id_bodega : null;
                     $uniFinal = ($rol === 'solicitante') ? $id_unidad_u : null;
 
                     if ($tieneUsuario) {
-                        // Actualizar usuario existente
                         if ($clave !== '') {
                             $clave_hash = password_hash($clave, PASSWORD_DEFAULT);
                             $stmt = $pdo->prepare("UPDATE usuarios SET
                                 nombre = ?, email = ?, usuario = ?, clave_hash = ?,
-                                rol = ?, id_bodega = ?, id_unidad = ?
+                                rol = ?, id_unidad = ?
                                 WHERE id = ?");
                             $stmt->execute(array(
                                 $nombre, $email !== '' ? $email : null, $rut, $clave_hash,
-                                $rol, $bodFinal, $uniFinal, $f['usuario_id']
+                                $rol, $uniFinal, $uidActual
                             ));
                         } else {
                             $stmt = $pdo->prepare("UPDATE usuarios SET
                                 nombre = ?, email = ?, usuario = ?,
-                                rol = ?, id_bodega = ?, id_unidad = ?
+                                rol = ?, id_unidad = ?
                                 WHERE id = ?");
                             $stmt->execute(array(
                                 $nombre, $email !== '' ? $email : null, $rut,
-                                $rol, $bodFinal, $uniFinal, $f['usuario_id']
+                                $rol, $uniFinal, $uidActual
                             ));
                         }
-                        $uidFinal = (int)$f['usuario_id'];
+                        $uidFinal = $uidActual;
                     } else {
-                        // Crear usuario nuevo
                         $clave_hash = password_hash($clave, PASSWORD_DEFAULT);
                         $sql = "INSERT INTO usuarios
                                   (id_funcionario, nombre, email, usuario, clave_hash, rol, id_bodega, id_unidad, estado)
                                 VALUES
-                                  (:id_funcionario, :nombre, :email, :usuario, :clave_hash, :rol, :id_bodega, :id_unidad, 1)";
+                                  (:id_funcionario, :nombre, :email, :usuario, :clave_hash, :rol, NULL, :id_unidad, 1)";
                         $stmt = $pdo->prepare($sql);
                         $stmt->execute(array(
                             ':id_funcionario' => $id,
@@ -138,24 +143,47 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             ':usuario'        => $rut,
                             ':clave_hash'     => $clave_hash,
                             ':rol'            => $rol,
-                            ':id_bodega'      => $bodFinal,
                             ':id_unidad'      => $uniFinal
                         ));
                         $uidFinal = (int)$pdo->lastInsertId();
                     }
 
-                    // Sincronizar id_encargado de bodegas
-                    if ($rol === 'bodega' && $id_bodega > 0) {
-                        // Limpiar si era encargado de otra bodega
-                        $pdo->prepare("UPDATE bodegas SET id_encargado = NULL WHERE id_encargado = ? AND id <> ?")
-                            ->execute(array($uidFinal, $id_bodega));
-                        // Asignar a la nueva
-                        $pdo->prepare("UPDATE bodegas SET id_encargado = ? WHERE id = ?")
-                            ->execute(array($uidFinal, $id_bodega));
+                    // 3) Sincronizar M:N usuarios_bodegas
+                    if ($rol === 'bodega') {
+                        // Obtener asignaciones actuales
+                        $stA = $pdo->prepare("SELECT id_bodega FROM usuarios_bodegas WHERE id_usuario = ?");
+                        $stA->execute(array($uidFinal));
+                        $actuales = array_map('intval', $stA->fetchAll(PDO::FETCH_COLUMN));
+
+                        $paraAgregar = array_diff($bodegasSel, $actuales);
+                        $paraQuitar  = array_diff($actuales, $bodegasSel);
+
+                        // Determinar principal (explícita o primera)
+                        if ($bodegaPrincipalId <= 0 && $bodegasSel) {
+                            $bodegaPrincipalId = (int)$bodegasSel[0];
+                        }
+
+                        foreach ($paraAgregar as $bid) {
+                            asignar_encargado_bodega($uidFinal, (int)$bid, ((int)$bid === $bodegaPrincipalId));
+                        }
+                        foreach ($paraQuitar as $bid) {
+                            desasignar_encargado_bodega($uidFinal, (int)$bid);
+                        }
+
+                        // Asegurar que la principal quede marcada correctamente
+                        if ($bodegaPrincipalId > 0 && in_array($bodegaPrincipalId, $bodegasSel, true)) {
+                            set_bodega_principal($uidFinal, $bodegaPrincipalId);
+                        }
                     } else {
-                        // Si ya no es encargado, liberar cualquier bodega que tuviera
-                        $pdo->prepare("UPDATE bodegas SET id_encargado = NULL WHERE id_encargado = ?")
-                            ->execute(array($uidFinal));
+                        // No es encargado: limpiar todas sus bodegas M:N
+                        $stA = $pdo->prepare("SELECT id_bodega FROM usuarios_bodegas WHERE id_usuario = ?");
+                        $stA->execute(array($uidFinal));
+                        $actuales = array_map('intval', $stA->fetchAll(PDO::FETCH_COLUMN));
+                        foreach ($actuales as $bid) {
+                            desasignar_encargado_bodega($uidFinal, (int)$bid);
+                        }
+                        // Limpiar legacy id_bodega
+                        $pdo->prepare("UPDATE usuarios SET id_bodega = NULL WHERE id = ?")->execute(array($uidFinal));
                     }
                 }
 
@@ -168,31 +196,37 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         }
 
-        // Refresca valores
         $f = array_merge($f, array(
             'codigo' => $codigo, 'rut' => $rut, 'nombre' => $nombre,
             'id_unidad' => $id_unidad, 'cargo' => $cargo,
             'programa' => $programa, 'email' => $email
         ));
+        // Mantener selección tras error
+        $bodegasAsignadas = $bodegasSel;
     }
 }
 
 $unidades = $pdo->query("SELECT id, nombre FROM unidades_organizacionales WHERE estado = 1 ORDER BY nombre")->fetchAll();
 
 $bodegas = $pdo->query("
-    SELECT b.id, b.codigo, b.nombre, b.es_central, b.id_encargado,
-           ff.nombre AS encargado_nombre
+    SELECT b.id, b.codigo, b.nombre, b.es_central,
+           (SELECT COUNT(*) FROM usuarios_bodegas WHERE id_bodega = b.id) AS total_encargados
     FROM bodegas b
-    LEFT JOIN usuarios uu ON uu.id = b.id_encargado
-    LEFT JOIN funcionarios ff ON ff.id = uu.id_funcionario
     WHERE b.estado = 1
     ORDER BY b.es_central DESC, b.nombre ASC
 ")->fetchAll();
 
 $crear_acceso_default = $tieneUsuario ? 1 : 0;
 $rol_default          = $tieneUsuario ? $f['usuario_rol'] : 'solicitante';
-$id_bodega_default    = $tieneUsuario ? (int)$f['usuario_id_bodega'] : 0;
 $id_unidad_u_default  = $tieneUsuario ? (int)$f['usuario_id_unidad'] : 0;
+
+// Principal actual
+$bodegaPrincipalActual = 0;
+if ($uidActual > 0) {
+    $st = $pdo->prepare("SELECT id_bodega FROM usuarios_bodegas WHERE id_usuario = ? AND es_principal = 1 LIMIT 1");
+    $st->execute(array($uidActual));
+    $bodegaPrincipalActual = (int)$st->fetchColumn();
+}
 
 $pageTitle = 'Editar Funcionario';
 require_once __DIR__ . '/../../inc/header.php';
@@ -289,8 +323,7 @@ require_once __DIR__ . '/../../inc/header.php';
                 <?php if ($tieneUsuario): ?>
                     <div class="alert alert-light border small mb-3">
                         <i class="bi bi-info-circle me-1"></i>
-                        Usuario del sistema activo. Deja la contraseña en blanco para conservar la actual.
-                        Para revocar el acceso usa el botón correspondiente en el listado.
+                        Usuario activo. Deja la contraseña en blanco para conservar la actual.
                     </div>
                 <?php else: ?>
                     <div class="alert alert-info small mb-3">
@@ -316,21 +349,43 @@ require_once __DIR__ . '/../../inc/header.php';
                         </select>
                     </div>
 
-                    <div class="col-12" id="grupoBodega" style="display:none;">
-                        <label class="form-label fw-bold text-secondary">Bodega a cargo <span class="text-danger">*</span></label>
-                        <select name="id_bodega" id="selBodega" class="form-select">
-                            <option value="">— Selecciona una bodega —</option>
+                    <!-- Bodegas M:N (solo rol bodega) -->
+                    <div class="col-12" id="grupoBodegas" style="display:none;">
+                        <label class="form-label fw-bold text-secondary">Bodegas a cargo <span class="text-danger">*</span></label>
+                        <div class="border rounded p-2" style="max-height:240px;overflow-y:auto;">
                             <?php foreach ($bodegas as $b):
-                                $yaTiene = !empty($b['id_encargado']) && (int)$b['id_encargado'] !== (int)$f['usuario_id'];
-                                $label = $b['codigo'] . ' — ' . $b['nombre'];
-                                if ((int)$b['es_central'] === 1) $label .= ' [CENTRAL]';
-                                if ($yaTiene) $label .= ' · asignada a ' . $b['encargado_nombre'];
+                                $checked = in_array((int)$b['id'], $bodegasAsignadas, true);
+                                $esPrincipal = ((int)$b['id'] === $bodegaPrincipalActual);
                             ?>
-                                <option value="<?php echo (int)$b['id']; ?>" <?php echo ($id_bodega_default === (int)$b['id']) ? 'selected' : ''; ?>>
-                                    <?php echo h($label); ?>
-                                </option>
+                                <div class="form-check d-flex align-items-center gap-2 mb-1">
+                                    <input type="checkbox" class="form-check-input chk-bod" name="bodegas[]"
+                                           value="<?php echo (int)$b['id']; ?>"
+                                           id="bod_<?php echo (int)$b['id']; ?>"
+                                           data-principal="<?php echo $esPrincipal ? '1' : '0'; ?>"
+                                           <?php echo $checked ? 'checked' : ''; ?>>
+                                    <label class="form-check-label flex-grow-1 small" for="bod_<?php echo (int)$b['id']; ?>">
+                                        <span class="badge bg-light text-dark border me-1"><?php echo h($b['codigo']); ?></span>
+                                        <?php echo h($b['nombre']); ?>
+                                        <?php if ((int)$b['es_central'] === 1): ?>
+                                            <span class="badge bg-warning bg-opacity-10 text-warning border border-warning-subtle ms-1" style="font-size:.6rem;">CENTRAL</span>
+                                        <?php endif; ?>
+                                        <?php if ((int)$b['total_encargados'] > 0): ?>
+                                            <span class="text-muted ms-2" style="font-size:.7rem;">
+                                                <i class="bi bi-people me-1"></i><?php echo (int)$b['total_encargados']; ?> encargado(s)
+                                            </span>
+                                        <?php endif; ?>
+                                    </label>
+                                    <input type="radio" class="form-check-input rd-principal" name="bodega_principal"
+                                           value="<?php echo (int)$b['id']; ?>"
+                                           <?php echo $esPrincipal ? 'checked' : ''; ?>
+                                           <?php echo $checked ? '' : 'disabled'; ?>
+                                           title="Marcar como bodega principal">
+                                </div>
                             <?php endforeach; ?>
-                        </select>
+                        </div>
+                        <div class="form-text">
+                            ☑ Marca las bodegas que gestionará · ◉ Marca la <strong>bodega principal</strong> (la que verá por defecto).
+                        </div>
                     </div>
 
                     <div class="col-12" id="grupoUnidadU" style="display:none;">
@@ -358,9 +413,10 @@ require_once __DIR__ . '/../../inc/header.php';
                     <i class="bi bi-info-circle me-2"></i>Notas
                 </h6>
                 <ul class="small text-muted ps-3 mb-0">
-                    <li class="mb-2">Si cambias el RUT, también se actualiza el nombre de usuario del acceso.</li>
-                    <li class="mb-2">Al asignar una bodega a un Encargado, se actualiza automáticamente en el módulo de Bodegas.</li>
-                    <li>Para eliminar el acceso al sistema usa la opción <em>Revocar acceso</em> en el listado.</li>
+                    <li class="mb-2">Un encargado puede gestionar <strong>varias bodegas</strong> a la vez.</li>
+                    <li class="mb-2">Una bodega puede tener <strong>varios encargados</strong> (M:N).</li>
+                    <li class="mb-2">La <strong>bodega principal</strong> es la que se muestra por defecto.</li>
+                    <li>Un solicitante podrá pedir a todas las bodegas de su unidad.</li>
                 </ul>
             </div>
         </div>
@@ -381,9 +437,8 @@ require_once __DIR__ . '/../../inc/header.php';
     var chkAcceso  = document.getElementById('chkCrearAcceso');
     var seccion    = document.getElementById('seccionAcceso');
     var selRol     = document.getElementById('selRol');
-    var selBodega  = document.getElementById('selBodega');
     var selUnidadU = document.getElementById('selUnidadU');
-    var grupoBod   = document.getElementById('grupoBodega');
+    var grupoBods  = document.getElementById('grupoBodegas');
     var grupoUni   = document.getElementById('grupoUnidadU');
     var inpClave   = document.getElementById('inpClave');
     var selUniFunc = document.getElementById('selUnidadFunc');
@@ -398,22 +453,39 @@ require_once __DIR__ . '/../../inc/header.php';
 
     function actualizarCampos() {
         if (!chkAcceso.checked) {
-            grupoBod.style.display = 'none';
-            grupoUni.style.display = 'none';
-            selBodega.required = false;
-            selUnidadU.required = false;
+            grupoBods.style.display = 'none';
+            grupoUni.style.display  = 'none';
+            selUnidadU.required     = false;
             return;
         }
         var rol = selRol.value;
-        grupoBod.style.display = (rol === 'bodega')      ? '' : 'none';
-        grupoUni.style.display = (rol === 'solicitante') ? '' : 'none';
-        selBodega.required  = (rol === 'bodega');
-        selUnidadU.required = (rol === 'solicitante');
+        grupoBods.style.display = (rol === 'bodega')      ? '' : 'none';
+        grupoUni.style.display  = (rol === 'solicitante') ? '' : 'none';
+        selUnidadU.required     = (rol === 'solicitante');
 
         if (rol === 'solicitante' && !selUnidadU.value && selUniFunc.value) {
             selUnidadU.value = selUniFunc.value;
         }
     }
+
+    // Habilitar/deshabilitar radios de principal según checkbox
+    document.querySelectorAll('.chk-bod').forEach(function(chk) {
+        chk.addEventListener('change', function() {
+            var id   = this.value;
+            var rad  = document.querySelector('.rd-principal[value="' + id + '"]');
+            if (!rad) return;
+            rad.disabled = !this.checked;
+            if (!this.checked && rad.checked) {
+                rad.checked = false;
+                // Auto-seleccionar primera marcada como principal
+                var firstChk = document.querySelector('.chk-bod:checked');
+                if (firstChk) {
+                    var r = document.querySelector('.rd-principal[value="' + firstChk.value + '"]');
+                    if (r) r.checked = true;
+                }
+            }
+        });
+    });
 
     chkAcceso.addEventListener('change', toggleAcceso);
     selRol.addEventListener('change', actualizarCampos);

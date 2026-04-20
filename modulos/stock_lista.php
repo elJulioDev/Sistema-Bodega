@@ -2,146 +2,195 @@
 require_once __DIR__ . '/../inc/db.php';
 require_once __DIR__ . '/../inc/auth.php';
 require_once __DIR__ . '/../inc/functions.php';
+require_once __DIR__ . '/../inc/bodegas_helpers.php';
 
-// 1. Añadir 'solicitante' a los roles permitidos
+require_login();
 require_role(array('admin', 'bodega', 'solicitante'));
 
 $buscar        = trim((string)get('buscar'));
 $id_bodega     = get('id_bodega');
 $filtro_alerta = get('alerta', '');
 
-// ============================================================
-// BLOQUEO POR ROL (ENCARGADO O SOLICITANTE)
-// ============================================================
-// Creamos una variable para saber si el usuario tiene vista restringida
-$is_restricted = is_encargado() || is_solicitante();
+/*
+|--------------------------------------------------------------------------
+| Bodegas visibles según rol (M:N)
+|--------------------------------------------------------------------------
+| - Encargado: sus bodegas asignadas en usuarios_bodegas
+| - Solicitante: todas las bodegas activas de su unidad
+| - Admin: todas las bodegas activas
+*/
+$user          = current_user();
+$uid           = (int)$user['id'];
+$uniId         = (int)(isset($user['id_unidad']) ? $user['id_unidad'] : 0);
+$esRestringido = (is_encargado() || is_solicitante());
 
-if ($is_restricted) {
-    if (is_solicitante()) {
-        // Obtener la bodega ligada a la unidad del solicitante
-        $stmtUnidad = $pdo->prepare("SELECT id FROM bodegas WHERE id_unidad = ? AND estado = 1 LIMIT 1");
-        $stmtUnidad->execute(array(user_unidad_id()));
-        $b_id = $stmtUnidad->fetchColumn();
-        $id_bodega = $b_id ? (string)$b_id : '0';
-    } else {
-        // El encargado ve su propia bodega asignada
-        $id_bodega = (string)user_bodega_id();
+$bodegasPermitidasIds = array();
+$bodegas              = array();
+
+if (is_admin()) {
+    $bodegas = $pdo->query("
+        SELECT id, codigo, nombre
+        FROM   bodegas
+        WHERE  estado = 1
+        ORDER  BY (codigo='CENTRAL') DESC, nombre ASC
+    ")->fetchAll();
+} elseif (is_encargado()) {
+    $bodegas = user_bodegas($uid);
+    foreach ($bodegas as $b) { $bodegasPermitidasIds[] = (int)$b['id']; }
+
+    if (!$bodegasPermitidasIds) {
+        set_flash('error', 'No tienes bodegas asignadas. Contacta al administrador.');
+        redirect('/Bodega/index.php');
     }
+} else {
+    // Solicitante: bodegas de su unidad
+    if ($uniId <= 0) {
+        set_flash('error', 'Tu usuario no tiene unidad asignada. Contacta al administrador.');
+        redirect('/Bodega/index.php');
+    }
+    $bodegas = bodegas_de_unidad($uniId);
+    foreach ($bodegas as $b) { $bodegasPermitidasIds[] = (int)$b['id']; }
 
-    if ((int)$id_bodega <= 0) {
-        set_flash('error', 'Tu usuario o unidad no tiene una bodega asignada. Contacta al administrador.');
+    if (!$bodegasPermitidasIds) {
+        set_flash('error', 'Tu unidad no tiene bodegas asignadas. Contacta al administrador.');
         redirect('/Bodega/index.php');
     }
 }
 
-// Buscar bodega central (default para admin)
-$stmtBC = $pdo->prepare("SELECT id, nombre FROM bodegas WHERE estado=1 AND codigo='CENTRAL' LIMIT 1");
-$stmtBC->execute();
-$bodegaCentral   = $stmtBC->fetch();
-$idBodegaCentral = $bodegaCentral ? (int)$bodegaCentral['id'] : 0;
-
-// Para admin: primera carga = bodega central
-if (is_admin()) {
-    if (!isset($_GET['id_bodega'])) {
-        $id_bodega = $idBodegaCentral > 0 ? (string)$idBodegaCentral : '';
-    } else {
-        $id_bodega = trim((string)$_GET['id_bodega']);
+/*
+|--------------------------------------------------------------------------
+| Validar/normalizar filtro de bodega
+|--------------------------------------------------------------------------
+*/
+if ($esRestringido) {
+    // Si pidió una bodega específica, debe estar en las permitidas
+    if ($id_bodega !== '' && !in_array((int)$id_bodega, $bodegasPermitidasIds, true)) {
+        $id_bodega = '';
     }
 }
 
-// Bodegas disponibles en el selector
-if ($is_restricted) {
-    // Solo su bodega asignada/ligada
-    $stmtB = $pdo->prepare("SELECT id, codigo, nombre FROM bodegas WHERE id = ? AND estado = 1 LIMIT 1");
-    $stmtB->execute(array($id_bodega));
-    $bodegas = $stmtB->fetchAll();
-    $miBodega = !empty($bodegas[0]) ? $bodegas[0] : null;
-} else {
-    $bodegas = $pdo->query("
-        SELECT id, codigo, nombre FROM bodegas
-        WHERE estado = 1
-        ORDER BY (codigo='CENTRAL') DESC, nombre ASC
-    ")->fetchAll();
-    $miBodega = null;
+// Central (para default admin)
+$stmtBC = $pdo->prepare("SELECT id FROM bodegas WHERE estado=1 AND codigo='CENTRAL' LIMIT 1");
+$stmtBC->execute();
+$idBodegaCentral = (int)$stmtBC->fetchColumn();
+
+if (is_admin() && !isset($_GET['id_bodega']) && $idBodegaCentral > 0) {
+    $id_bodega = (string)$idBodegaCentral;
 }
 
-// Estadísticas
+/*
+|--------------------------------------------------------------------------
+| Construcción dinámica WHERE
+|--------------------------------------------------------------------------
+*/
+$whereBase  = " p.estado = 1 ";
+$paramsBase = array();
+
+// Restringir por lista de bodegas permitidas
+if ($esRestringido) {
+    $phs = array();
+    foreach ($bodegasPermitidasIds as $i => $bid) {
+        $k = ':bp' . $i;
+        $phs[] = $k;
+        $paramsBase[$k] = $bid;
+    }
+    $whereBase .= " AND sb.id_bodega IN (" . implode(',', $phs) . ") ";
+}
+
+// Filtro por bodega específica
+if ($id_bodega !== '') {
+    $whereBase .= " AND sb.id_bodega = :idb ";
+    $paramsBase[':idb'] = (int)$id_bodega;
+}
+
+/*
+|--------------------------------------------------------------------------
+| Estadísticas
+|--------------------------------------------------------------------------
+*/
 $sqlStats = "
-    SELECT 
+    SELECT
         COUNT(*) AS total_registros,
         COALESCE(SUM(sb.stock_actual), 0) AS stock_total,
         COALESCE(SUM(sb.stock_actual * sb.costo_promedio), 0) AS valor_total,
         SUM(CASE WHEN sb.stock_actual <= 0 THEN 1 ELSE 0 END) AS sin_stock,
         SUM(CASE WHEN p.stock_minimo > 0 AND sb.stock_actual > 0 AND sb.stock_actual <= p.stock_minimo THEN 1 ELSE 0 END) AS stock_bajo
-    FROM stock_bodega sb
-    INNER JOIN productos p ON p.id = sb.id_producto
-    WHERE p.estado = 1
+    FROM   stock_bodega sb
+    INNER  JOIN productos p ON p.id = sb.id_producto
+    WHERE  $whereBase
 ";
-$paramsStats = array();
-if ($id_bodega !== '') {
-    $sqlStats .= " AND sb.id_bodega = :idb";
-    $paramsStats[':idb'] = (int)$id_bodega;
-}
 $stmtStats = $pdo->prepare($sqlStats);
-$stmtStats->execute($paramsStats);
+$stmtStats->execute($paramsBase);
 $stats = $stmtStats->fetch();
 
-// Consulta principal
-$sql = "SELECT 
-            sb.*,
-            b.nombre AS bodega_nombre,
-            b.codigo AS bodega_codigo,
-            p.codigo AS producto_codigo,
-            p.nombre AS producto_nombre,
-            p.stock_minimo,
-            p.activo_fijo,
-            um.nombre AS unidad_nombre,
-            um.codigo AS unidad_codigo
-        FROM stock_bodega sb
-        INNER JOIN bodegas b ON b.id = sb.id_bodega
-        INNER JOIN productos p ON p.id = sb.id_producto
-        LEFT JOIN unidades_medida um ON um.id = p.id_unidad_medida
-        WHERE p.estado = 1";
-$params = array();
+/*
+|--------------------------------------------------------------------------
+| Consulta principal
+|--------------------------------------------------------------------------
+*/
+$paramsList = $paramsBase;
+$whereList  = $whereBase;
 
 if ($buscar !== '') {
-    $sql .= " AND (p.codigo LIKE :buscar OR p.nombre LIKE :buscar OR b.nombre LIKE :buscar)";
-    $params[':buscar'] = '%' . $buscar . '%';
-}
-
-if ($id_bodega !== '') {
-    $sql .= " AND sb.id_bodega = :id_bodega";
-    $params[':id_bodega'] = (int)$id_bodega;
+    $whereList .= " AND (p.codigo LIKE :buscar OR p.nombre LIKE :buscar OR b.nombre LIKE :buscar) ";
+    $paramsList[':buscar'] = '%' . $buscar . '%';
 }
 
 if ($filtro_alerta === 'bajo') {
-    $sql .= " AND p.stock_minimo > 0 AND sb.stock_actual <= p.stock_minimo";
+    $whereList .= " AND p.stock_minimo > 0 AND sb.stock_actual <= p.stock_minimo ";
 } elseif ($filtro_alerta === 'sin') {
-    $sql .= " AND sb.stock_actual <= 0";
+    $whereList .= " AND sb.stock_actual <= 0 ";
 }
 
-$sql .= " ORDER BY (b.codigo='CENTRAL') DESC, b.nombre ASC, p.nombre ASC";
-
+$sql = "
+    SELECT sb.*,
+           b.nombre  AS bodega_nombre,
+           b.codigo  AS bodega_codigo,
+           p.codigo  AS producto_codigo,
+           p.nombre  AS producto_nombre,
+           p.stock_minimo,
+           p.activo_fijo,
+           um.nombre AS unidad_nombre,
+           um.codigo AS unidad_codigo
+    FROM   stock_bodega sb
+    INNER  JOIN bodegas b       ON b.id  = sb.id_bodega
+    INNER  JOIN productos p     ON p.id  = sb.id_producto
+    LEFT   JOIN unidades_medida um ON um.id = p.id_unidad_medida
+    WHERE  $whereList
+    ORDER  BY (b.codigo='CENTRAL') DESC, b.nombre ASC, p.nombre ASC
+";
 $stmt = $pdo->prepare($sql);
-$stmt->execute($params);
+$stmt->execute($paramsList);
 $stocks = $stmt->fetchAll();
 
 $canOperate = has_role(array('admin', 'bodega'));
 
-$pageTitle = $is_restricted ? 'Stock de mi Bodega' : 'Control de Stock';
+/*
+|--------------------------------------------------------------------------
+| Título / subtítulo
+|--------------------------------------------------------------------------
+*/
+if (is_encargado())        $pageTitle = 'Stock de mis Bodegas';
+elseif (is_solicitante())  $pageTitle = 'Stock de mi Unidad';
+else                       $pageTitle = 'Control de Stock';
+
 require_once __DIR__ . '/../inc/header.php';
 ?>
 
 <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
     <div>
         <h1 class="h4 mb-0 text-dark fw-bold">
-            <i class="bi bi-inboxes text-primary me-2"></i>
-            <?php echo $is_restricted ? 'Stock de mi Bodega' : 'Control de Stock'; ?>
+            <i class="bi bi-inboxes text-primary me-2"></i><?php echo h($pageTitle); ?>
         </h1>
-        <?php if ($is_restricted && $miBodega): ?>
+        <?php if (is_encargado()): ?>
             <small class="text-muted">
                 <i class="bi bi-geo-alt-fill me-1"></i>
-                <?php echo h($miBodega['nombre'] . ' (' . $miBodega['codigo'] . ')'); ?>
+                <?php echo count($bodegasPermitidasIds); ?> bodega<?php echo count($bodegasPermitidasIds)===1?'':'s'; ?> a tu cargo
+            </small>
+        <?php elseif (is_solicitante()): ?>
+            <small class="text-muted">
+                <i class="bi bi-diagram-3 me-1"></i>
+                Bodegas de tu unidad (<?php echo count($bodegasPermitidasIds); ?>)
             </small>
         <?php else: ?>
             <small class="text-muted">Stock actual por bodega y producto</small>
@@ -162,7 +211,7 @@ require_once __DIR__ . '/../inc/header.php';
     </div>
 </div>
 
-<!-- ESTADISTICAS -->
+<!-- KPIs -->
 <div class="row g-2 mb-3">
     <div class="col-6 col-lg-3">
         <div class="card shadow-sm border-0 border-start border-4 border-primary">
@@ -198,30 +247,30 @@ require_once __DIR__ . '/../inc/header.php';
     </div>
 </div>
 
-<!-- FILTROS -->
+<!-- Filtros -->
 <div class="card shadow-sm border-0 mb-3">
     <div class="card-body py-2 px-3">
         <form method="get" class="row g-2 align-items-center">
-            <div class="col-md-<?php echo $is_restricted ? '8' : '4'; ?>">
+            <div class="col-md-<?php echo (count($bodegas) > 1) ? '4' : '6'; ?>">
                 <div class="input-group input-group-sm">
                     <span class="input-group-text bg-light text-secondary border-end-0"><i class="bi bi-search"></i></span>
                     <input type="text" name="buscar" value="<?php echo h($buscar); ?>" class="form-control border-start-0 ps-0" placeholder="Buscar por código o nombre...">
                 </div>
             </div>
 
-            <?php if (!$is_restricted): ?>
+            <?php if (count($bodegas) > 1): ?>
             <div class="col-md-3">
                 <select name="id_bodega" class="form-select form-select-sm">
-                    <option value="">Todas las bodegas</option>
+                    <option value="">Todas mis bodegas</option>
                     <?php foreach ($bodegas as $b): ?>
                         <option value="<?php echo (int)$b['id']; ?>" <?php echo ((string)$id_bodega === (string)$b['id']) ? 'selected' : ''; ?>>
-                            <?php echo h($b['nombre']); ?><?php echo $b['codigo'] === 'CENTRAL' ? ' ★' : ''; ?>
+                            <?php echo h($b['nombre']); ?><?php echo ($b['codigo'] === 'CENTRAL') ? ' ★' : ''; ?>
                         </option>
                     <?php endforeach; ?>
                 </select>
             </div>
-            <?php else: ?>
-                <input type="hidden" name="id_bodega" value="<?php echo (int)$id_bodega; ?>">
+            <?php elseif (count($bodegas) === 1): ?>
+                <input type="hidden" name="id_bodega" value="<?php echo (int)$bodegas[0]['id']; ?>">
             <?php endif; ?>
 
             <div class="col-md-3">
@@ -231,9 +280,9 @@ require_once __DIR__ . '/../inc/header.php';
                     <option value="sin"  <?php echo $filtro_alerta === 'sin'  ? 'selected' : ''; ?>>✗ Sin stock</option>
                 </select>
             </div>
-            <div class="col-md-<?php echo $is_restricted ? '1' : '2'; ?> d-flex gap-1">
+            <div class="col-md-2 d-flex gap-1">
                 <button type="submit" class="btn btn-sm btn-primary flex-grow-1">Filtrar</button>
-                <?php if ($buscar !== '' || (is_admin() && isset($_GET['id_bodega'])) || $filtro_alerta !== ''): ?>
+                <?php if ($buscar !== '' || $id_bodega !== '' || $filtro_alerta !== ''): ?>
                     <a href="stock_lista.php" class="btn btn-sm btn-light border" title="Limpiar"><i class="bi bi-x-lg"></i></a>
                 <?php endif; ?>
             </div>
@@ -241,17 +290,15 @@ require_once __DIR__ . '/../inc/header.php';
     </div>
 </div>
 
-<!-- TABLA -->
+<!-- Tabla -->
 <div class="card shadow-sm border-0">
     <div class="card-body p-0">
         <div class="table-responsive">
             <table class="table table-hover align-middle mb-0" style="font-size: 0.9rem;">
                 <thead class="table-light text-secondary" style="font-size: 0.75rem;">
                     <tr>
-                        <?php if (!$is_restricted): ?>
-                            <th class="px-3 py-2">BODEGA</th>
-                        <?php endif; ?>
-                        <th class="py-2 <?php echo $is_restricted ? 'px-3' : ''; ?>">PRODUCTO</th>
+                        <th class="px-3 py-2">BODEGA</th>
+                        <th class="py-2">PRODUCTO</th>
                         <th class="py-2 text-center">UNIDAD</th>
                         <th class="py-2 text-end">STOCK</th>
                         <th class="py-2 text-end">MÍN.</th>
@@ -265,42 +312,35 @@ require_once __DIR__ . '/../inc/header.php';
                 </thead>
                 <tbody>
                 <?php if (!$stocks): ?>
-                    <?php $colspan = $is_restricted ? 7 : 8; if ($canOperate) $colspan++; ?>
+                    <?php $colspan = 8; if ($canOperate) $colspan++; ?>
                     <tr>
                         <td colspan="<?php echo $colspan; ?>" class="text-center py-5">
                             <i class="bi bi-inbox display-4 text-muted d-block mb-2"></i>
                             <p class="text-muted mb-0">No hay stock registrado con los filtros aplicados.</p>
-                            <?php if (is_admin()): ?>
-                                <small class="text-muted">Para ingresar stock, registra una factura de compra.</small>
-                            <?php else: ?>
-                                <small class="text-muted">Solicita reposición desde la bodega central u otras bodegas.</small>
-                            <?php endif; ?>
                         </td>
                     </tr>
                 <?php else: ?>
-                    <?php foreach ($stocks as $s): 
+                    <?php foreach ($stocks as $s):
                         $stock     = (float)$s['stock_actual'];
                         $minimo    = (float)$s['stock_minimo'];
                         $sinStock  = ($stock <= 0);
                         $bajoMin   = ($minimo > 0 && $stock > 0 && $stock <= $minimo);
                         $valor     = $stock * (float)$s['costo_promedio'];
                         $esCentral = ($s['bodega_codigo'] === 'CENTRAL');
-                        
+
                         $rowClass = '';
                         if ($sinStock)     $rowClass = 'table-danger';
                         elseif ($bajoMin)  $rowClass = 'table-warning';
                     ?>
                         <tr<?php echo $rowClass ? ' class="' . $rowClass . '"' : ''; ?>>
-                            <?php if (!$is_restricted): ?>
-                                <td class="px-3">
-                                    <div class="fw-semibold small"><?php echo h($s['bodega_nombre']); ?></div>
-                                    <small class="text-muted">
-                                        <?php echo h($s['bodega_codigo']); ?>
-                                        <?php if ($esCentral): ?> <span class="text-warning">★</span><?php endif; ?>
-                                    </small>
-                                </td>
-                            <?php endif; ?>
-                            <td class="<?php echo $is_restricted ? 'px-3' : ''; ?>">
+                            <td class="px-3">
+                                <div class="fw-semibold small"><?php echo h($s['bodega_nombre']); ?></div>
+                                <small class="text-muted">
+                                    <?php echo h($s['bodega_codigo']); ?>
+                                    <?php if ($esCentral): ?> <span class="text-warning">★</span><?php endif; ?>
+                                </small>
+                            </td>
+                            <td>
                                 <div class="fw-medium small"><?php echo h($s['producto_nombre']); ?></div>
                                 <small class="text-muted"><?php echo h($s['producto_codigo']); ?></small>
                             </td>
@@ -325,6 +365,11 @@ require_once __DIR__ . '/../inc/header.php';
                             </td>
                             <?php if ($canOperate): ?>
                                 <td class="px-3 text-center">
+                                    <?php
+                                    // Encargado: solo puede operar si la bodega está en sus permisos
+                                    $puedoOperarFila = is_admin() || in_array((int)$s['id_bodega'], $bodegasPermitidasIds, true);
+                                    ?>
+                                    <?php if ($puedoOperarFila): ?>
                                     <div class="btn-group btn-group-sm">
                                         <?php if (is_admin()): ?>
                                             <a href="movimientos/movimientos_crear.php?tipo=salida_consumo&id_bodega=<?php echo (int)$s['id_bodega']; ?>&id_producto=<?php echo (int)$s['id_producto']; ?>"
@@ -343,6 +388,9 @@ require_once __DIR__ . '/../inc/header.php';
                                             </a>
                                         <?php endif; ?>
                                     </div>
+                                    <?php else: ?>
+                                        <span class="text-muted small">—</span>
+                                    <?php endif; ?>
                                 </td>
                             <?php endif; ?>
                         </tr>

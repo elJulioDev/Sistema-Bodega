@@ -3,6 +3,7 @@
 require_once __DIR__ . '/../../inc/db.php';
 require_once __DIR__ . '/../../inc/auth.php';
 require_once __DIR__ . '/../../inc/functions.php';
+require_once __DIR__ . '/../../inc/bodegas_helpers.php';
 
 require_login();
 require_role('admin');
@@ -40,10 +41,12 @@ if (isset($_GET['revocar_acceso'])) {
         set_flash('error', 'No puedes revocar tu propio acceso.');
     } elseif ($uid > 0) {
         try {
-            // Desvincular encargado de bodegas si aplica
+            // Desvincular encargado de bodegas (M:N) y legacy
+            $pdo->prepare("DELETE FROM usuarios_bodegas WHERE id_usuario = ?")
+                ->execute(array($uid));
             $pdo->prepare("UPDATE bodegas SET id_encargado = NULL WHERE id_encargado = ?")
                 ->execute(array($uid));
-
+         
             $pdo->prepare("DELETE FROM usuarios WHERE id = ?")
                 ->execute(array($uid));
 
@@ -127,17 +130,22 @@ $totalPaginas = max(1, (int)ceil($total / $perPage));
 
 // Listado
 $sql = "SELECT f.*,
-               un.nombre AS unidad_nombre,
-               u.id AS usuario_id,
-               u.rol AS usuario_rol,
-               u.estado AS usuario_estado,
-               b.nombre AS bodega_nombre,
-               b.codigo AS bodega_codigo,
-               ub.nombre AS unidad_usuario_nombre
+                un.nombre AS unidad_nombre,
+                u.id AS usuario_id,
+                u.rol AS usuario_rol,
+                u.estado AS usuario_estado,
+                ub.nombre AS unidad_usuario_nombre,
+                (SELECT COUNT(*) FROM usuarios_bodegas WHERE id_usuario = u.id) AS total_bodegas,
+                (
+                SELECT b.nombre FROM usuarios_bodegas ub2
+                INNER JOIN bodegas b ON b.id = ub2.id_bodega
+                WHERE ub2.id_usuario = u.id
+                ORDER BY ub2.es_principal DESC, b.nombre ASC
+                LIMIT 1
+                ) AS bodega_principal_nombre
         FROM funcionarios f
         LEFT JOIN unidades_organizacionales un ON un.id = f.id_unidad
         LEFT JOIN usuarios u ON u.id_funcionario = f.id
-        LEFT JOIN bodegas b ON b.id = u.id_bodega
         LEFT JOIN unidades_organizacionales ub ON ub.id = u.id_unidad
         WHERE $whereSql
         ORDER BY f.nombre ASC
@@ -304,8 +312,11 @@ require_once __DIR__ . '/../../inc/header.php';
                         $rolInfo = $tieneUsuario ? rolBadge($f['usuario_rol']) : null;
                         $asignacion = '';
                         if ($tieneUsuario) {
-                            if ($f['usuario_rol'] === 'bodega' && !empty($f['bodega_nombre'])) {
-                                $asignacion = $f['bodega_codigo'] . ' — ' . $f['bodega_nombre'];
+                            if ($f['usuario_rol'] === 'bodega' && (int)$f['total_bodegas'] > 0) {
+                                $asignacion = $f['bodega_principal_nombre'];
+                                if ((int)$f['total_bodegas'] > 1) {
+                                    $asignacion .= ' +' . ((int)$f['total_bodegas'] - 1) . ' más';
+                                }
                             } elseif ($f['usuario_rol'] === 'solicitante' && !empty($f['unidad_usuario_nombre'])) {
                                 $asignacion = $f['unidad_usuario_nombre'];
                             }

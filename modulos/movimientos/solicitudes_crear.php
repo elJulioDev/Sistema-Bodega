@@ -1,12 +1,19 @@
 <?php
 /**
  * solicitudes_crear.php
- * Muestra stock libre (stock_actual - reservado en solicitudes pendientes).
- * Permite seleccionar días límite para aprobación (1–7, default 3).
+ *
+ * ACTUALIZACIÓN (modelo M:N):
+ *   - Encargado: destino = cualquiera de SUS bodegas (M:N).
+ *   - Solicitante: destino = cualquier bodega de SU unidad
+ *                  (soporta múltiples bodegas por unidad).
+ *   - Origen: cualquier bodega activa; el solicitante solo puede
+ *     pedir desde bodegas que NO sean de su propia unidad, pero
+ *     el destino SÍ debe ser de su unidad.
  */
 require_once __DIR__ . '/../../inc/db.php';
 require_once __DIR__ . '/../../inc/auth.php';
 require_once __DIR__ . '/../../inc/functions.php';
+require_once __DIR__ . '/../../inc/bodegas_helpers.php';
 
 require_login();
 require_role(array('admin', 'bodega', 'solicitante'));
@@ -14,35 +21,26 @@ require_role(array('admin', 'bodega', 'solicitante'));
 $user  = current_user();
 $miUid = (int)$user['id'];
 
-// ── Destino fijo para encargado / solicitante ───────────────
-$destinoFijo   = null;
-$destinoFijoId = 0;
+// ── Bodegas destino permitidas según rol ────────────────────
+$bodegasDestino   = array();   // filas
+$bodegasDestinoIds = array();  // solo ids
 
-if (is_encargado() || is_solicitante()) {
-    $uniId = (int)(isset($user['id_unidad']) ? $user['id_unidad'] : 0);
-
-    if (is_encargado()) {
-        $bid = user_bodega_id();
-        $stmt = $pdo->prepare("SELECT id, codigo, nombre FROM bodegas WHERE id = ? AND estado = 1 LIMIT 1");
-        $stmt->execute(array($bid));
-        $destinoFijo = $stmt->fetch();
-        $destinoFijoId = $destinoFijo ? (int)$destinoFijo['id'] : 0;
-    } elseif ($uniId > 0) {
-        $stmt = $pdo->prepare("SELECT id, codigo, nombre FROM bodegas WHERE id_unidad = ? AND estado = 1 LIMIT 1");
-        $stmt->execute(array($uniId));
-        $destinoFijo = $stmt->fetch();
-        $destinoFijoId = $destinoFijo ? (int)$destinoFijo['id'] : 0;
-    }
-
-    if (!$destinoFijo) {
-        set_flash('error', 'Tu unidad/bodega no tiene destino configurado. Contacta al administrador.');
-        redirect('/Bodega/index.php');
-    }
+if (is_encargado()) {
+    $bodegasDestino = user_bodegas($miUid);  // todas sus bodegas
+    foreach ($bodegasDestino as $b) $bodegasDestinoIds[] = (int)$b['id'];
+} elseif (is_solicitante()) {
+    $bodegasDestino = bodegas_destino_solicitante($miUid);
+    foreach ($bodegasDestino as $b) $bodegasDestinoIds[] = (int)$b['id'];
 }
 
-// ── Bodegas origen ──────────────────────────────────────────
+if ((is_encargado() || is_solicitante()) && !$bodegasDestino) {
+    set_flash('error', 'Tu usuario/unidad no tiene bodegas configuradas como destino. Contacta al administrador.');
+    redirect('/Bodega/index.php');
+}
+
+// ── Bodegas origen (todas las activas) ──────────────────────
 $bodegas = $pdo->query("
-    SELECT id, codigo, nombre
+    SELECT id, codigo, nombre, id_unidad
     FROM   bodegas
     WHERE  estado = 1
     ORDER  BY (codigo = 'CENTRAL') DESC, nombre ASC
@@ -82,9 +80,7 @@ foreach ($stockRows as $r) {
     );
 }
 
-// ── Stock reservado por bodega (solicitudes pendientes) ─────
-// Para cada bodega origen, qué cantidades ya están comprometidas
-// en solicitudes pendientes / en_revision aún no ejecutadas.
+// ── Reservado en solicitudes pendientes ─────────────────────
 $reservadoRows = $pdo->query("
     SELECT s.id_bodega_origen, sd.id_producto, SUM(sd.cantidad) AS reservado
     FROM   solicitudes_detalle sd
@@ -94,7 +90,7 @@ $reservadoRows = $pdo->query("
     GROUP  BY s.id_bodega_origen, sd.id_producto
 ")->fetchAll();
 
-$reservadoMap = array(); // [id_bodega][id_producto] = qty_reservada
+$reservadoMap = array();
 foreach ($reservadoRows as $r) {
     $bi = (int)$r['id_bodega_origen'];
     $pi = (int)$r['id_producto'];
@@ -107,7 +103,7 @@ $error = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $id_origen  = (int)post('id_bodega_origen');
     $id_destino = (int)post('id_bodega_destino');
-    $motivo     = trim(post('observacion'));
+    $motivo     = trim((string)post('observacion'));
     $dias_lim   = (int)post('dias_limite');
     if ($dias_lim < 1 || $dias_lim > 7) $dias_lim = 3;
 
@@ -115,19 +111,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $items_cant = isset($_POST['item_cantidad'])    ? $_POST['item_cantidad']    : array();
     $items_obs  = isset($_POST['item_obs'])         ? $_POST['item_obs']         : array();
 
+    // Validar destino según rol
     if (is_encargado() || is_solicitante()) {
-        $id_destino = $destinoFijoId;
+        if (!in_array($id_destino, $bodegasDestinoIds, true)) {
+            $error = 'La bodega destino no está permitida para tu usuario/unidad.';
+        }
     }
 
-    if ($id_origen <= 0) {
-        $error = 'Debes seleccionar la bodega origen.';
-    } elseif ($id_destino <= 0) {
-        $error = 'Bodega destino no definida.';
-    } elseif ($id_origen === $id_destino) {
-        $error = 'Bodega origen y destino no pueden ser la misma.';
-    } elseif ($motivo === '') {
-        $error = 'Debes ingresar un motivo para la solicitud.';
-    } else {
+    if ($error === '') {
+        if ($id_origen <= 0) {
+            $error = 'Debes seleccionar la bodega origen.';
+        } elseif ($id_destino <= 0) {
+            $error = 'Debes seleccionar la bodega destino.';
+        } elseif ($id_origen === $id_destino) {
+            $error = 'La bodega origen y destino no pueden ser la misma.';
+        } elseif ($motivo === '') {
+            $error = 'Debes ingresar un motivo para la solicitud.';
+        }
+    }
+
+    if ($error === '') {
         $detalle = array();
         $n = count($items_prod);
         for ($i = 0; $i < $n; $i++) {
@@ -142,16 +145,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (!$detalle) {
             $error = 'Agrega al menos un producto con cantidad válida.';
         } else {
-            // Advertir si algún ítem supera stock libre
             $advertencias = array();
             foreach ($detalle as $d) {
                 $stockReal = isset($stockMap[$id_origen][$d['p']]) ? $stockMap[$id_origen][$d['p']]['stock'] : 0;
                 $reservado = isset($reservadoMap[$id_origen][$d['p']]) ? $reservadoMap[$id_origen][$d['p']] : 0;
                 $libre     = max(0, $stockReal - $reservado);
-                if ($d['c'] > $libre) {
-                    // Solo advertir, no bloquear (el encargado decide al aprobar)
-                    $advertencias[] = $d['p'];
-                }
+                if ($d['c'] > $libre) $advertencias[] = $d['p'];
             }
 
             try {
@@ -179,7 +178,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $stmtD->execute(array($id_sol, $d['p'], $d['c'], $d['obs']));
                 }
 
-                // Log creación
                 $pdo->prepare("INSERT INTO solicitudes_log (id_solicitud, id_usuario, accion, detalle) VALUES (?,?,?,?)")
                     ->execute(array(
                         $id_sol, $miUid, 'creada',
@@ -197,7 +195,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 redirect('solicitudes_lista.php');
 
             } catch (Exception $e) {
-                $pdo->rollBack();
+                if ($pdo->inTransaction()) $pdo->rollBack();
                 $error = $e->getMessage();
             }
         }
@@ -219,8 +217,10 @@ require_once __DIR__ . '/../../inc/header.php';
             <i class="bi bi-clipboard-plus text-primary me-2"></i>Nueva Solicitud de Traslado
         </h1>
         <p class="text-muted mb-0 small mt-1">
-            <?php if (is_encargado() || is_solicitante()): ?>
-                Solicita productos hacia <strong><?php echo h($destinoFijo['nombre']); ?></strong>.
+            <?php if (is_solicitante()): ?>
+                Solicita productos hacia las bodegas de tu unidad.
+            <?php elseif (is_encargado()): ?>
+                Solicita productos hacia una de tus bodegas asignadas.
             <?php else: ?>
                 Crea una solicitud de traslado entre bodegas.
             <?php endif; ?>
@@ -232,19 +232,17 @@ require_once __DIR__ . '/../../inc/header.php';
     <div class="alert alert-danger"><i class="bi bi-exclamation-triangle me-2"></i><?php echo h($error); ?></div>
 <?php endif; ?>
 
-<!-- Aviso stock reservado -->
 <div class="alert alert-info d-flex gap-2 align-items-start border-0 shadow-sm mb-4" id="alertaReservado" style="display:none!important">
     <i class="bi bi-info-circle-fill fs-5 flex-shrink-0 mt-1"></i>
     <div>
         <strong>Stock con reservas activas</strong> — el stock libre mostrado descuenta cantidades comprometidas
-        en solicitudes pendientes de otros funcionarios. La cantidad disponible puede variar si esas solicitudes
-        se aprueban o caducan antes que la tuya.
+        en solicitudes pendientes de otros funcionarios.
     </div>
 </div>
 
 <form method="post" id="formSolicitud">
 
-    <!-- PASO 1: Origen / Destino / Motivo / Días límite -->
+    <!-- PASO 1 -->
     <div class="card border-0 shadow-sm mb-4">
         <div class="card-header bg-white py-3">
             <h6 class="mb-0 fw-bold">
@@ -253,15 +251,18 @@ require_once __DIR__ . '/../../inc/header.php';
         </div>
         <div class="card-body">
             <div class="row g-3">
-
-                <!-- Bodega origen -->
-                <div class="col-md-<?php echo (is_encargado() || is_solicitante()) ? '6' : '4'; ?>">
+                <!-- Origen -->
+                <div class="col-md-4">
                     <label class="form-label fw-semibold">Bodega Origen <span class="text-danger">*</span></label>
                     <select name="id_bodega_origen" id="selOrigen" class="form-select" required>
                         <option value="">— Seleccionar —</option>
-                        <?php foreach ($bodegas as $b): ?>
+                        <?php foreach ($bodegas as $b):
+                            // Solicitante/Encargado: no puede ser la misma que su destino
+                            $isDest = in_array((int)$b['id'], $bodegasDestinoIds, true);
+                        ?>
                             <option value="<?php echo (int)$b['id']; ?>"
-                                <?php echo ((int)$b['id'] === $idCentral) ? ' selected' : ''; ?>>
+                                data-dest="<?php echo $isDest ? '1' : '0'; ?>"
+                                <?php echo ((int)$b['id'] === $idCentral && !$isDest) ? ' selected' : ''; ?>>
                                 <?php echo h($b['nombre']); ?>
                                 <?php echo ((int)$b['id'] === $idCentral) ? ' ★' : ''; ?>
                             </option>
@@ -269,14 +270,36 @@ require_once __DIR__ . '/../../inc/header.php';
                     </select>
                 </div>
 
-                <!-- Bodega destino -->
-                <div class="col-md-<?php echo (is_encargado() || is_solicitante()) ? '6' : '4'; ?>">
+                <!-- Destino -->
+                <div class="col-md-4">
                     <label class="form-label fw-semibold">Bodega Destino <span class="text-danger">*</span></label>
-                    <?php if ($destinoFijo): ?>
-                        <input type="hidden" name="id_bodega_destino" value="<?php echo (int)$destinoFijoId; ?>">
-                        <input type="text" class="form-control bg-light" value="<?php echo h($destinoFijo['nombre']); ?>" readonly>
+                    <?php if (is_encargado() || is_solicitante()): ?>
+                        <?php if (count($bodegasDestino) === 1): ?>
+                            <?php $b = $bodegasDestino[0]; ?>
+                            <input type="hidden" name="id_bodega_destino" value="<?php echo (int)$b['id']; ?>">
+                            <input type="text" class="form-control bg-light" value="<?php echo h($b['nombre']); ?>" readonly>
+                            <div class="form-text">
+                                <?php if (is_solicitante()): ?>Única bodega de tu unidad.<?php else: ?>Única bodega asignada.<?php endif; ?>
+                            </div>
+                        <?php else: ?>
+                            <select name="id_bodega_destino" id="selDestino" class="form-select" required>
+                                <option value="">— Seleccionar —</option>
+                                <?php foreach ($bodegasDestino as $b): ?>
+                                    <option value="<?php echo (int)$b['id']; ?>">
+                                        <?php echo h($b['nombre']); ?> (<?php echo h($b['codigo']); ?>)
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
+                            <div class="form-text">
+                                <?php if (is_solicitante()): ?>
+                                    <?php echo count($bodegasDestino); ?> bodega(s) de tu unidad disponibles.
+                                <?php else: ?>
+                                    <?php echo count($bodegasDestino); ?> bodega(s) bajo tu gestión.
+                                <?php endif; ?>
+                            </div>
+                        <?php endif; ?>
                     <?php else: ?>
-                        <select name="id_bodega_destino" class="form-select" required>
+                        <select name="id_bodega_destino" id="selDestino" class="form-select" required>
                             <option value="">— Seleccionar —</option>
                             <?php foreach ($bodegas as $b): ?>
                                 <option value="<?php echo (int)$b['id']; ?>"><?php echo h($b['nombre']); ?></option>
@@ -285,12 +308,9 @@ require_once __DIR__ . '/../../inc/header.php';
                     <?php endif; ?>
                 </div>
 
-                <?php if (!is_encargado() && !is_solicitante()): ?>
-                <!-- Días límite — solo visible para admin -->
                 <div class="col-md-4">
                     <label class="form-label fw-semibold">
-                        Plazo de aprobación
-                        <span class="text-muted fw-normal small ms-1">(días)</span>
+                        Plazo aprobación <span class="text-muted fw-normal small ms-1">(días)</span>
                     </label>
                     <select name="dias_limite" class="form-select">
                         <?php for ($d = 1; $d <= 7; $d++): ?>
@@ -299,24 +319,18 @@ require_once __DIR__ . '/../../inc/header.php';
                             </option>
                         <?php endfor; ?>
                     </select>
-                    <div class="form-text">La solicitud caduca si no se aprueba en este plazo.</div>
                 </div>
-                <?php else: ?>
-                <!-- Días límite fijo para encargado/solicitante -->
-                <input type="hidden" name="dias_limite" value="3">
-                <?php endif; ?>
 
-                <!-- Motivo -->
                 <div class="col-12">
                     <label class="form-label fw-semibold">Motivo / Descripción <span class="text-danger">*</span></label>
                     <textarea name="observacion" class="form-control" rows="2"
-                              placeholder="Ej: Reposición mensual de insumos de oficina, evento..." required></textarea>
+                              placeholder="Ej: Reposición mensual de insumos..." required></textarea>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- PASO 2: Selección de productos -->
+    <!-- PASO 2 -->
     <div class="card border-0 shadow-sm mb-4">
         <div class="card-header bg-white d-flex justify-content-between align-items-center py-3">
             <h6 class="mb-0 fw-bold">
@@ -325,7 +339,6 @@ require_once __DIR__ . '/../../inc/header.php';
                 <span class="badge bg-secondary ms-2" id="badgeDisponibles">—</span>
             </h6>
             <div class="d-flex gap-2 align-items-center">
-                <!-- Leyenda stock -->
                 <span class="d-none d-md-flex align-items-center gap-1 me-2 small text-muted">
                     <i class="bi bi-circle-fill text-success" style="font-size:.55rem"></i> libre
                     <i class="bi bi-circle-fill text-warning ms-2" style="font-size:.55rem"></i> reservado
@@ -335,34 +348,25 @@ require_once __DIR__ . '/../../inc/header.php';
             </div>
         </div>
 
-        <!-- Mensaje sin origen -->
         <div class="text-center text-muted py-5" id="mensajeOrigen">
             <i class="bi bi-arrow-up-circle fs-1 d-block mb-2 text-primary opacity-50"></i>
             Selecciona la bodega origen para ver productos disponibles.
         </div>
 
-        <!-- Sin productos -->
         <div class="text-center text-muted py-5" id="sinProductos" style="display:none">
             <i class="bi bi-box-seam fs-1 d-block mb-2 opacity-25"></i>
             No hay stock disponible en la bodega seleccionada.
         </div>
 
-        <!-- Tabla productos -->
         <div id="contenidoProductos" style="display:none">
             <div class="table-responsive">
                 <table class="table table-hover align-middle mb-0">
                     <thead class="table-light small text-uppercase text-muted">
                         <tr>
-                            <th style="width:36px">
-                                <input type="checkbox" class="form-check-input" id="chkTodos">
-                            </th>
+                            <th style="width:36px"><input type="checkbox" class="form-check-input" id="chkTodos"></th>
                             <th>Código</th>
                             <th>Producto</th>
-                            <th class="text-end">
-                                Stock libre
-                                <i class="bi bi-info-circle ms-1" title="Stock disponible descontando reservas en solicitudes pendientes"
-                                   data-bs-toggle="tooltip"></i>
-                            </th>
+                            <th class="text-end">Stock libre</th>
                             <th class="text-end" style="width:130px">Cantidad</th>
                             <th class="d-none d-md-table-cell">Nota</th>
                         </tr>
@@ -373,7 +377,6 @@ require_once __DIR__ . '/../../inc/header.php';
         </div>
     </div>
 
-    <!-- Pie: resumen + enviar -->
     <div class="card border-0 shadow-sm sticky-bottom bg-white">
         <div class="card-body d-flex justify-content-between align-items-center flex-wrap gap-3 py-3">
             <div class="d-flex gap-4">
@@ -384,10 +387,6 @@ require_once __DIR__ . '/../../inc/header.php';
                 <div>
                     <div class="text-muted small text-uppercase fw-bold" style="font-size:.65rem;letter-spacing:.5px;">Cantidad total</div>
                     <div class="h5 mb-0 fw-bold text-primary" id="resumenCantidad">0,00</div>
-                </div>
-                <div id="resumenFecha" class="d-none">
-                    <div class="text-muted small text-uppercase fw-bold" style="font-size:.65rem;letter-spacing:.5px;">Caduca</div>
-                    <div class="h5 mb-0 fw-bold text-warning" id="resumenFechaVal">—</div>
                 </div>
             </div>
             <div class="d-flex gap-2">
@@ -403,12 +402,12 @@ require_once __DIR__ . '/../../inc/header.php';
 
 <script>
 (function () {
-    // Datos PHP → JS
-    var stockMap    = <?php echo json_encode($stockMap); ?>;
+    var stockMap     = <?php echo json_encode($stockMap); ?>;
     var reservadoMap = <?php echo json_encode($reservadoMap); ?>;
-    var productos   = <?php echo json_encode(array_values($productos)); ?>;
+    var productos    = <?php echo json_encode(array_values($productos)); ?>;
 
     var selOrigen     = document.getElementById('selOrigen');
+    var selDestino    = document.getElementById('selDestino'); // puede ser null si fijo
     var buscador      = document.getElementById('buscadorProductos');
     var tbody         = document.getElementById('tbodyProductos');
     var mensajeOrigen = document.getElementById('mensajeOrigen');
@@ -419,42 +418,23 @@ require_once __DIR__ . '/../../inc/header.php';
     var btnConfirmar  = document.getElementById('btnConfirmar');
     var resumenItems    = document.getElementById('resumenItems');
     var resumenCantidad = document.getElementById('resumenCantidad');
-    var selDias       = document.querySelector('select[name="dias_limite"]');
-    var resumenFecha  = document.getElementById('resumenFecha');
-    var resumenFechaVal = document.getElementById('resumenFechaVal');
     var alertaReservado = document.getElementById('alertaReservado');
 
     function fmt(n, dec) {
         if (isNaN(n)) n = 0;
         return n.toFixed(dec === undefined ? 2 : dec)
-                .replace('.', ',')
-                .replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+                .replace('.', ',').replace(/\B(?=(\d{3})+(?!\d))/g, '.');
     }
-
     function escapeHtml(s) {
         s = (s == null) ? '' : String(s);
         return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
                 .replace(/"/g,'&quot;').replace(/'/g,'&#039;');
     }
 
-    function addDays(n) {
-        var d = new Date();
-        d.setDate(d.getDate() + n);
-        return ('0' + d.getDate()).slice(-2) + '/' +
-               ('0' + (d.getMonth()+1)).slice(-2) + '/' +
-               d.getFullYear();
-    }
-
-    function actualizarFecha() {
-        if (!selDias) return;
-        var n = parseInt(selDias.value, 10);
-        resumenFechaVal.textContent = addDays(n);
-        resumenFecha.classList.remove('d-none');
-    }
-
-    if (selDias) {
-        selDias.addEventListener('change', actualizarFecha);
-        actualizarFecha();
+    function getDestinoActual() {
+        if (selDestino) return parseInt(selDestino.value, 10) || 0;
+        var hid = document.querySelector('input[name="id_bodega_destino"]');
+        return hid ? (parseInt(hid.value, 10) || 0) : 0;
     }
 
     function renderProductos() {
@@ -466,13 +446,11 @@ require_once __DIR__ . '/../../inc/header.php';
             sinProductos.style.display  = 'none';
             contenidoProd.style.display = 'none';
             badgeDisp.textContent = '—';
-            alertaReservado.style.removeProperty('display');
             alertaReservado.style.display = 'none';
             return;
         }
 
         mensajeOrigen.style.display = 'none';
-
         var stockBodega    = stockMap[idOrigen]     || {};
         var reservadoBodega = reservadoMap[idOrigen] || {};
         var hayReservas    = false;
@@ -485,23 +463,16 @@ require_once __DIR__ . '/../../inc/header.php';
             var stockReal = parseFloat(st.stock);
             var reservado = parseFloat(reservadoBodega[p.id] || 0);
             var libre     = Math.max(0, stockReal - reservado);
-            // Mostrar si hay stock real (aunque libre sea 0, para info)
             if (stockReal > 0) {
                 disponibles.push({
-                    id:       p.id,
-                    codigo:   p.codigo,
-                    nombre:   p.nombre,
-                    unidad:   p.unidad_nombre || '',
-                    tipo:     p.tipo_nombre   || '',
-                    stockReal: stockReal,
-                    reservado: reservado,
-                    libre:     libre
+                    id: p.id, codigo: p.codigo, nombre: p.nombre,
+                    unidad: p.unidad_nombre || '', tipo: p.tipo_nombre || '',
+                    stockReal: stockReal, reservado: reservado, libre: libre
                 });
                 if (reservado > 0) hayReservas = true;
             }
         }
 
-        // Mostrar alerta reservas
         alertaReservado.style.display = hayReservas ? '' : 'none';
 
         if (!disponibles.length) {
@@ -520,55 +491,35 @@ require_once __DIR__ . '/../../inc/header.php';
         for (var j = 0; j < disponibles.length; j++) {
             var d = disponibles[j];
             var agotado = (d.libre <= 0);
-
-            // Columna stock libre con info de reserva
-            var colStock = '';
-            if (agotado) {
-                colStock = '<span class="text-danger fw-bold"><i class="bi bi-exclamation-circle me-1"></i>Sin stock libre</span>';
-                if (d.reservado > 0) {
-                    colStock += '<br><small class="text-muted">'
-                             + fmt(d.stockReal) + ' total · '
-                             + '<span class="text-warning"><i class="bi bi-clock me-1"></i>' + fmt(d.reservado) + ' reservado</span>'
-                             + '</small>';
-                }
-            } else {
-                colStock = '<span class="fw-bold text-success">' + fmt(d.libre) + '</span>';
-                if (d.reservado > 0) {
-                    colStock += '<br><small class="text-warning"><i class="bi bi-clock me-1"></i>' + fmt(d.reservado) + ' reservado</small>';
-                }
+            var colStock = agotado
+                ? '<span class="text-danger fw-bold"><i class="bi bi-exclamation-circle me-1"></i>Sin stock libre</span>'
+                : '<span class="fw-bold text-success">' + fmt(d.libre) + '</span>';
+            if (d.reservado > 0) {
+                colStock += '<br><small class="text-warning"><i class="bi bi-clock me-1"></i>'
+                         + fmt(d.reservado) + ' reservado</small>';
             }
 
             html += '<tr class="fila-producto'+ (agotado ? ' table-secondary opacity-75' : '') +'"'
-                  + ' data-id="' + d.id + '"'
-                  + ' data-stock="' + d.libre + '"'
+                  + ' data-id="' + d.id + '" data-stock="' + d.libre + '"'
                   + ' data-nombre="' + escapeHtml(d.nombre.toLowerCase()) + '"'
-                  + ' data-codigo="' + escapeHtml(d.codigo.toLowerCase()) + '"'
-                  + ' data-agotado="' + (agotado ? '1' : '0') + '">'
-                  + '<td class="px-3">'
-                  +   '<input type="checkbox" class="form-check-input chk-item"'
-                  +   (agotado ? ' disabled title="Sin stock libre"' : '') + '>'
-                  + '</td>'
+                  + ' data-codigo="' + escapeHtml(d.codigo.toLowerCase()) + '">'
+                  + '<td class="px-3"><input type="checkbox" class="form-check-input chk-item"'
+                  +   (agotado ? ' disabled' : '') + '></td>'
                   + '<td><span class="badge bg-light text-dark border">' + escapeHtml(d.codigo) + '</span></td>'
-                  + '<td>'
-                  +   '<div class="fw-bold">' + escapeHtml(d.nombre) + '</div>'
-                  +   '<div class="text-muted small">' + (d.unidad ? '<i class="bi bi-ruler me-1"></i>' + escapeHtml(d.unidad) : '')
-                  +     (d.tipo ? ' · ' + escapeHtml(d.tipo) : '') + '</div>'
-                  + '</td>'
+                  + '<td><div class="fw-bold">' + escapeHtml(d.nombre) + '</div>'
+                  +   '<div class="text-muted small">' + (d.unidad ? escapeHtml(d.unidad) : '')
+                  +   (d.tipo ? ' · ' + escapeHtml(d.tipo) : '') + '</div></td>'
                   + '<td class="text-end">' + colStock + '</td>'
                   + '<td class="text-end" style="min-width:110px">'
-                  +   (agotado
-                        ? '<span class="text-muted small">No disponible</span>'
-                        : '<input type="number" class="form-control form-control-sm text-end input-cantidad" '
-                          + 'name="item_cantidad[]" step="0.01" min="0.01" max="' + d.libre + '" '
-                          + 'placeholder="0,00" style="min-width:90px">'
-                          + '<input type="hidden" name="item_id_producto[]" value="' + d.id + '">'
-                          + '<input type="hidden" name="item_obs[]" value="">'
-                      )
+                  +   (agotado ? '<span class="text-muted small">No disponible</span>'
+                               : '<input type="number" class="form-control form-control-sm text-end input-cantidad" '
+                                 + 'name="item_cantidad[]" step="0.01" min="0.01" max="' + d.libre + '" '
+                                 + 'placeholder="0,00">'
+                                 + '<input type="hidden" name="item_id_producto[]" value="' + d.id + '">')
                   + '</td>'
                   + '<td class="d-none d-md-table-cell">'
                   +   (agotado ? '' : '<input type="text" class="form-control form-control-sm" name="item_obs[]" placeholder="Nota opcional" maxlength="200">')
-                  + '</td>'
-                  + '</tr>';
+                  + '</td></tr>';
         }
         tbody.innerHTML = html;
         bindFilas();
@@ -576,42 +527,30 @@ require_once __DIR__ . '/../../inc/header.php';
     }
 
     function bindFilas() {
-        // Checkbox
         tbody.querySelectorAll('.chk-item').forEach(function (chk) {
             chk.addEventListener('change', function () {
                 var fila   = this.closest('tr');
                 var cantIn = fila.querySelector('.input-cantidad');
-                if (this.checked && cantIn) {
-                    if (!cantIn.value) cantIn.value = '1';
-                } else if (cantIn) {
-                    cantIn.value = '';
-                }
+                if (this.checked && cantIn && !cantIn.value) cantIn.value = '1';
+                else if (!this.checked && cantIn) cantIn.value = '';
                 actualizarResumen();
             });
         });
-
-        // Cantidad
         tbody.querySelectorAll('.input-cantidad').forEach(function (inp) {
             inp.addEventListener('input', function () {
-                var chk  = this.closest('tr').querySelector('.chk-item');
-                var max  = parseFloat(this.max);
-                var val  = parseFloat(this.value);
-
+                var chk = this.closest('tr').querySelector('.chk-item');
+                var max = parseFloat(this.max);
+                var val = parseFloat(this.value);
                 this.classList.remove('is-invalid');
                 if (this.value && val > 0) {
                     chk.checked = true;
-                    if (val > max) {
-                        this.classList.add('is-invalid');
-                        this.title = 'Máximo disponible: ' + fmt(max);
-                    }
+                    if (val > max) this.classList.add('is-invalid');
                 } else {
                     chk.checked = false;
                 }
                 actualizarResumen();
             });
         });
-
-        // Chk todos
         chkTodos.addEventListener('change', function () {
             tbody.querySelectorAll('.chk-item:not(:disabled)').forEach(function (c) {
                 c.checked = this.checked;
@@ -624,41 +563,36 @@ require_once __DIR__ . '/../../inc/header.php';
     }
 
     function actualizarResumen() {
-        var nItems = 0;
-        var total  = 0;
+        var nItems = 0, total = 0;
         tbody.querySelectorAll('.chk-item').forEach(function (chk) {
             if (chk.checked) {
                 nItems++;
                 var cantIn = chk.closest('tr').querySelector('.input-cantidad');
-                var v      = cantIn ? parseFloat(cantIn.value) : 0;
+                var v = cantIn ? parseFloat(cantIn.value) : 0;
                 if (!isNaN(v)) total += v;
             }
         });
         resumenItems.textContent    = nItems;
         resumenCantidad.textContent = fmt(total);
-        btnConfirmar.disabled       = (nItems === 0);
+
+        // Validar que origen != destino
+        var dst = getDestinoActual();
+        var org = parseInt(selOrigen.value, 10) || 0;
+        btnConfirmar.disabled = (nItems === 0) || !org || !dst || (org === dst);
     }
 
-    // Buscador
     buscador.addEventListener('input', function () {
         var q = this.value.toLowerCase().trim();
         tbody.querySelectorAll('tr.fila-producto').forEach(function (tr) {
-            var match = !q
-                     || tr.dataset.nombre.includes(q)
-                     || tr.dataset.codigo.includes(q);
+            var match = !q || tr.dataset.nombre.indexOf(q) !== -1 || tr.dataset.codigo.indexOf(q) !== -1;
             tr.style.display = match ? '' : 'none';
         });
     });
 
     selOrigen.addEventListener('change', renderProductos);
-    renderProductos(); // Inicial
+    if (selDestino) selDestino.addEventListener('change', actualizarResumen);
 
-    // Tooltips Bootstrap
-    document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(function (el) {
-        if (typeof bootstrap !== 'undefined') {
-            new bootstrap.Tooltip(el);
-        }
-    });
+    renderProductos();
 })();
 </script>
 

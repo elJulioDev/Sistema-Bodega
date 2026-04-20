@@ -2,6 +2,7 @@
 require_once __DIR__ . '/../../inc/db.php';
 require_once __DIR__ . '/../../inc/auth.php';
 require_once __DIR__ . '/../../inc/functions.php';
+require_once __DIR__ . '/../../inc/bodegas_helpers.php';
 
 require_login();
 require_role('admin');
@@ -14,19 +15,25 @@ $bodega = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$bodega) { die('Bodega no encontrada'); }
 
+// Encargado principal actual (para el form simplificado)
+$principalActualId = 0;
+$stmtP = $pdo->prepare("SELECT id_usuario FROM usuarios_bodegas WHERE id_bodega = ? AND es_principal = 1 LIMIT 1");
+$stmtP->execute(array($id));
+$rp = $stmtP->fetchColumn();
+if ($rp) { $principalActualId = (int)$rp; }
+
 $error = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $nombre       = trim((string)post('nombre'));
     $descripcion  = trim((string)post('descripcion'));
     $ubicacion    = trim((string)post('ubicacion_referencial'));
-    $id_encargado = (int)post('id_encargado');
+    $id_principal = (int)post('id_encargado');
     $id_unidad    = (int)post('id_unidad');
 
     if ($nombre === '') {
         $error = 'El nombre es obligatorio.';
     } else {
-        // Validar nombre duplicado (excepto la misma bodega)
         $stmt = $pdo->prepare("SELECT id FROM bodegas WHERE nombre = ? AND id <> ? LIMIT 1");
         $stmt->execute(array($nombre, $id));
         if ($stmt->fetch()) {
@@ -35,13 +42,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             try {
                 $pdo->beginTransaction();
 
-                // Obtener nombre del encargado (legacy field)
+                // Obtener nombre del encargado (legacy)
                 $responsableNombre = null;
-                if ($id_encargado > 0) {
+                if ($id_principal > 0) {
                     $stmt = $pdo->prepare("SELECT f.nombre FROM usuarios u
                                            LEFT JOIN funcionarios f ON f.id = u.id_funcionario
                                            WHERE u.id = ? LIMIT 1");
-                    $stmt->execute(array($id_encargado));
+                    $stmt->execute(array($id_principal));
                     $responsableNombre = $stmt->fetchColumn();
                 }
 
@@ -57,33 +64,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $stmt->execute(array(
                     ':nombre'       => $nombre,
                     ':id_unidad'    => $id_unidad > 0 ? $id_unidad : null,
-                    ':id_encargado' => $id_encargado > 0 ? $id_encargado : null,
+                    ':id_encargado' => $id_principal > 0 ? $id_principal : null,
                     ':descripcion'  => $descripcion,
                     ':ubicacion'    => $ubicacion,
                     ':responsable'  => $responsableNombre ? $responsableNombre : null,
                     ':id'           => $id
                 ));
 
-                // Manejar cambio de encargado
-                $viejoEncargado = (int)$bodega['id_encargado'];
-
-                if ($id_encargado > 0) {
-                    // Revertir rol del encargado anterior si es distinto al nuevo
-                    if ($viejoEncargado > 0 && $viejoEncargado !== $id_encargado) {
-                        $pdo->prepare("UPDATE usuarios SET rol = 'solicitante', id_bodega = NULL WHERE id = ?")
-                            ->execute(array($viejoEncargado));
+                // Gestión del principal vía helper M:N
+                if ($id_principal > 0) {
+                    if ($principalActualId !== $id_principal) {
+                        // Asegurar que el nuevo esté asignado y marcado como principal
+                        asignar_encargado_bodega($id_principal, $id, true);
+                        // set_bodega_principal además actualiza legacy (redundante pero seguro)
+                        set_bodega_principal($id_principal, $id);
                     }
-                    // Liberar al nuevo encargado de su bodega anterior (si tenía)
-                    $pdo->prepare("UPDATE bodegas SET id_encargado = NULL WHERE id_encargado = ? AND id <> ?")
-                        ->execute(array($id_encargado, $bodega['id']));
-                    // Asignar esta bodega y promover rol
-                    $pdo->prepare("UPDATE usuarios SET rol = 'bodega', id_bodega = ? WHERE id = ?")
-                        ->execute(array($bodega['id'], $id_encargado));
-
-                } elseif ($viejoEncargado > 0) {
-                    // Se quitó el encargado: revertir su rol a solicitante
-                    $pdo->prepare("UPDATE usuarios SET rol = 'solicitante', id_bodega = NULL WHERE id = ?")
-                        ->execute(array($viejoEncargado));
+                } else {
+                    // Se quitó el encargado principal: solo quitar la marca, no la asignación de otros
+                    $pdo->prepare("UPDATE usuarios_bodegas SET es_principal = 0 WHERE id_bodega = ?")
+                        ->execute(array($id));
                 }
 
                 $pdo->commit();
@@ -99,27 +98,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $bodega['nombre'] = $nombre;
         $bodega['descripcion'] = $descripcion;
         $bodega['ubicacion_referencial'] = $ubicacion;
-        $bodega['id_encargado'] = $id_encargado > 0 ? $id_encargado : null;
+        $bodega['id_encargado'] = $id_principal > 0 ? $id_principal : null;
         $bodega['id_unidad'] = $id_unidad > 0 ? $id_unidad : null;
+        $principalActualId = $id_principal;
     }
 }
 
-// Todos los usuarios activos con acceso (excluyendo admin)
+// Lista de encargados candidatos (muestra cuántas bodegas ya gestiona cada uno)
 $encargados = $pdo->query("
     SELECT u.id, u.usuario, u.rol AS usuario_rol,
            COALESCE(f.nombre, u.nombre) AS nombre,
            f.rut, f.cargo, un.nombre AS unidad_nombre,
-           b.id AS bodega_asignada_id, b.codigo AS bodega_asignada_codigo,
-           b.nombre AS bodega_asignada_nombre
+           (SELECT COUNT(*) FROM usuarios_bodegas WHERE id_usuario = u.id) AS total_bodegas
     FROM usuarios u
     LEFT JOIN funcionarios f ON f.id = u.id_funcionario
     LEFT JOIN unidades_organizacionales un ON un.id = f.id_unidad
-    LEFT JOIN bodegas b ON b.id_encargado = u.id
     WHERE u.estado = 1 AND u.rol <> 'admin'
     ORDER BY COALESCE(f.nombre, u.nombre) ASC
 ")->fetchAll();
 
 $unidades = $pdo->query("SELECT id, nombre FROM unidades_organizacionales WHERE estado = 1 ORDER BY nombre")->fetchAll();
+
+// Total encargados M:N actuales
+$totalEncMn = 0;
+$stTE = $pdo->prepare("SELECT COUNT(*) FROM usuarios_bodegas WHERE id_bodega = ?");
+$stTE->execute(array($id));
+$totalEncMn = (int)$stTE->fetchColumn();
 
 $pageTitle = 'Editar Bodega';
 require_once __DIR__ . '/../../inc/header.php';
@@ -130,6 +134,9 @@ require_once __DIR__ . '/../../inc/header.php';
         <i class="bi bi-pencil-square text-primary me-2"></i>Editar Bodega
     </h1>
     <div class="d-flex gap-2">
+        <a href="bodegas_encargados.php?id=<?php echo (int)$bodega['id']; ?>" class="btn btn-outline-success">
+            <i class="bi bi-people-fill me-1"></i> Encargados (<?php echo $totalEncMn; ?>)
+        </a>
         <a href="bodegas_ver.php?id=<?php echo (int)$bodega['id']; ?>" class="btn btn-outline-secondary">
             <i class="bi bi-eye me-1"></i> Ver detalle
         </a>
@@ -138,6 +145,15 @@ require_once __DIR__ . '/../../inc/header.php';
         </a>
     </div>
 </div>
+
+<?php if ($totalEncMn > 1): ?>
+<div class="alert alert-info">
+    <i class="bi bi-info-circle me-2"></i>
+    Esta bodega tiene <strong><?php echo $totalEncMn; ?> encargados</strong> asignados. Aquí solo puedes cambiar el
+    <strong>encargado principal</strong>. Para agregar/quitar otros encargados usa
+    <a href="bodegas_encargados.php?id=<?php echo (int)$bodega['id']; ?>" class="alert-link">Gestionar encargados</a>.
+</div>
+<?php endif; ?>
 
 <div class="card shadow-sm border-0">
     <div class="card-body p-4">
@@ -169,6 +185,7 @@ require_once __DIR__ . '/../../inc/header.php';
                         </option>
                     <?php endforeach; ?>
                 </select>
+                <div class="form-text">Una unidad puede tener varias bodegas.</div>
             </div>
 
             <div class="col-md-6">
@@ -177,7 +194,7 @@ require_once __DIR__ . '/../../inc/header.php';
             </div>
 
             <div class="col-12">
-                <label class="form-label fw-bold text-secondary">Encargado de bodega</label>
+                <label class="form-label fw-bold text-secondary">Encargado principal</label>
 
                 <div class="input-group mb-2">
                     <span class="input-group-text bg-white"><i class="bi bi-search"></i></span>
@@ -189,18 +206,17 @@ require_once __DIR__ . '/../../inc/header.php';
                         <div class="p-3 text-center text-muted small">
                             <i class="bi bi-info-circle me-1"></i>
                             No hay encargados disponibles.
-                            <a href="../funcionarios/funcionarios_crear.php" class="alert-link">Crea un funcionario con rol Encargado</a>.
                         </div>
                     <?php else: ?>
                         <div class="list-group list-group-flush" id="listaEncargados">
                             <label class="list-group-item list-group-item-action d-flex align-items-center gap-2 encargado-item" data-search="sin ninguno">
-                                <input type="radio" class="form-check-input mt-0" name="id_encargado" value="0" <?php echo empty($bodega['id_encargado']) ? 'checked' : ''; ?>>
-                                <span class="text-muted fst-italic small">— Sin encargado asignado —</span>
+                                <input type="radio" class="form-check-input mt-0" name="id_encargado" value="0" <?php echo empty($principalActualId) ? 'checked' : ''; ?>>
+                                <span class="text-muted fst-italic small">— Sin encargado principal —</span>
                             </label>
                             <?php foreach ($encargados as $e):
                                 $searchText = strtolower(($e['nombre'] ? $e['nombre'] : '') . ' ' . ($e['rut'] ? $e['rut'] : '') . ' ' . ($e['cargo'] ? $e['cargo'] : ''));
-                                $asignadaOtra = !empty($e['bodega_asignada_id']) && (int)$e['bodega_asignada_id'] !== (int)$bodega['id'];
-                                $esActual = ((int)$bodega['id_encargado'] === (int)$e['id']);
+                                $esActual = ($principalActualId === (int)$e['id']);
+                                $tieneOtras = ((int)$e['total_bodegas'] > 0);
                             ?>
                                 <label class="list-group-item list-group-item-action encargado-item <?php echo $esActual ? 'bg-light' : ''; ?>"
                                        data-search="<?php echo h($searchText); ?>">
@@ -213,25 +229,20 @@ require_once __DIR__ . '/../../inc/header.php';
                                                     <div class="fw-bold small text-dark">
                                                         <?php echo h($e['nombre']); ?>
                                                         <?php if ($esActual): ?>
-                                                            <span class="badge bg-primary bg-opacity-10 text-primary border border-primary-subtle ms-1" style="font-size:.6rem;">ACTUAL</span>
+                                                            <span class="badge bg-primary bg-opacity-10 text-primary border border-primary-subtle ms-1" style="font-size:.6rem;">PRINCIPAL ACTUAL</span>
                                                         <?php endif; ?>
                                                     </div>
                                                     <div class="text-muted" style="font-size:.72rem;">
                                                         <i class="bi bi-person-badge me-1"></i><?php echo h($e['rut'] ? $e['rut'] : $e['usuario']); ?>
-                                                        <?php if (!empty($e['cargo'])): ?>
-                                                            · <?php echo h($e['cargo']); ?>
-                                                        <?php endif; ?>
-                                                        <?php if (!empty($e['unidad_nombre'])): ?>
-                                                            · <?php echo h($e['unidad_nombre']); ?>
-                                                        <?php endif; ?>
+                                                        <?php if (!empty($e['cargo'])): ?> · <?php echo h($e['cargo']); ?><?php endif; ?>
+                                                        <?php if (!empty($e['unidad_nombre'])): ?> · <?php echo h($e['unidad_nombre']); ?><?php endif; ?>
                                                     </div>
                                                 </div>
-                                                <?php if ($asignadaOtra): ?>
-                                                    <span class="badge bg-warning bg-opacity-10 text-warning border border-warning-subtle" style="font-size:.65rem;" title="Ya asignado a <?php echo h($e['bodega_asignada_nombre']); ?>">
-                                                        <i class="bi bi-exclamation-triangle"></i>
-                                                        <?php echo h($e['bodega_asignada_codigo']); ?>
+                                                <?php if ($tieneOtras && !$esActual): ?>
+                                                    <span class="badge bg-info bg-opacity-10 text-info border border-info-subtle" style="font-size:.65rem;" title="Gestiona otras bodegas">
+                                                        <i class="bi bi-buildings me-1"></i><?php echo (int)$e['total_bodegas']; ?>
                                                     </span>
-                                                <?php elseif (!$esActual): ?>
+                                                <?php elseif (!$tieneOtras): ?>
                                                     <span class="badge bg-success bg-opacity-10 text-success border border-success-subtle" style="font-size:.65rem;">Disponible</span>
                                                 <?php endif; ?>
                                             </div>
@@ -243,7 +254,9 @@ require_once __DIR__ . '/../../inc/header.php';
                     <?php endif; ?>
                 </div>
                 <div class="form-text">
-                    Si seleccionas un encargado ya asignado a otra bodega, será reasignado a esta.
+                    <i class="bi bi-info-circle me-1"></i>
+                    Aquí solo configuras el <strong>principal</strong>. Para agregar/quitar co-encargados usa la sección
+                    <em>Gestionar encargados</em>.
                 </div>
             </div>
 

@@ -2,6 +2,7 @@
 require_once __DIR__ . '/inc/db.php';
 require_once __DIR__ . '/inc/auth.php';
 require_once __DIR__ . '/inc/functions.php';
+require_once __DIR__ . '/inc/bodegas_helpers.php';
 
 require_login();
 
@@ -23,16 +24,33 @@ if (!function_exists('tipo_badge_dash')) {
     }
 }
 
-// Bodega asignada (rol bodega / solicitante)
-$miBodegaId     = null;
+// Bodegas M:N (rol bodega) o bodegas de su unidad (solicitante)
+$misBodegasIds  = array();   // lista de bodegas del encargado (M:N)
+$miBodegaId     = null;      // "principal" para compat
 $miBodegaNombre = null;
-if (in_array($rol, array('bodega', 'solicitante'), true)) {
-    $stmt = $pdo->prepare("SELECT u.id_bodega, b.nombre FROM usuarios u LEFT JOIN bodegas b ON b.id = u.id_bodega WHERE u.id = :id LIMIT 1");
-    $stmt->execute(array(':id' => $user['id']));
-    $r = $stmt->fetch();
-    if ($r) {
-        $miBodegaId     = $r['id_bodega'] ? (int)$r['id_bodega'] : null;
-        $miBodegaNombre = $r['nombre'];
+ 
+if ($rol === 'bodega') {
+    $bods = user_bodegas((int)$user['id']);
+    foreach ($bods as $b) {
+        $misBodegasIds[] = (int)$b['id'];
+        if ((int)$b['es_principal'] === 1 && !$miBodegaId) {
+            $miBodegaId     = (int)$b['id'];
+            $miBodegaNombre = $b['nombre'];
+        }
+    }
+    if (!$miBodegaId && $bods) {
+        $miBodegaId     = (int)$bods[0]['id'];
+        $miBodegaNombre = $bods[0]['nombre'];
+    }
+} elseif ($rol === 'solicitante') {
+    $uniId = (int)(isset($user['id_unidad']) ? $user['id_unidad'] : 0);
+    if ($uniId > 0) {
+        $bods = bodegas_de_unidad($uniId);
+        foreach ($bods as $b) { $misBodegasIds[] = (int)$b['id']; }
+        if ($bods) {
+            $miBodegaId     = (int)$bods[0]['id'];
+            $miBodegaNombre = $bods[0]['nombre'];
+        }
     }
 }
 
@@ -106,45 +124,53 @@ if (in_array($rol, array('admin', 'auditor', 'consulta'), true)) {
 }
 
 // ==================================================================
-// CONSULTAS: BODEGA
+// CONSULTAS: BODEGA (M:N — consolidado de todas sus bodegas)
 // ==================================================================
-if ($rol === 'bodega' && $miBodegaId) {
-
-    $stmt = $pdo->prepare("SELECT COUNT(DISTINCT id_producto) FROM stock_bodega WHERE id_bodega = :b AND stock_actual > 0");
-    $stmt->execute(array(':b' => $miBodegaId));
+if ($rol === 'bodega' && $misBodegasIds) {
+    $phs  = implode(',', array_fill(0, count($misBodegasIds), '?'));
+    $args = $misBodegasIds;
+ 
+    $stmt = $pdo->prepare("SELECT COUNT(DISTINCT id_producto) FROM stock_bodega WHERE id_bodega IN ($phs) AND stock_actual > 0");
+    $stmt->execute($args);
     $data['productosBodega'] = (int)$stmt->fetchColumn();
-
-    $stmt = $pdo->prepare("SELECT COALESCE(SUM(stock_actual * costo_promedio),0) FROM stock_bodega WHERE id_bodega = :b");
-    $stmt->execute(array(':b' => $miBodegaId));
+ 
+    $stmt = $pdo->prepare("SELECT COALESCE(SUM(stock_actual * costo_promedio),0) FROM stock_bodega WHERE id_bodega IN ($phs)");
+    $stmt->execute($args);
     $data['valorStockBodega'] = (float)$stmt->fetchColumn();
-
-    $stmt = $pdo->prepare("SELECT COUNT(*) FROM movimientos_bodega WHERE id_bodega = :b AND fecha_movimiento >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)");
-    $stmt->execute(array(':b' => $miBodegaId));
+ 
+    $stmt = $pdo->prepare("SELECT COUNT(*) FROM movimientos_bodega WHERE id_bodega IN ($phs) AND fecha_movimiento >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)");
+    $stmt->execute($args);
     $data['movMesBodega'] = (int)$stmt->fetchColumn();
-
+ 
     $stmt = $pdo->prepare("
-        SELECT p.codigo, p.nombre, p.stock_minimo, s.stock_actual
-        FROM stock_bodega s INNER JOIN productos p ON p.id = s.id_producto
-        WHERE s.id_bodega = :b AND p.estado = 1 AND p.stock_minimo > 0 AND s.stock_actual < p.stock_minimo
+        SELECT p.codigo, p.nombre, p.stock_minimo, s.stock_actual, b.nombre AS bodega_nombre
+        FROM stock_bodega s
+        INNER JOIN productos p ON p.id = s.id_producto
+        INNER JOIN bodegas b   ON b.id = s.id_bodega
+        WHERE s.id_bodega IN ($phs) AND p.estado = 1 AND p.stock_minimo > 0 AND s.stock_actual < p.stock_minimo
         ORDER BY (p.stock_minimo - s.stock_actual) DESC LIMIT 6
     ");
-    $stmt->execute(array(':b' => $miBodegaId));
+    $stmt->execute($args);
     $data['stockBajoBodega'] = $stmt->fetchAll();
-
+ 
     $stmt = $pdo->prepare("
         SELECT m.fecha_movimiento, m.tipo_movimiento, m.cantidad,
-               p.codigo, p.nombre AS producto
-        FROM movimientos_bodega m INNER JOIN productos p ON p.id = m.id_producto
-        WHERE m.id_bodega = :b ORDER BY m.id DESC LIMIT 7
+               p.codigo, p.nombre AS producto, b.nombre AS bodega_nombre
+        FROM movimientos_bodega m
+        INNER JOIN productos p ON p.id = m.id_producto
+        INNER JOIN bodegas b   ON b.id = m.id_bodega
+        WHERE m.id_bodega IN ($phs) ORDER BY m.id DESC LIMIT 7
     ");
-    $stmt->execute(array(':b' => $miBodegaId));
+    $stmt->execute($args);
     $data['ultimosMovBodega'] = $stmt->fetchAll();
-
+ 
     $stmt = $pdo->prepare("
-        SELECT COUNT(*) FROM solicitudes WHERE id_bodega_origen = :b AND estado = 'pendiente'
+        SELECT COUNT(*) FROM solicitudes WHERE id_bodega_origen IN ($phs) AND estado IN ('pendiente','en_revision')
     ");
-    $stmt->execute(array(':b' => $miBodegaId));
+    $stmt->execute($args);
     $data['solPendBodega'] = (int)$stmt->fetchColumn();
+ 
+    $data['totalBodegasEncargado'] = count($misBodegasIds);
 }
 
 // ==================================================================
@@ -226,7 +252,8 @@ $rolTxt = isset($rolLabel[$rol]) ? $rolLabel[$rol] : ucfirst($rol);
         <p class="text-muted mb-0 small">
             Hola, <strong><?php echo h($user['nombre']); ?></strong> ·
             <span class="text-secondary"><?php echo h($rolTxt); ?></span>
-            <?php if ($miBodegaNombre): ?> · <i class="bi bi-geo-alt"></i> <?php echo h($miBodegaNombre); ?><?php endif; ?>
+            <?php if ($miBodegaNombre): ?> · <i class="bi bi-geo-alt"></i> <?php echo h($miBodegaNombre); ?> <?php if ($rol === 'bodega' && count($misBodegasIds) > 1): ?> <span class="text-muted">+<?php echo count($misBodegasIds) - 1; ?> más</span> <?php endif; ?>
+    <?php endif; ?>
         </p>
     </div>
     <span class="badge bg-light text-secondary border d-none d-md-inline-flex align-items-center gap-1 py-2 px-3">
@@ -438,10 +465,10 @@ $rolTxt = isset($rolLabel[$rol]) ? $rolLabel[$rol] : ucfirst($rol);
         BODEGA (ENCARGADO)
         ================================================================ */ ?>
 <?php if ($rol === 'bodega'): ?>
-
-<?php if (!$miBodegaId): ?>
+ 
+<?php if (!$misBodegasIds): ?>
     <div class="alert alert-warning shadow-sm">
-        <i class="bi bi-exclamation-triangle me-2"></i>No tienes una bodega asignada. Contacta al administrador.
+        <i class="bi bi-exclamation-triangle me-2"></i>No tienes bodegas asignadas. Contacta al administrador.
     </div>
 <?php else: ?>
 
@@ -515,8 +542,13 @@ $rolTxt = isset($rolLabel[$rol]) ? $rolLabel[$rol] : ucfirst($rol);
                     <?php foreach ($data['stockBajoBodega'] as $p): ?>
                     <tr>
                         <td>
-                            <div class="fw-medium text-dark text-truncate" style="max-width:150px"><?php echo h($p['nombre']); ?></div>
-                            <div class="text-muted" style="font-size:.7rem"><?php echo h($p['codigo']); ?></div>
+                            <div class="fw-medium text-dark text-truncate" style="max-width:150px"><?php echo h($m['producto']); ?></div>
+                            <div class="text-muted" style="font-size:.7rem">
+                                <?php echo h($m['codigo']); ?>
+                                <?php if (!empty($m['bodega_nombre']) && count($misBodegasIds) > 1): ?>
+                                    · <i class="bi bi-geo-alt"></i> <?php echo h($m['bodega_nombre']); ?>
+                                <?php endif; ?>
+                            </div>
                         </td>
                         <td class="text-end fw-bold text-danger"><?php echo number_format((float)$p['stock_actual'],2,',','.'); ?></td>
                         <td class="text-end text-muted"><?php echo number_format((float)$p['stock_minimo'],2,',','.'); ?></td>
@@ -533,7 +565,7 @@ $rolTxt = isset($rolLabel[$rol]) ? $rolLabel[$rol] : ucfirst($rol);
         <div class="card dash-card h-100">
             <div class="card-header d-flex justify-content-between align-items-center">
                 <h6><i class="bi bi-arrow-left-right text-primary me-2"></i>Últimos movimientos</h6>
-                <a href="/Bodega/modulos/movimientos/movimientos_lista.php?id_bodega=<?php echo $miBodegaId; ?>" class="btn btn-sm btn-outline-primary py-0 px-2" style="font-size:.75rem">Ver todos</a>
+                <a href="/Bodega/modulos/movimientos/movimientos_lista.php" class="btn btn-sm btn-outline-primary py-0 px-2" style="font-size:.75rem">Ver todos</a>
             </div>
             <?php if (!$data['ultimosMovBodega']): ?>
                 <div class="card-body text-center text-muted py-4 small">Sin movimientos</div>

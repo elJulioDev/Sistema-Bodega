@@ -7,6 +7,7 @@
 require_once __DIR__ . '/../../inc/db.php';
 require_once __DIR__ . '/../../inc/auth.php';
 require_once __DIR__ . '/../../inc/functions.php';
+require_once __DIR__ . '/../../inc/bodegas_helpers.php';
 
 require_login();
 require_role(array('admin', 'bodega', 'solicitante'));
@@ -46,7 +47,8 @@ if (!$sol) {
 function puede_procesar_ver($sol) {
     if (is_admin()) return true;
     if (is_encargado()) {
-        return ((int)$sol['id_bodega_origen'] === (int)user_bodega_id());
+        // M:N — chequea usuarios_bodegas
+        return user_puede_operar_bodega((int)$sol['id_bodega_origen']);
     }
     return false;
 }

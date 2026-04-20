@@ -1,32 +1,33 @@
 <?php
 /**
  * solicitudes_lista.php
- * Lista de solicitudes con botón "Revisar" → solicitudes_ver.php
+ * ACTUALIZACIÓN M:N:
+ *   - Encargado: ve solicitudes de TODAS sus bodegas (usuarios_bodegas).
  */
 require_once __DIR__ . '/../../inc/db.php';
 require_once __DIR__ . '/../../inc/auth.php';
 require_once __DIR__ . '/../../inc/functions.php';
+require_once __DIR__ . '/../../inc/bodegas_helpers.php';
 
 require_login();
 require_role(array('admin', 'bodega', 'solicitante'));
-// Caducar solicitudes vencidas (sin cron, se ejecuta en cada carga)
 caducar_solicitudes_vencidas($pdo);
 
-$user     = current_user();
-$miBodega = user_bodega_id();
-$miUid    = (int)$user['id'];
+$user  = current_user();
+$miUid = (int)$user['id'];
+$misBodegasIds = is_encargado() ? user_bodegas_ids($miUid) : array();
 
 // ── Helper permiso ──────────────────────────────────────────
-function puede_procesar($sol) {
+function puede_procesar($sol, $misBodegasIds) {
     if (is_admin()) return true;
     if (is_encargado()) {
-        return ((int)$sol['id_bodega_origen'] === (int)user_bodega_id());
+        return in_array((int)$sol['id_bodega_origen'], $misBodegasIds, true);
     }
     return false;
 }
 
 // ============================================================
-// ACCIÓN: RECHAZAR (desde modal de lista, sin entrar a ver.php)
+// RECHAZAR (rápido desde modal)
 // ============================================================
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'rechazar') {
     $id_sol = (int)post('id_sol');
@@ -38,12 +39,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
 
     if (!$sol) {
         set_flash('error', 'Solicitud no encontrada o ya procesada.');
-    } elseif (!puede_procesar($sol)) {
+    } elseif (!puede_procesar($sol, $misBodegasIds)) {
         set_flash('error', 'No tienes permisos para rechazar esta solicitud.');
     } else {
         try {
             $pdo->beginTransaction();
-
             $pdo->prepare("
                 UPDATE solicitudes
                 SET    estado='rechazada', observacion_respuesta=?, id_usuario_respuesta=?, fecha_respuesta=NOW()
@@ -53,7 +53,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
             $pdo->prepare("UPDATE solicitudes_detalle SET estado='rechazado' WHERE id_solicitud=?")
                 ->execute(array($id_sol));
 
-            // Log
             $pdo->prepare("INSERT INTO solicitudes_log (id_solicitud, id_usuario, accion, detalle) VALUES (?,?,?,?)")
                 ->execute(array($id_sol, $miUid, 'rechazada', $motivo));
 
@@ -72,10 +71,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
 // ============================================================
 $filtroEstado = get('estado', '');
 $vista        = get('vista', '');
+$filtroBodega = (int)get('id_bodega');
 
-if (is_encargado() && $vista === '') {
-    $vista = 'recibidas';
-}
+if (is_encargado() && $vista === '') $vista = 'recibidas';
 
 // ============================================================
 // LISTADO
@@ -96,14 +94,24 @@ $where  = '';
 $params = array();
 
 if (is_admin()) {
-    // sin filtro
+    // sin filtro base
 } elseif (is_encargado()) {
     if ($vista === 'enviadas') {
         $where .= " AND s.id_usuario = :uid";
         $params[':uid'] = $miUid;
     } else {
-        $where .= " AND s.id_bodega_origen = :bod";
-        $params[':bod'] = $miBodega;
+        // Recibidas: TODAS sus bodegas (M:N)
+        if (empty($misBodegasIds)) {
+            $where .= " AND 1=0";  // sin bodegas → sin resultados
+        } else {
+            $ph = array();
+            foreach ($misBodegasIds as $i => $bid) {
+                $key = ':bod' . $i;
+                $ph[] = $key;
+                $params[$key] = $bid;
+            }
+            $where .= " AND s.id_bodega_origen IN (" . implode(',', $ph) . ")";
+        }
     }
 } else {
     $where .= " AND s.id_usuario = :uid";
@@ -115,28 +123,43 @@ if ($filtroEstado !== '') {
     $params[':estado'] = $filtroEstado;
 }
 
+// Filtro extra de bodega (útil si encargado tiene muchas)
+if ($filtroBodega > 0 && is_encargado() && $vista !== 'enviadas') {
+    if (in_array($filtroBodega, $misBodegasIds, true)) {
+        $where .= " AND s.id_bodega_origen = :fbod";
+        $params[':fbod'] = $filtroBodega;
+    }
+}
+
 $sql = $baseSelect . $where . " ORDER BY s.id DESC";
 $stmt = $pdo->prepare($sql);
 $stmt->execute($params);
 $solicitudes = $stmt->fetchAll();
 
-// Contadores tabs
+// Contadores encargado
 $countRecibidas = 0; $countEnviadas = 0; $countRecibidasPend = 0;
-if (is_encargado()) {
-    $st = $pdo->prepare("SELECT COUNT(*) FROM solicitudes WHERE id_bodega_origen = ?");
-    $st->execute(array($miBodega));
+$misBodegasDetalle = array();
+
+if (is_encargado() && $misBodegasIds) {
+    $ph = implode(',', array_fill(0, count($misBodegasIds), '?'));
+
+    $st = $pdo->prepare("SELECT COUNT(*) FROM solicitudes WHERE id_bodega_origen IN ($ph)");
+    $st->execute($misBodegasIds);
     $countRecibidas = (int)$st->fetchColumn();
 
-    $st = $pdo->prepare("SELECT COUNT(*) FROM solicitudes WHERE id_bodega_origen = ? AND estado IN ('pendiente','en_revision')");
-    $st->execute(array($miBodega));
+    $st = $pdo->prepare("SELECT COUNT(*) FROM solicitudes WHERE id_bodega_origen IN ($ph) AND estado IN ('pendiente','en_revision')");
+    $st->execute($misBodegasIds);
     $countRecibidasPend = (int)$st->fetchColumn();
 
     $st = $pdo->prepare("SELECT COUNT(*) FROM solicitudes WHERE id_usuario = ?");
     $st->execute(array($miUid));
     $countEnviadas = (int)$st->fetchColumn();
+
+    // Detalle bodegas para el selector
+    $misBodegasDetalle = user_bodegas($miUid);
 }
 
-// Ítems para modal detalle
+// Ítems para preview
 $allItems = array();
 if ($solicitudes) {
     $ids = array();
@@ -156,13 +179,8 @@ if ($solicitudes) {
             $sid = $row['id_solicitud'];
             if (!isset($allItems[$sid])) $allItems[$sid] = array();
             $allItems[$sid][] = array(
-                'codigo'            => $row['codigo'],
-                'nombre'            => $row['nombre'],
-                'cantidad'          => number_format((float)$row['cantidad'], 2, ',', '.'),
-                'cantidad_aprobada' => ($row['cantidad_aprobada'] !== null)
-                                       ? number_format((float)$row['cantidad_aprobada'], 2, ',', '.') : null,
-                'det_estado'        => $row['det_estado'],
-                'observacion'       => $row['observacion'],
+                'codigo' => $row['codigo'],
+                'nombre' => $row['nombre'],
             );
         }
     }
@@ -171,23 +189,15 @@ if ($solicitudes) {
 $pageTitle = 'Solicitudes de Traslado';
 require_once __DIR__ . '/../../inc/header.php';
 
-// ── Badge estado solicitud ──────────────────────────────────
 function badge_estado($estado) {
     switch ($estado) {
-        case 'pendiente':
-            return '<span class="badge bg-warning text-dark"><i class="bi bi-clock me-1"></i>Pendiente</span>';
-        case 'en_revision':
-            return '<span class="badge bg-info text-dark"><i class="bi bi-search me-1"></i>En revisión</span>';
-        case 'procesada':
-            return '<span class="badge bg-success"><i class="bi bi-check-circle me-1"></i>Ejecutada</span>';
-        case 'procesada_parcial':
-            return '<span class="badge text-white" style="background:#0d9488"><i class="bi bi-check2-all me-1"></i>Parcial</span>';
-        case 'rechazada':
-            return '<span class="badge bg-danger"><i class="bi bi-x-circle me-1"></i>Rechazada</span>';
-        case 'caducada':
-            return '<span class="badge bg-secondary"><i class="bi bi-hourglass-bottom me-1"></i>Caducada</span>';
-        default:
-            return '<span class="badge bg-secondary">' . h($estado) . '</span>';
+        case 'pendiente':         return '<span class="badge bg-warning text-dark"><i class="bi bi-clock me-1"></i>Pendiente</span>';
+        case 'en_revision':       return '<span class="badge bg-info text-dark"><i class="bi bi-search me-1"></i>En revisión</span>';
+        case 'procesada':         return '<span class="badge bg-success"><i class="bi bi-check-circle me-1"></i>Ejecutada</span>';
+        case 'procesada_parcial': return '<span class="badge text-white" style="background:#0d9488"><i class="bi bi-check2-all me-1"></i>Parcial</span>';
+        case 'rechazada':         return '<span class="badge bg-danger"><i class="bi bi-x-circle me-1"></i>Rechazada</span>';
+        case 'caducada':          return '<span class="badge bg-secondary"><i class="bi bi-hourglass-bottom me-1"></i>Caducada</span>';
+        default:                  return '<span class="badge bg-secondary">' . h($estado) . '</span>';
     }
 }
 ?>
@@ -202,12 +212,12 @@ function badge_estado($estado) {
             else                      echo 'Solicitudes de Traslado';
             ?>
         </h1>
-        <?php if (is_encargado()): ?>
+        <?php if (is_encargado() && $misBodegasDetalle): ?>
         <p class="text-muted mb-0 small mt-1">
             <?php if ($vista === 'enviadas'): ?>
-                Solicitudes que tú enviaste a otras bodegas.
+                Solicitudes que tú enviaste.
             <?php else: ?>
-                Solicitudes recibidas. Usa <strong>Revisar</strong> para validar stock y aprobar.
+                Gestionando <strong><?php echo count($misBodegasDetalle); ?> bodega<?php echo count($misBodegasDetalle) > 1 ? 's' : ''; ?></strong>.
             <?php endif; ?>
         </p>
         <?php endif; ?>
@@ -217,7 +227,6 @@ function badge_estado($estado) {
     </a>
 </div>
 
-<!-- Tabs encargado -->
 <?php if (is_encargado()): ?>
 <ul class="nav nav-tabs mb-3">
     <li class="nav-item">
@@ -241,8 +250,12 @@ function badge_estado($estado) {
 <!-- Filtros -->
 <div class="card shadow-sm border-0 mb-3">
     <div class="card-body py-2">
-        <div class="d-flex gap-2 align-items-center flex-wrap">
-            <span class="fw-bold text-secondary small">Filtrar:</span>
+        <form method="get" class="d-flex gap-2 align-items-center flex-wrap">
+            <?php if (is_encargado()): ?>
+                <input type="hidden" name="vista" value="<?php echo h($vista); ?>">
+            <?php endif; ?>
+
+            <span class="fw-bold text-secondary small">Estado:</span>
             <?php
             $estados = array(
                 ''                  => 'Todas',
@@ -254,18 +267,31 @@ function badge_estado($estado) {
                 'caducada'          => 'Caducadas',
             );
             foreach ($estados as $val => $lbl):
-                $url = '?' . (is_encargado() ? 'vista=' . urlencode($vista) . '&' : '') . 'estado=' . urlencode($val);
+                $qs = $_GET; $qs['estado'] = $val;
+                $url = '?' . http_build_query($qs);
             ?>
                 <a href="<?php echo h($url); ?>"
                    class="btn btn-sm <?php echo ($filtroEstado === $val) ? 'btn-primary' : 'btn-outline-secondary'; ?>">
                     <?php echo $lbl; ?>
                 </a>
             <?php endforeach; ?>
-        </div>
+
+            <?php if (is_encargado() && $vista !== 'enviadas' && count($misBodegasDetalle) > 1): ?>
+                <span class="ms-3 fw-bold text-secondary small">Bodega:</span>
+                <select name="id_bodega" class="form-select form-select-sm" style="max-width:250px;" onchange="this.form.submit()">
+                    <option value="0">Todas mis bodegas</option>
+                    <?php foreach ($misBodegasDetalle as $mb): ?>
+                        <option value="<?php echo (int)$mb['id']; ?>" <?php echo ($filtroBodega === (int)$mb['id']) ? 'selected' : ''; ?>>
+                            <?php echo h($mb['nombre']); ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+                <input type="hidden" name="estado" value="<?php echo h($filtroEstado); ?>">
+            <?php endif; ?>
+        </form>
     </div>
 </div>
 
-<!-- Tabla -->
 <div class="card shadow-sm border-0">
     <div class="table-responsive">
         <table class="table table-hover align-middle mb-0">
@@ -282,52 +308,36 @@ function badge_estado($estado) {
             </thead>
             <tbody>
             <?php if (!$solicitudes): ?>
-                <tr>
-                    <td colspan="7" class="text-center text-muted py-5">
-                        <i class="bi bi-inbox fs-1 d-block mb-2"></i>
-                        No hay solicitudes que coincidan con el filtro.
-                    </td>
-                </tr>
+                <tr><td colspan="7" class="text-center text-muted py-5">
+                    <i class="bi bi-inbox fs-1 d-block mb-2"></i>
+                    No hay solicitudes que coincidan con el filtro.
+                </td></tr>
             <?php else: ?>
                 <?php foreach ($solicitudes as $s):
                     $esPend = in_array($s['estado'], array('pendiente', 'en_revision'));
                 ?>
                 <tr>
                     <td>
-                        <a href="solicitudes_ver.php?id=<?php echo (int)$s['id']; ?>"
-                           class="fw-semibold text-decoration-none">
+                        <a href="solicitudes_ver.php?id=<?php echo (int)$s['id']; ?>" class="fw-semibold text-decoration-none">
                             <?php echo h($s['numero_solicitud']); ?>
                         </a>
                         <?php if (isset($allItems[$s['id']])): ?>
-                        <br>
-                        <small class="text-muted">
-                            <?php echo count($allItems[$s['id']]); ?> ítem(s)
-                        </small>
+                            <br><small class="text-muted"><?php echo count($allItems[$s['id']]); ?> ítem(s)</small>
                         <?php endif; ?>
                     </td>
-                    <td class="d-none d-md-table-cell small">
-                        <?php echo h($s['origen_nombre'] ?: '—'); ?>
-                    </td>
-                    <td class="d-none d-md-table-cell small">
-                        <?php echo h($s['destino_nombre']); ?>
-                    </td>
-                    <td class="d-none d-sm-table-cell small">
-                        <?php echo h($s['usuario_nombre']); ?>
-                    </td>
+                    <td class="d-none d-md-table-cell small"><?php echo h($s['origen_nombre'] ?: '—'); ?></td>
+                    <td class="d-none d-md-table-cell small"><?php echo h($s['destino_nombre']); ?></td>
+                    <td class="d-none d-sm-table-cell small"><?php echo h($s['usuario_nombre']); ?></td>
                     <td>
                         <?php echo badge_estado($s['estado']); ?>
                         <?php if (in_array($s['estado'], array('pendiente','en_revision')) && $s['fecha_limite']): ?>
-                            <?php
-                            $diasRestantes = (int)ceil((strtotime($s['fecha_limite']) - time()) / 86400);
-                            if ($diasRestantes <= 0):
-                            ?>
+                            <?php $diasR = (int)ceil((strtotime($s['fecha_limite']) - time()) / 86400); ?>
+                            <?php if ($diasR <= 0): ?>
                                 <br><small class="text-danger"><i class="bi bi-alarm me-1"></i>Vence hoy</small>
-                            <?php elseif ($diasRestantes <= 2): ?>
-                                <br><small class="text-danger"><i class="bi bi-alarm me-1"></i>Vence en <?php echo $diasRestantes; ?> día(s)</small>
-                            <?php elseif ($diasRestantes <= 4): ?>
-                                <br><small class="text-warning"><i class="bi bi-alarm me-1"></i><?php echo $diasRestantes; ?> días restantes</small>
+                            <?php elseif ($diasR <= 2): ?>
+                                <br><small class="text-danger"><i class="bi bi-alarm me-1"></i>Vence en <?php echo $diasR; ?> día(s)</small>
                             <?php else: ?>
-                                <br><small class="text-muted"><i class="bi bi-alarm me-1"></i><?php echo $diasRestantes; ?> días restantes</small>
+                                <br><small class="text-muted"><i class="bi bi-alarm me-1"></i><?php echo $diasR; ?> días restantes</small>
                             <?php endif; ?>
                         <?php endif; ?>
                     </td>
@@ -336,27 +346,19 @@ function badge_estado($estado) {
                     </td>
                     <td>
                         <div class="d-flex gap-1 justify-content-end">
-                            <!-- Ver detalle siempre -->
                             <a href="solicitudes_ver.php?id=<?php echo (int)$s['id']; ?>"
-                               class="btn btn-sm btn-outline-secondary"
-                               title="Ver detalle">
+                               class="btn btn-sm btn-outline-secondary" title="Ver detalle">
                                 <i class="bi bi-eye"></i>
                                 <span class="d-none d-md-inline ms-1">Ver</span>
                             </a>
-
-                            <?php if ($esPend && puede_procesar($s)): ?>
-                                <!-- Botón REVISAR → revisar stock, editar ítems, ejecutar -->
+                            <?php if ($esPend && puede_procesar($s, $misBodegasIds)): ?>
                                 <a href="solicitudes_ver.php?id=<?php echo (int)$s['id']; ?>"
-                                   class="btn btn-sm btn-primary"
-                                   title="Revisar y aprobar">
+                                   class="btn btn-sm btn-primary" title="Revisar y aprobar">
                                     <i class="bi bi-search me-1"></i>Revisar
                                 </a>
-                                <!-- Rechazo rápido desde lista -->
-                                <button type="button"
-                                        class="btn btn-sm btn-outline-danger btn-rechazar"
+                                <button type="button" class="btn btn-sm btn-outline-danger btn-rechazar"
                                         data-id="<?php echo (int)$s['id']; ?>"
-                                        data-numero="<?php echo h($s['numero_solicitud']); ?>"
-                                        title="Rechazar">
+                                        data-numero="<?php echo h($s['numero_solicitud']); ?>" title="Rechazar">
                                     <i class="bi bi-x-lg"></i>
                                 </button>
                             <?php endif; ?>
@@ -370,17 +372,13 @@ function badge_estado($estado) {
     </div>
 </div>
 
-<!-- Modal: Rechazar rápido -->
 <?php if (is_admin() || is_encargado()): ?>
 <div class="modal fade" id="modalRechazar" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content">
             <form method="post">
-                <input type="hidden" name="action"  value="rechazar">
-                <input type="hidden" name="id_sol"  id="rechazarIdSol" value="">
-                <?php if (is_encargado()): ?>
-                    <input type="hidden" name="vista" value="<?php echo h($vista); ?>">
-                <?php endif; ?>
+                <input type="hidden" name="action" value="rechazar">
+                <input type="hidden" name="id_sol" id="rechazarIdSol" value="">
                 <div class="modal-header border-0">
                     <h5 class="modal-title fw-bold">
                         <i class="bi bi-x-circle text-danger me-2"></i>
@@ -390,9 +388,7 @@ function badge_estado($estado) {
                 </div>
                 <div class="modal-body">
                     <label class="form-label fw-semibold">Motivo del rechazo <span class="text-danger">*</span></label>
-                    <textarea name="motivo_rechazo" class="form-control" rows="3"
-                              placeholder="Explica al solicitante el motivo..."
-                              required></textarea>
+                    <textarea name="motivo_rechazo" class="form-control" rows="3" required></textarea>
                 </div>
                 <div class="modal-footer border-0">
                     <button type="button" class="btn btn-light border" data-bs-dismiss="modal">Cancelar</button>
@@ -408,13 +404,11 @@ function badge_estado($estado) {
 
 <script>
 (function () {
-    // Abrir modal rechazar
     document.querySelectorAll('.btn-rechazar').forEach(function (btn) {
         btn.addEventListener('click', function () {
             document.getElementById('rechazarIdSol').value = this.getAttribute('data-id');
             document.getElementById('rechazarNumero').textContent = this.getAttribute('data-numero');
-            var modal = new bootstrap.Modal(document.getElementById('modalRechazar'));
-            modal.show();
+            new bootstrap.Modal(document.getElementById('modalRechazar')).show();
         });
     });
 })();
