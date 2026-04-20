@@ -172,7 +172,7 @@ require_once __DIR__ . '/../../inc/header.php';
 <!-- KPIs -->
 <div class="row g-3 mb-4">
     <div class="col-6 col-md-3">
-        <div class="card border-0 shadow-sm">
+        <div class="card shadow-sm border-0 border-start border-primary border-4">
             <div class="card-body py-3">
                 <div class="small text-muted text-uppercase fw-bold" style="font-size:.7rem;letter-spacing:.5px;">Total</div>
                 <div class="h4 mb-0 fw-bold"><?php echo number_format((int)$kpi['total'], 0, ',', '.'); ?></div>

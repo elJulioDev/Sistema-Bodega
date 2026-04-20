@@ -503,6 +503,12 @@ $rolLabel = ($user && isset($rolLabels[$user['rol']])) ? $rolLabels[$user['rol']
                         </a>
                     </li>
 
+                    <li>
+                        <a href="/Bodega/modulos/unidades/unidades_lista.php" class="nav-link <?php echo nav_active('/unidades/'); ?>">
+                            <i class="bi bi-diagram-3"></i> Unidades
+                        </a>
+                    </li>
+
                 <?php endif; ?>
 
             </ul>
