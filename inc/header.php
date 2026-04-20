@@ -519,11 +519,6 @@ $rolLabel = ($user && isset($rolLabels[$user['rol']])) ? $rolLabels[$user['rol']
                             <i class="bi bi-person-badge"></i> Funcionarios
                         </a>
                     </li>
-                    <li>
-                        <a href="/Bodega/modulos/usuarios/usuarios_lista.php" class="nav-link <?php echo nav_active('/usuarios/'); ?>">
-                            <i class="bi bi-people"></i> Usuarios
-                        </a>
-                    </li>
 
                 <?php endif; ?>
 
