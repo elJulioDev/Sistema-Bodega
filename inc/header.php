@@ -419,6 +419,11 @@ if (!function_exists('nav_active')) {
                     </a>
                 </li>
                 <li>
+                    <a href="/Bodega/modulos/funcionarios/funcionarios_lista.php" class="nav-link <?php echo nav_active('/funcionarios/'); ?>">
+                        <i class="bi bi-person-badge"></i> Funcionarios
+                    </a>
+                </li>
+                <li>
                     <a href="/Bodega/modulos/usuarios/usuarios_lista.php" class="nav-link <?php echo nav_active('/usuarios/'); ?>">
                         <i class="bi bi-people"></i> Usuarios
                     </a>
