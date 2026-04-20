@@ -6,29 +6,55 @@ require_once __DIR__ . '/../inc/functions.php';
 require_login();
 require_role(array('admin', 'bodega'));
 
-$buscar = trim((string)get('buscar'));
-$id_bodega = get('id_bodega');
-$filtro_alerta = get('alerta', ''); // 'bajo' | ''
+$buscar        = trim((string)get('buscar'));
+$id_bodega     = get('id_bodega');
+$filtro_alerta = get('alerta', '');
 
-// Buscar bodega central
-$stmtBC = $pdo->prepare("SELECT id, nombre FROM bodegas WHERE estado=1 AND codigo='CENTRAL' LIMIT 1");
-$stmtBC->execute();
-$bodegaCentral = $stmtBC->fetch();
-$idBodegaCentral = $bodegaCentral ? (int)$bodegaCentral['id'] : 0;
-
-// Si el usuario envió el filtro explícitamente (incluso vacío = todas), respetarlo.
-// Solo aplicar la central como default en la primera carga (sin parámetro en URL).
-if (!isset($_GET['id_bodega'])) {
-    // Primera carga: mostrar solo bodega central por defecto
-    $id_bodega = $idBodegaCentral > 0 ? (string)$idBodegaCentral : '';
-} else {
-    // El usuario eligió explícitamente (vacío = todas las bodegas)
-    $id_bodega = trim((string)$_GET['id_bodega']);
+// ============================================================
+// BLOQUEO POR ROL ENCARGADO
+// ============================================================
+// Encargado solo puede ver stock de SU bodega. Ignora cualquier
+// intento de filtrar otra bodega por URL.
+if (is_encargado()) {
+    $id_bodega = (string)user_bodega_id();
+    if ((int)$id_bodega <= 0) {
+        set_flash('error', 'Tu usuario no tiene una bodega asignada. Contacta al administrador.');
+        redirect('/Bodega/index.php');
+    }
 }
 
-$bodegas = $pdo->query("SELECT id, codigo, nombre FROM bodegas WHERE estado = 1 ORDER BY (codigo='CENTRAL') DESC, nombre ASC")->fetchAll();
+// Buscar bodega central (default para admin)
+$stmtBC = $pdo->prepare("SELECT id, nombre FROM bodegas WHERE estado=1 AND codigo='CENTRAL' LIMIT 1");
+$stmtBC->execute();
+$bodegaCentral   = $stmtBC->fetch();
+$idBodegaCentral = $bodegaCentral ? (int)$bodegaCentral['id'] : 0;
 
-// Estadísticas generales (filtradas por bodega si aplica)
+// Para admin: primera carga = bodega central
+if (is_admin()) {
+    if (!isset($_GET['id_bodega'])) {
+        $id_bodega = $idBodegaCentral > 0 ? (string)$idBodegaCentral : '';
+    } else {
+        $id_bodega = trim((string)$_GET['id_bodega']);
+    }
+}
+
+// Bodegas disponibles en el selector
+if (is_encargado()) {
+    // Solo su bodega
+    $stmtB = $pdo->prepare("SELECT id, codigo, nombre FROM bodegas WHERE id = ? AND estado = 1 LIMIT 1");
+    $stmtB->execute(array(user_bodega_id()));
+    $bodegas = $stmtB->fetchAll();
+    $miBodega = !empty($bodegas[0]) ? $bodegas[0] : null;
+} else {
+    $bodegas = $pdo->query("
+        SELECT id, codigo, nombre FROM bodegas
+        WHERE estado = 1
+        ORDER BY (codigo='CENTRAL') DESC, nombre ASC
+    ")->fetchAll();
+    $miBodega = null;
+}
+
+// Estadísticas
 $sqlStats = "
     SELECT 
         COUNT(*) AS total_registros,
@@ -91,28 +117,41 @@ $stocks = $stmt->fetchAll();
 
 $canOperate = has_role(array('admin', 'bodega'));
 
-$pageTitle = 'Control de Stock';
+$pageTitle = is_encargado() ? 'Stock de mi Bodega' : 'Control de Stock';
 require_once __DIR__ . '/../inc/header.php';
 ?>
 
-<div class="d-flex justify-content-between align-items-center mb-3">
+<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
     <div>
-        <h1 class="h4 mb-0 text-dark fw-bold"><i class="bi bi-inboxes text-primary me-2"></i>Control de Stock</h1>
-        <small class="text-muted">Stock actual por bodega y producto</small>
+        <h1 class="h4 mb-0 text-dark fw-bold">
+            <i class="bi bi-inboxes text-primary me-2"></i>
+            <?php echo is_encargado() ? 'Stock de mi Bodega' : 'Control de Stock'; ?>
+        </h1>
+        <?php if (is_encargado() && $miBodega): ?>
+            <small class="text-muted">
+                <i class="bi bi-geo-alt-fill me-1"></i>
+                <?php echo h($miBodega['nombre'] . ' (' . $miBodega['codigo'] . ')'); ?>
+            </small>
+        <?php else: ?>
+            <small class="text-muted">Stock actual por bodega y producto</small>
+        <?php endif; ?>
     </div>
     <div class="d-flex gap-2">
-        <a href="facturas/facturas_crear.php" class="btn btn-sm btn-success">
-            <i class="bi bi-receipt me-1"></i> Ingresar Factura
-        </a>
+        <?php if (is_admin()): ?>
+            <a href="facturas/facturas_crear.php" class="btn btn-sm btn-success">
+                <i class="bi bi-receipt me-1"></i> Ingresar Factura
+            </a>
+        <?php endif; ?>
         <?php if ($canOperate): ?>
             <a href="movimientos/movimientos_crear.php" class="btn btn-sm btn-primary">
-                <i class="bi bi-arrow-left-right me-1"></i> Registrar Movimiento
+                <i class="bi bi-arrow-left-right me-1"></i>
+                <?php echo is_encargado() ? 'Nuevo Traslado' : 'Registrar Movimiento'; ?>
             </a>
         <?php endif; ?>
     </div>
 </div>
 
-<!-- ESTADÍSTICAS -->
+<!-- ESTADISTICAS -->
 <div class="row g-2 mb-3">
     <div class="col-6 col-lg-3">
         <div class="card shadow-sm border-0 border-start border-4 border-primary">
@@ -134,9 +173,7 @@ require_once __DIR__ . '/../inc/header.php';
         <div class="card shadow-sm border-0 border-start border-4 border-warning">
             <div class="card-body py-2 px-3">
                 <div class="text-muted small text-uppercase fw-semibold">Stock Bajo</div>
-                <div class="h4 mb-0 fw-bold text-warning">
-                    <?php echo (int)$stats['stock_bajo']; ?>
-                </div>
+                <div class="h4 mb-0 fw-bold text-warning"><?php echo (int)$stats['stock_bajo']; ?></div>
             </div>
         </div>
     </div>
@@ -154,12 +191,14 @@ require_once __DIR__ . '/../inc/header.php';
 <div class="card shadow-sm border-0 mb-3">
     <div class="card-body py-2 px-3">
         <form method="get" class="row g-2 align-items-center">
-            <div class="col-md-4">
+            <div class="col-md-<?php echo is_encargado() ? '8' : '4'; ?>">
                 <div class="input-group input-group-sm">
                     <span class="input-group-text bg-light text-secondary border-end-0"><i class="bi bi-search"></i></span>
                     <input type="text" name="buscar" value="<?php echo h($buscar); ?>" class="form-control border-start-0 ps-0" placeholder="Buscar por código o nombre...">
                 </div>
             </div>
+
+            <?php if (!is_encargado()): ?>
             <div class="col-md-3">
                 <select name="id_bodega" class="form-select form-select-sm">
                     <option value="">Todas las bodegas</option>
@@ -170,16 +209,20 @@ require_once __DIR__ . '/../inc/header.php';
                     <?php endforeach; ?>
                 </select>
             </div>
+            <?php else: ?>
+                <input type="hidden" name="id_bodega" value="<?php echo (int)$id_bodega; ?>">
+            <?php endif; ?>
+
             <div class="col-md-3">
                 <select name="alerta" class="form-select form-select-sm">
                     <option value="">Sin filtro de alerta</option>
                     <option value="bajo" <?php echo $filtro_alerta === 'bajo' ? 'selected' : ''; ?>>⚠ Stock bajo mínimo</option>
-                    <option value="sin" <?php echo $filtro_alerta === 'sin' ? 'selected' : ''; ?>>✗ Sin stock</option>
+                    <option value="sin"  <?php echo $filtro_alerta === 'sin'  ? 'selected' : ''; ?>>✗ Sin stock</option>
                 </select>
             </div>
-            <div class="col-md-2 d-flex gap-1">
+            <div class="col-md-<?php echo is_encargado() ? '1' : '2'; ?> d-flex gap-1">
                 <button type="submit" class="btn btn-sm btn-primary flex-grow-1">Filtrar</button>
-                <?php if ($buscar !== '' || isset($_GET['id_bodega']) || $filtro_alerta !== ''): ?>
+                <?php if ($buscar !== '' || (is_admin() && isset($_GET['id_bodega'])) || $filtro_alerta !== ''): ?>
                     <a href="stock_lista.php" class="btn btn-sm btn-light border" title="Limpiar"><i class="bi bi-x-lg"></i></a>
                 <?php endif; ?>
             </div>
@@ -194,8 +237,10 @@ require_once __DIR__ . '/../inc/header.php';
             <table class="table table-hover align-middle mb-0" style="font-size: 0.9rem;">
                 <thead class="table-light text-secondary" style="font-size: 0.75rem;">
                     <tr>
-                        <th class="px-3 py-2">BODEGA</th>
-                        <th class="py-2">PRODUCTO</th>
+                        <?php if (!is_encargado()): ?>
+                            <th class="px-3 py-2">BODEGA</th>
+                        <?php endif; ?>
+                        <th class="py-2 <?php echo is_encargado() ? 'px-3' : ''; ?>">PRODUCTO</th>
                         <th class="py-2 text-center">UNIDAD</th>
                         <th class="py-2 text-end">STOCK</th>
                         <th class="py-2 text-end">MÍN.</th>
@@ -209,58 +254,52 @@ require_once __DIR__ . '/../inc/header.php';
                 </thead>
                 <tbody>
                 <?php if (!$stocks): ?>
+                    <?php $colspan = is_encargado() ? 7 : 8; if ($canOperate) $colspan++; ?>
                     <tr>
-                        <td colspan="<?php echo $canOperate ? 9 : 8; ?>" class="text-center py-5">
+                        <td colspan="<?php echo $colspan; ?>" class="text-center py-5">
                             <i class="bi bi-inbox display-4 text-muted d-block mb-2"></i>
                             <p class="text-muted mb-0">No hay stock registrado con los filtros aplicados.</p>
-                            <small class="text-muted">Para ingresar stock, registra una factura de compra.</small>
+                            <?php if (is_admin()): ?>
+                                <small class="text-muted">Para ingresar stock, registra una factura de compra.</small>
+                            <?php else: ?>
+                                <small class="text-muted">Solicita reposición desde la bodega central u otras bodegas.</small>
+                            <?php endif; ?>
                         </td>
                     </tr>
                 <?php else: ?>
                     <?php foreach ($stocks as $s): 
-                        $stock = (float)$s['stock_actual'];
-                        $minimo = (float)$s['stock_minimo'];
-                        $sinStock = ($stock <= 0);
-                        $bajoMin = ($minimo > 0 && $stock > 0 && $stock <= $minimo);
-                        $valor = $stock * (float)$s['costo_promedio'];
+                        $stock     = (float)$s['stock_actual'];
+                        $minimo    = (float)$s['stock_minimo'];
+                        $sinStock  = ($stock <= 0);
+                        $bajoMin   = ($minimo > 0 && $stock > 0 && $stock <= $minimo);
+                        $valor     = $stock * (float)$s['costo_promedio'];
                         $esCentral = ($s['bodega_codigo'] === 'CENTRAL');
                         
                         $rowClass = '';
-                        if ($sinStock) $rowClass = 'table-danger';
-                        elseif ($bajoMin) $rowClass = 'table-warning';
+                        if ($sinStock)     $rowClass = 'table-danger';
+                        elseif ($bajoMin)  $rowClass = 'table-warning';
                     ?>
                         <tr<?php echo $rowClass ? ' class="' . $rowClass . '"' : ''; ?>>
-                            <td class="px-3">
-                                <?php if ($esCentral): ?>
-                                    <span class="badge bg-primary text-white"><i class="bi bi-star-fill me-1"></i><?php echo h($s['bodega_nombre']); ?></span>
-                                <?php else: ?>
-                                    <span class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary border-opacity-25">
-                                        <i class="bi bi-geo-alt me-1"></i><?php echo h($s['bodega_nombre']); ?>
-                                    </span>
-                                <?php endif; ?>
+                            <?php if (!is_encargado()): ?>
+                                <td class="px-3">
+                                    <div class="fw-semibold small"><?php echo h($s['bodega_nombre']); ?></div>
+                                    <small class="text-muted">
+                                        <?php echo h($s['bodega_codigo']); ?>
+                                        <?php if ($esCentral): ?> <span class="text-warning">★</span><?php endif; ?>
+                                    </small>
+                                </td>
+                            <?php endif; ?>
+                            <td class="<?php echo is_encargado() ? 'px-3' : ''; ?>">
+                                <div class="fw-medium small"><?php echo h($s['producto_nombre']); ?></div>
+                                <small class="text-muted"><?php echo h($s['producto_codigo']); ?></small>
                             </td>
-                            <td>
-                                <div>
-                                    <span class="badge bg-light text-dark border font-monospace small me-1"><?php echo h($s['producto_codigo']); ?></span>
-                                    <?php if ((int)$s['activo_fijo'] === 1): ?>
-                                        <span class="badge bg-info bg-opacity-10 text-info small"><i class="bi bi-building"></i></span>
-                                    <?php endif; ?>
-                                </div>
-                                <div class="fw-semibold text-dark small mt-1"><?php echo h($s['producto_nombre']); ?></div>
+                            <td class="text-center text-secondary small">
+                                <?php echo h($s['unidad_codigo'] ? $s['unidad_codigo'] : '—'); ?>
                             </td>
-                            <td class="text-center small text-muted">
-                                <?php echo h($s['unidad_nombre'] ?: '—'); ?>
+                            <td class="text-end fw-bold <?php echo $sinStock ? 'text-danger' : ($bajoMin ? 'text-warning' : ''); ?>">
+                                <?php echo number_format($stock, 2, ',', '.'); ?>
                             </td>
-                            <td class="text-end fw-bold fs-6">
-                                <?php if ($sinStock): ?>
-                                    <span class="text-danger"><i class="bi bi-exclamation-octagon-fill"></i> 0,00</span>
-                                <?php elseif ($bajoMin): ?>
-                                    <span class="text-warning"><i class="bi bi-exclamation-triangle-fill"></i> <?php echo number_format($stock, 2, ',', '.'); ?></span>
-                                <?php else: ?>
-                                    <span class="text-success"><?php echo number_format($stock, 2, ',', '.'); ?></span>
-                                <?php endif; ?>
-                            </td>
-                            <td class="text-end small text-muted">
+                            <td class="text-end text-secondary small">
                                 <?php echo $minimo > 0 ? number_format($minimo, 2, ',', '.') : '—'; ?>
                             </td>
                             <td class="text-end text-secondary small">
@@ -276,18 +315,22 @@ require_once __DIR__ . '/../inc/header.php';
                             <?php if ($canOperate): ?>
                                 <td class="px-3 text-center">
                                     <div class="btn-group btn-group-sm">
-                                        <a href="movimientos/movimientos_crear.php?tipo=salida_consumo&id_bodega=<?php echo (int)$s['id_bodega']; ?>&id_producto=<?php echo (int)$s['id_producto']; ?>"
-                                           class="btn btn-outline-danger" title="Salida por consumo">
-                                            <i class="bi bi-box-arrow-right"></i>
-                                        </a>
+                                        <?php if (is_admin()): ?>
+                                            <a href="movimientos/movimientos_crear.php?tipo=salida_consumo&id_bodega=<?php echo (int)$s['id_bodega']; ?>&id_producto=<?php echo (int)$s['id_producto']; ?>"
+                                               class="btn btn-outline-danger" title="Salida por consumo">
+                                                <i class="bi bi-box-arrow-right"></i>
+                                            </a>
+                                        <?php endif; ?>
                                         <a href="movimientos/movimientos_crear.php?tipo=traslado&id_bodega=<?php echo (int)$s['id_bodega']; ?>&id_producto=<?php echo (int)$s['id_producto']; ?>"
                                            class="btn btn-outline-primary" title="Trasladar a otra bodega">
                                             <i class="bi bi-arrow-repeat"></i>
                                         </a>
-                                        <a href="movimientos/movimientos_crear.php?tipo=ajuste_entrada&id_bodega=<?php echo (int)$s['id_bodega']; ?>&id_producto=<?php echo (int)$s['id_producto']; ?>"
-                                           class="btn btn-outline-success" title="Ajuste de entrada">
-                                            <i class="bi bi-plus-circle"></i>
-                                        </a>
+                                        <?php if (is_admin()): ?>
+                                            <a href="movimientos/movimientos_crear.php?tipo=ajuste_entrada&id_bodega=<?php echo (int)$s['id_bodega']; ?>&id_producto=<?php echo (int)$s['id_producto']; ?>"
+                                               class="btn btn-outline-success" title="Ajuste de entrada">
+                                                <i class="bi bi-plus-circle"></i>
+                                            </a>
+                                        <?php endif; ?>
                                     </div>
                                 </td>
                             <?php endif; ?>
@@ -303,7 +346,6 @@ require_once __DIR__ . '/../inc/header.php';
                     Mostrando <strong><?php echo count($stocks); ?></strong> registro(s).
                     Filas <span class="badge bg-warning bg-opacity-25 text-warning">amarillas</span> = stock bajo mínimo.
                     Filas <span class="badge bg-danger bg-opacity-25 text-danger">rojas</span> = sin stock.
-                    La bodega con ★ es la central (recepción de facturas).
                 </small>
             </div>
         <?php endif; ?>

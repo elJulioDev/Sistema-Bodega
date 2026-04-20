@@ -13,13 +13,35 @@ $tipo_movimiento = get('tipo_movimiento');
 $fecha_desde     = get('fecha_desde');
 $fecha_hasta     = get('fecha_hasta');
 
+// ============================================================
+// BLOQUEO POR ROL ENCARGADO
+// ============================================================
+// Encargado solo ve movimientos de SU bodega, ignora cualquier
+// intento de filtrar otra bodega por URL.
+if (is_encargado()) {
+    $miBodegaId = user_bodega_id();
+    if ($miBodegaId <= 0) {
+        set_flash('error', 'Tu usuario no tiene una bodega asignada. Contacta al administrador.');
+        redirect('/Bodega/index.php');
+    }
+    $id_bodega = (string)$miBodegaId;
+}
+
 // --- Paginación ---
 $porPagina = 50;
 $pagina    = max(1, (int)get('p'));
 $offset    = ($pagina - 1) * $porPagina;
 
-// Bodegas para el selector
-$bodegas = $pdo->query("SELECT id, nombre FROM bodegas WHERE estado = 1 ORDER BY nombre ASC")->fetchAll();
+// Bodegas para el selector (solo admin ve todas)
+if (is_encargado()) {
+    $stmtB = $pdo->prepare("SELECT id, nombre FROM bodegas WHERE id = ? AND estado = 1 LIMIT 1");
+    $stmtB->execute(array(user_bodega_id()));
+    $bodegas  = $stmtB->fetchAll();
+    $miBodega = !empty($bodegas[0]) ? $bodegas[0] : null;
+} else {
+    $bodegas  = $pdo->query("SELECT id, nombre FROM bodegas WHERE estado = 1 ORDER BY nombre ASC")->fetchAll();
+    $miBodega = null;
+}
 
 // --- WHERE dinámico ---
 $where  = " WHERE 1=1";
@@ -60,10 +82,10 @@ $sqlKpi = "
     SELECT
         COUNT(*) AS total,
         SUM(CASE WHEN m.tipo_movimiento IN ('entrada_compra','ajuste_entrada','traslado_entrada') THEN 1 ELSE 0 END) AS entradas,
-        SUM(CASE WHEN m.tipo_movimiento IN ('salida_consumo','ajuste_salida','traslado_salida') THEN 1 ELSE 0 END) AS salidas,
-        SUM(CASE WHEN m.tipo_movimiento IN ('traslado_entrada','traslado_salida') THEN 1 ELSE 0 END) AS traslados
+        SUM(CASE WHEN m.tipo_movimiento IN ('salida_consumo','ajuste_salida','traslado_salida')    THEN 1 ELSE 0 END) AS salidas,
+        SUM(CASE WHEN m.tipo_movimiento IN ('traslado_entrada','traslado_salida')                   THEN 1 ELSE 0 END) AS traslados
     FROM movimientos_bodega m
-    INNER JOIN bodegas b ON b.id = m.id_bodega
+    INNER JOIN bodegas b   ON b.id = m.id_bodega
     INNER JOIN productos p ON p.id = m.id_producto
     $where
 ";
@@ -74,7 +96,7 @@ $kpi = $stmtKpi->fetch();
 // --- Total para paginación ---
 $sqlCount = "
     SELECT COUNT(*) FROM movimientos_bodega m
-    INNER JOIN bodegas b ON b.id = m.id_bodega
+    INNER JOIN bodegas b   ON b.id = m.id_bodega
     INNER JOIN productos p ON p.id = m.id_producto
     $where
 ";
@@ -94,9 +116,9 @@ $sql = "
         u.nombre  AS usuario_nombre,
         um.nombre AS unidad_nombre
     FROM movimientos_bodega m
-    INNER JOIN bodegas b         ON b.id  = m.id_bodega
-    INNER JOIN productos p       ON p.id  = m.id_producto
-    LEFT  JOIN usuarios u        ON u.id  = m.id_usuario
+    INNER JOIN bodegas b          ON b.id  = m.id_bodega
+    INNER JOIN productos p        ON p.id  = m.id_producto
+    LEFT  JOIN usuarios u         ON u.id  = m.id_usuario
     LEFT  JOIN unidades_medida um ON um.id = p.id_unidad_medida
     $where
     ORDER BY m.id DESC
@@ -120,24 +142,31 @@ function tipo_badge($tipo) {
     return isset($map[$t]) ? $map[$t] : array('bg-light text-dark', 'bi-question-circle', $t);
 }
 
-$pageTitle = 'Movimientos';
+$pageTitle = is_encargado() ? 'Movimientos de mi Bodega' : 'Movimientos';
 require_once __DIR__ . '/../../inc/header.php';
 ?>
 
 <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
     <div>
         <h1 class="h3 mb-1 text-gray-800">
-            <i class="bi bi-arrow-left-right text-primary me-2"></i>Historial de Movimientos
+            <i class="bi bi-arrow-left-right text-primary me-2"></i>
+            <?php echo is_encargado() ? 'Movimientos de mi Bodega' : 'Historial de Movimientos'; ?>
         </h1>
-        <p class="text-muted mb-0 small">Registro unificado de entradas, salidas, ajustes y traslados.</p>
+        <?php if (is_encargado() && $miBodega): ?>
+            <p class="text-muted mb-0 small">
+                <i class="bi bi-geo-alt-fill me-1"></i>
+                <?php echo h($miBodega['nombre']); ?>
+                · Entradas, salidas y traslados asociados a tu bodega.
+            </p>
+        <?php else: ?>
+            <p class="text-muted mb-0 small">Registro unificado de entradas, salidas, ajustes y traslados.</p>
+        <?php endif; ?>
     </div>
-    <?php if (has_role(array('admin', 'bodega'))): ?>
     <div class="d-flex gap-2">
         <a href="movimientos_crear.php" class="btn btn-primary">
             <i class="bi bi-plus-lg me-1"></i> Registrar Movimiento
         </a>
     </div>
-    <?php endif; ?>
 </div>
 
 <!-- KPIs -->
@@ -180,12 +209,13 @@ require_once __DIR__ . '/../../inc/header.php';
 <div class="card shadow-sm border-0 mb-3">
     <div class="card-body py-3">
         <form method="get" class="row g-2 align-items-end">
-            <div class="col-12 col-sm-6 col-md-3">
+            <div class="col-12 col-sm-6 col-md-<?php echo is_encargado() ? '4' : '3'; ?>">
                 <label class="form-label text-secondary fw-bold small">Buscar</label>
                 <input type="text" name="buscar" value="<?php echo h($buscar); ?>"
                        class="form-control" placeholder="Producto, código, bodega…">
             </div>
 
+            <?php if (!is_encargado()): ?>
             <div class="col-12 col-sm-6 col-md-2">
                 <label class="form-label text-secondary fw-bold small">Bodega</label>
                 <select name="id_bodega" class="form-select">
@@ -198,8 +228,11 @@ require_once __DIR__ . '/../../inc/header.php';
                     <?php endforeach; ?>
                 </select>
             </div>
+            <?php else: ?>
+                <input type="hidden" name="id_bodega" value="<?php echo (int)$id_bodega; ?>">
+            <?php endif; ?>
 
-            <div class="col-12 col-sm-6 col-md-2">
+            <div class="col-12 col-sm-6 col-md-<?php echo is_encargado() ? '3' : '2'; ?>">
                 <label class="form-label text-secondary fw-bold small">Tipo</label>
                 <select name="tipo_movimiento" class="form-select">
                     <option value="">Todos</option>
@@ -226,7 +259,7 @@ require_once __DIR__ . '/../../inc/header.php';
                 <button type="submit" class="btn btn-primary w-100" title="Filtrar">
                     <i class="bi bi-funnel"></i>
                 </button>
-                <?php if ($buscar !== '' || $id_bodega !== '' || $tipo_movimiento !== '' || $fecha_desde !== '' || $fecha_hasta !== ''): ?>
+                <?php if ($buscar !== '' || (is_admin() && $id_bodega !== '') || $tipo_movimiento !== '' || $fecha_desde !== '' || $fecha_hasta !== ''): ?>
                     <a href="movimientos_lista.php" class="btn btn-light border" title="Limpiar">
                         <i class="bi bi-eraser"></i>
                     </a>
@@ -244,7 +277,9 @@ require_once __DIR__ . '/../../inc/header.php';
                 <thead class="table-light text-secondary" style="font-size: 0.78rem; letter-spacing: 0.03em;">
                     <tr>
                         <th class="px-3 py-3" style="min-width:90px;">FECHA</th>
-                        <th class="py-3" style="min-width:110px;">BODEGA</th>
+                        <?php if (!is_encargado()): ?>
+                            <th class="py-3" style="min-width:110px;">BODEGA</th>
+                        <?php endif; ?>
                         <th class="py-3" style="min-width:160px;">PRODUCTO</th>
                         <th class="py-3 text-center" style="min-width:120px;">TIPO</th>
                         <th class="py-3 text-end" style="min-width:70px;">CANT.</th>
@@ -255,46 +290,32 @@ require_once __DIR__ . '/../../inc/header.php';
                 <tbody>
                 <?php if (!$movimientos): ?>
                     <tr>
-                        <td colspan="7" class="text-center py-5 text-muted">
+                        <td colspan="<?php echo is_encargado() ? 6 : 7; ?>" class="text-center py-5 text-muted">
                             <i class="bi bi-inbox fs-1 d-block mb-2"></i>
                             No se encontraron movimientos con los filtros aplicados.
                         </td>
                     </tr>
                 <?php else: ?>
                     <?php foreach ($movimientos as $m):
-                        $tipo      = (string)$m['tipo_movimiento'];
-                        $badge     = tipo_badge($tipo);
-                        $esEntrada = (strpos($tipo, 'entrada') !== false);
-                        $esTraslado = ($m['referencia_tipo'] === 'traslado' && (int)$m['referencia_id'] > 0);
+                        $badge       = tipo_badge($m['tipo_movimiento']);
+                        $esEntrada   = in_array($m['tipo_movimiento'], array('entrada_compra','ajuste_entrada','traslado_entrada'), true);
+                        $esTraslado  = ($m['referencia_tipo'] === 'traslado');
                     ?>
                         <tr>
-                            <!-- FECHA -->
-                            <td class="px-3 text-muted small">
-                                <div class="fw-medium text-dark">
-                                    <?php echo date('d/m/Y', strtotime($m['fecha_movimiento'])); ?>
-                                </div>
-                                <div style="font-size:.72rem;">
-                                    <?php echo date('H:i', strtotime($m['fecha_movimiento'])); ?>
-                                </div>
+                            <td class="px-3 text-nowrap small text-secondary">
+                                <?php echo date('d/m/Y', strtotime($m['fecha_movimiento'])); ?>
+                                <div style="font-size:.72rem;"><?php echo date('H:i', strtotime($m['fecha_movimiento'])); ?></div>
                             </td>
-
-                            <!-- BODEGA -->
+                            <?php if (!is_encargado()): ?>
+                                <td>
+                                    <span class="badge bg-light text-dark border"><?php echo h($m['bodega_codigo']); ?></span>
+                                    <div class="small"><?php echo h($m['bodega_nombre']); ?></div>
+                                </td>
+                            <?php endif; ?>
                             <td>
-                                <span class="badge bg-primary bg-opacity-10 text-primary border-0 text-wrap text-start"
-                                      style="max-width:130px; white-space:normal; line-height:1.3;">
-                                    <i class="bi bi-geo-alt-fill me-1"></i><?php echo h($m['bodega_nombre']); ?>
-                                </span>
-                            </td>
-
-                            <!-- PRODUCTO -->
-                            <td>
-                                <div class="fw-medium text-dark" style="line-height:1.3;">
-                                    <?php echo h($m['producto_nombre']); ?>
-                                </div>
-                                <div class="mt-1">
-                                    <span class="badge bg-light text-dark border" style="font-size:.7rem;">
-                                        <?php echo h($m['producto_codigo']); ?>
-                                    </span>
+                                <div class="fw-medium"><?php echo h($m['producto_nombre']); ?></div>
+                                <div class="text-muted small">
+                                    <span><?php echo h($m['producto_codigo']); ?></span>
                                     <?php if ($m['unidad_nombre']): ?>
                                         <span class="text-muted ms-1" style="font-size:.72rem;">
                                             <?php echo h($m['unidad_nombre']); ?>
@@ -302,26 +323,18 @@ require_once __DIR__ . '/../../inc/header.php';
                                     <?php endif; ?>
                                 </div>
                             </td>
-
-                            <!-- TIPO -->
                             <td class="text-center">
                                 <span class="badge <?php echo $badge[0]; ?> bg-opacity-85"
                                       style="font-size:.72rem; white-space:normal; line-height:1.4;">
                                     <i class="bi <?php echo $badge[1]; ?> me-1"></i><?php echo h($badge[2]); ?>
                                 </span>
                             </td>
-
-                            <!-- CANTIDAD -->
                             <td class="text-end fw-bold <?php echo $esEntrada ? 'text-success' : 'text-danger'; ?>">
                                 <?php echo $esEntrada ? '+' : '−'; ?><?php echo number_format((float)$m['cantidad'], 2, ',', '.'); ?>
                             </td>
-
-                            <!-- TOTAL -->
                             <td class="text-end fw-medium text-dark">
                                 $<?php echo number_format((float)$m['total'], 0, ',', '.'); ?>
                             </td>
-
-                            <!-- ACCIONES -->
                             <td class="px-3 text-center">
                                 <?php if ($esTraslado): ?>
                                     <a href="movimientos_ver.php?id=<?php echo (int)$m['referencia_id']; ?>"
