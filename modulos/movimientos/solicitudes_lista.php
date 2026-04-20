@@ -178,9 +178,9 @@ $baseSelect = "
            bo.nombre AS origen_nombre,  bo.codigo AS origen_codigo,
            bd.nombre AS destino_nombre, bd.codigo AS destino_codigo
     FROM solicitudes s
-    INNER JOIN usuarios u  ON u.id  = s.id_usuario
+    LEFT  JOIN usuarios u  ON u.id  = s.id_usuario
     LEFT  JOIN bodegas  bo ON bo.id = s.id_bodega_origen
-    INNER JOIN bodegas  bd ON bd.id = s.id_bodega_destino
+    LEFT  JOIN bodegas  bd ON bd.id = s.id_bodega_destino
     WHERE 1=1
 ";
 
