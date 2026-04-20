@@ -4,6 +4,7 @@ require_once __DIR__ . '/../inc/auth.php';
 require_once __DIR__ . '/../inc/functions.php';
 
 require_login();
+require_role(array('admin', 'bodega'));
 
 $buscar = trim((string)get('buscar'));
 $id_bodega = get('id_bodega');

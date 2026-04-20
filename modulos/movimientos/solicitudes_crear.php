@@ -2,7 +2,9 @@
 require_once __DIR__ . '/../../inc/db.php';
 require_once __DIR__ . '/../../inc/auth.php';
 require_once __DIR__ . '/../../inc/functions.php';
+
 require_login();
+require_role(array('admin', 'bodega', 'solicitante'));
 
 $error    = '';
 $bodegas  = $pdo->query("SELECT id, nombre FROM bodegas WHERE estado = 1 ORDER BY nombre")->fetchAll();

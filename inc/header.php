@@ -21,6 +21,14 @@ if (!function_exists('nav_active')) {
         return (strpos($current_script, $needle) !== false) ? 'active' : '';
     }
 }
+
+// Etiqueta legible del rol
+$rolLabels = array(
+    'admin'       => 'Administrador',
+    'bodega'      => 'Encargado',
+    'solicitante' => 'Solicitante'
+);
+$rolLabel = ($user && isset($rolLabels[$user['rol']])) ? $rolLabels[$user['rol']] : '';
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -69,7 +77,7 @@ if (!function_exists('nav_active')) {
             overflow: hidden;
         }
 
-        /* ====== OVERLAY (reemplaza blur) ====== */
+        /* ====== OVERLAY ====== */
         .sidebar-overlay {
             display: none;
             position: fixed;
@@ -132,7 +140,6 @@ if (!function_exists('nav_active')) {
             overflow: hidden;
         }
 
-        /* Brand + botón cerrar (móvil) */
         .sidebar-header {
             padding: 1rem 1rem 0;
             flex-shrink: 0;
@@ -156,7 +163,6 @@ if (!function_exists('nav_active')) {
         .sidebar-brand .bi { font-size: 1.5rem; color: var(--accent); }
         .sidebar-brand span { font-size: 1.05rem; font-weight: 700; }
 
-        /* Botón X: solo visible en móvil */
         .btn-sidebar-close {
             display: none;
             background: transparent;
@@ -175,6 +181,23 @@ if (!function_exists('nav_active')) {
             border-color: var(--sidebar-border) !important;
             opacity: 1;
             margin: 0 0 0.5rem;
+        }
+
+        /* Badge de rol en header */
+        .sidebar-role-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: .35rem;
+            background: rgba(220, 53, 69, 0.12);
+            border: 1px solid rgba(220, 53, 69, 0.35);
+            color: #ff8b95;
+            font-size: .65rem;
+            font-weight: 700;
+            letter-spacing: .5px;
+            text-transform: uppercase;
+            padding: .18rem .5rem;
+            border-radius: .35rem;
+            margin-bottom: .5rem;
         }
 
         /* Navegación scrolleable */
@@ -225,6 +248,19 @@ if (!function_exists('nav_active')) {
             border-left: 3px solid var(--accent);
             border-radius: 0 0.375rem 0.375rem 0;
             padding-left: calc(1rem - 3px);
+        }
+
+        /* Nav link destacado (CTA) */
+        .sidebar .nav-link.nav-cta {
+            background-color: rgba(220, 53, 69, 0.1);
+            color: #ff8b95;
+            border: 1px solid rgba(220, 53, 69, 0.25);
+            font-weight: 600;
+        }
+        .sidebar .nav-link.nav-cta:hover {
+            background-color: rgba(220, 53, 69, 0.2);
+            color: #fff;
+            border-color: rgba(220, 53, 69, 0.5);
         }
 
         /* Footer fijo del sidebar */
@@ -333,7 +369,7 @@ if (!function_exists('nav_active')) {
 
     <?php if ($user): ?>
 
-    <!-- Overlay oscuro (cierra sidebar al hacer clic) -->
+    <!-- Overlay oscuro -->
     <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
     <!-- ============ SIDEBAR ============ -->
@@ -349,85 +385,146 @@ if (!function_exists('nav_active')) {
                     <i class="bi bi-x-lg"></i>
                 </button>
             </div>
+            <?php if ($rolLabel): ?>
+                <div class="sidebar-role-badge">
+                    <i class="bi bi-shield-lock-fill"></i> <?php echo h($rolLabel); ?>
+                </div>
+            <?php endif; ?>
             <hr>
         </div>
 
         <div class="sidebar-nav">
             <ul class="nav nav-pills flex-column">
 
-                <li class="nav-item">
+                <!-- Inicio: todos los roles -->
+                <li>
                     <a href="/Bodega/index.php" class="nav-link <?php echo (strpos($current_script, '/Bodega/index.php') !== false) ? 'active' : ''; ?>">
                         <i class="bi bi-house-door"></i> Inicio
                     </a>
                 </li>
 
-                <li>
-                    <a href="/Bodega/modulos/stock_lista.php" class="nav-link <?php echo nav_active('stock_lista'); ?>">
-                        <i class="bi bi-inboxes"></i> Stock
-                    </a>
-                </li>
+                <?php /* ==================================================
+                        SOLICITANTE: solo solicitudes
+                        ================================================== */ ?>
+                <?php if (is_solicitante()): ?>
 
-                <?php if (has_role('admin')): ?>
-                <li class="nav-section">Maestros</li>
+                    <li class="nav-section">Mis Solicitudes</li>
 
-                <li>
-                    <a href="/Bodega/modulos/proveedores/proveedores_lista.php" class="nav-link <?php echo nav_active('/proveedores/'); ?>">
-                        <i class="bi bi-truck"></i> Proveedores
-                    </a>
-                </li>
-                <li>
-                    <a href="/Bodega/modulos/productos/productos_lista.php" class="nav-link <?php echo nav_active('/productos/'); ?>">
-                        <i class="bi bi-boxes"></i> Productos
-                    </a>
-                </li>
-                <li>
-                    <a href="/Bodega/modulos/facturas/facturas_lista.php" class="nav-link <?php echo nav_active('/facturas/'); ?>">
-                        <i class="bi bi-receipt"></i> Facturas
-                    </a>
-                </li>
+                    <li>
+                        <a href="/Bodega/modulos/movimientos/solicitudes_crear.php" class="nav-link nav-cta <?php echo nav_active('solicitudes_crear'); ?>">
+                            <i class="bi bi-plus-circle"></i> Nueva Solicitud
+                        </a>
+                    </li>
+
+                    <li>
+                        <a href="/Bodega/modulos/movimientos/solicitudes_lista.php" class="nav-link <?php echo nav_active('solicitudes_lista'); ?>">
+                            <i class="bi bi-clipboard-check"></i> Historial
+                        </a>
+                    </li>
+
                 <?php endif; ?>
 
-                <?php if (has_role(array('admin', 'bodega'))): ?>
-                <li class="nav-section">Operaciones</li>
+                <?php /* ==================================================
+                        ENCARGADO DE BODEGA
+                        ================================================== */ ?>
+                <?php if (is_encargado()): ?>
 
-                <li>
-                    <a href="/Bodega/modulos/movimientos/movimientos_lista.php" class="nav-link <?php echo nav_active('movimientos_'); ?>">
-                        <i class="bi bi-arrow-left-right"></i> Movimientos
-                    </a>
-                </li>
-                <?php endif; ?>
+                    <li>
+                        <a href="/Bodega/modulos/stock_lista.php" class="nav-link <?php echo nav_active('stock_lista'); ?>">
+                            <i class="bi bi-inboxes"></i> Stock de mi Bodega
+                        </a>
+                    </li>
 
-                <?php if (has_role(array('admin', 'bodega', 'solicitante'))): ?>
-                <?php if (!has_role('admin') && !has_role('bodega')): ?>
+                    <li class="nav-section">Operaciones</li>
+
+                    <li>
+                        <a href="/Bodega/modulos/movimientos/movimientos_lista.php" class="nav-link <?php echo nav_active('movimientos_'); ?>">
+                            <i class="bi bi-arrow-left-right"></i> Movimientos
+                        </a>
+                    </li>
+
+                    <li>
+                        <a href="/Bodega/modulos/movimientos/movimientos_crear.php" class="nav-link nav-cta <?php echo nav_active('movimientos_crear'); ?>">
+                            <i class="bi bi-box-arrow-right"></i> Nuevo Traslado
+                        </a>
+                    </li>
+
                     <li class="nav-section">Solicitudes</li>
+
+                    <li>
+                        <a href="/Bodega/modulos/movimientos/solicitudes_crear.php" class="nav-link <?php echo nav_active('solicitudes_crear'); ?>">
+                            <i class="bi bi-plus-circle"></i> Solicitar Reposición
+                        </a>
+                    </li>
+
+                    <li>
+                        <a href="/Bodega/modulos/movimientos/solicitudes_lista.php" class="nav-link <?php echo nav_active('solicitudes_lista'); ?>">
+                            <i class="bi bi-clipboard-check"></i> Bandeja Solicitudes
+                        </a>
+                    </li>
+
                 <?php endif; ?>
 
-                <li>
-                    <a href="/Bodega/modulos/movimientos/solicitudes_lista.php" class="nav-link <?php echo nav_active('solicitudes'); ?>">
-                        <i class="bi bi-clipboard-check"></i>
-                        <?php echo has_role('solicitante') ? 'Mis Solicitudes' : 'Solicitudes'; ?>
-                    </a>
-                </li>
-                <?php endif; ?>
+                <?php /* ==================================================
+                        ADMIN: acceso total
+                        ================================================== */ ?>
+                <?php if (is_admin()): ?>
 
-                <?php if (has_role('admin')): ?>
-                <li class="nav-section">Configuración</li>
+                    <li>
+                        <a href="/Bodega/modulos/stock_lista.php" class="nav-link <?php echo nav_active('stock_lista'); ?>">
+                            <i class="bi bi-inboxes"></i> Stock
+                        </a>
+                    </li>
 
-                <li>
-                    <a href="/Bodega/modulos/bodegas/bodegas_lista.php" class="nav-link <?php echo nav_active('/bodegas/'); ?>">
-                        <i class="bi bi-buildings"></i> Bodegas
-                    </a>
-                </li>
-                <li>
-                    <a href="/Bodega/modulos/funcionarios/funcionarios_lista.php" class="nav-link <?php echo nav_active('/funcionarios/'); ?>">
-                        <i class="bi bi-person-badge"></i> Funcionarios
-                    </a>
-                </li>
-                <li>
-                    <a href="/Bodega/modulos/usuarios/usuarios_lista.php" class="nav-link <?php echo nav_active('/usuarios/'); ?>">
-                        <i class="bi bi-people"></i> Usuarios
-                    </a>
-                </li>
+                    <li class="nav-section">Maestros</li>
+
+                    <li>
+                        <a href="/Bodega/modulos/proveedores/proveedores_lista.php" class="nav-link <?php echo nav_active('/proveedores/'); ?>">
+                            <i class="bi bi-truck"></i> Proveedores
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/Bodega/modulos/productos/productos_lista.php" class="nav-link <?php echo nav_active('/productos/'); ?>">
+                            <i class="bi bi-boxes"></i> Productos
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/Bodega/modulos/facturas/facturas_lista.php" class="nav-link <?php echo nav_active('/facturas/'); ?>">
+                            <i class="bi bi-receipt"></i> Facturas
+                        </a>
+                    </li>
+
+                    <li class="nav-section">Operaciones</li>
+
+                    <li>
+                        <a href="/Bodega/modulos/movimientos/movimientos_lista.php" class="nav-link <?php echo nav_active('movimientos_'); ?>">
+                            <i class="bi bi-arrow-left-right"></i> Movimientos
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/Bodega/modulos/movimientos/solicitudes_lista.php" class="nav-link <?php echo nav_active('solicitudes'); ?>">
+                            <i class="bi bi-clipboard-check"></i> Solicitudes
+                        </a>
+                    </li>
+
+                    <li class="nav-section">Configuración</li>
+
+                    <li>
+                        <a href="/Bodega/modulos/bodegas/bodegas_lista.php" class="nav-link <?php echo nav_active('/bodegas/'); ?>">
+                            <i class="bi bi-buildings"></i> Bodegas
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/Bodega/modulos/funcionarios/funcionarios_lista.php" class="nav-link <?php echo nav_active('/funcionarios/'); ?>">
+                            <i class="bi bi-person-badge"></i> Funcionarios
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/Bodega/modulos/usuarios/usuarios_lista.php" class="nav-link <?php echo nav_active('/usuarios/'); ?>">
+                            <i class="bi bi-people"></i> Usuarios
+                        </a>
+                    </li>
+
                 <?php endif; ?>
 
             </ul>
@@ -438,7 +535,7 @@ if (!function_exists('nav_active')) {
                 <i class="bi bi-person-circle fs-4 text-secondary"></i>
                 <div class="user-details">
                     <div class="user-name"><?php echo h($user['nombre']); ?></div>
-                    <div class="user-role"><?php echo h($user['rol']); ?></div>
+                    <div class="user-role"><?php echo h($rolLabel ? $rolLabel : $user['rol']); ?></div>
                 </div>
             </div>
             <a href="/Bodega/logout.php" class="btn-logout">
