@@ -20,7 +20,7 @@ if (!function_exists('tipo_badge_dash')) {
             'traslado_entrada'  => array('bg-primary',   'bi-arrow-down-left',   'Traslado Entrada'),
             'traslado_salida'   => array('bg-secondary', 'bi-arrow-up-right',    'Traslado Salida'),
         );
-        return isset($map[$t]) ? $map[$t] : array('bg-light text-dark', 'bi-dash', '—');
+        return isset($map[$t]) ? $map[$t] : array('bg-secondary text-white', 'bi-dash', '—');
     }
 }
 

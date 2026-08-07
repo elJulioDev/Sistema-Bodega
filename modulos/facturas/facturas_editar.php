@@ -262,7 +262,7 @@ ui_page_header('bi-pencil-square', 'Editar Factura N° ' . $factura['numero_fact
         <div class="row g-3">
             <div class="col-md-4">
                 <label class="form-label fw-semibold small text-secondary text-uppercase">Bodega</label>
-                <input type="text" class="form-control bg-light" value="<?php echo h($bodegaInfo['nombre']); ?> (<?php echo h($bodegaInfo['codigo']); ?>)" readonly>
+                <input type="text" class="form-control" value="<?php echo h($bodegaInfo['nombre']); ?> (<?php echo h($bodegaInfo['codigo']); ?>)" readonly>
             </div>
             <div class="col-md-4">
                 <label class="form-label fw-semibold small text-secondary text-uppercase">Proveedor <span class="text-danger">*</span></label>
@@ -326,7 +326,7 @@ ui_page_header('bi-pencil-square', 'Editar Factura N° ' . $factura['numero_fact
                 <div class="small text-muted mb-2 px-1">
                     <i class="bi bi-lightbulb me-1"></i>Click o <kbd>Enter</kbd> para agregar. Si ya existe, suma cantidad.
                 </div>
-                <div id="listaProductos" class="border rounded bg-light scroll-420"></div>
+                <div id="listaProductos" class="border rounded bg-body scroll-420"></div>
                 <div class="small text-muted mt-2 text-center">
                     <span id="contadorProductos">0</span> producto(s) disponibles
                 </div>
@@ -439,7 +439,7 @@ ui_page_header('bi-pencil-square', 'Editar Factura N° ' . $factura['numero_fact
                 
                 html += '<div class="producto-item d-flex justify-content-between align-items-center ' + yaAgr + '" data-id="' + p.id + '">';
                 html += '<div class="flex-fill-min" >';
-                html += '<div class="small text-truncate">' + icono + '<span class="badge bg-white text-dark border font-monospace me-1">' + escapeHtml(p.codigo) + '</span><strong>' + escapeHtml(p.nombre) + '</strong></div>';
+                html += '<div class="small text-truncate">' + icono + '<span class="badge bg-body text-secondary border font-monospace me-1">' + escapeHtml(p.codigo) + '</span><strong>' + escapeHtml(p.nombre) + '</strong></div>';
                 html += '<div class="small text-muted">' + (p.unidad ? escapeHtml(p.unidad) : '—') + ' ' + costoStr + '</div>';
                 html += '</div>';
                 html += '<div class="ms-2">' + checkIcon + '</div>';
@@ -490,8 +490,8 @@ ui_page_header('bi-pencil-square', 'Editar Factura N° ' . $factura['numero_fact
             + '<td class="px-2">'
             + '<input type="hidden" name="item_id_producto[]" value="' + p.id + '">'
             + '<input type="hidden" name="item_descripcion[]" value="' + escapeHtml(p.nombre) + '">'
-            + '<div class="small"><span class="badge bg-light text-dark border font-monospace">' + escapeHtml(p.codigo) + '</span></div>'
-            + '<div class="small fw-semibold text-dark text-truncate mw-260" title="' + escapeHtml(p.nombre) + '">' + escapeHtml(p.nombre) + '</div>'
+            + '<div class="small"><span class="badge bg-body text-secondary border font-monospace">' + escapeHtml(p.codigo) + '</span></div>'
+            + '<div class="small fw-semibold text-body text-truncate mw-260" title="' + escapeHtml(p.nombre) + '">' + escapeHtml(p.nombre) + '</div>'
             + '<div class="small text-muted">' + (p.unidad ? escapeHtml(p.unidad) : '—') + '</div>'
             + '</td>'
             + '<td><input type="number" step="0.01" min="0.01" name="item_cantidad[]" value="' + cant + '" class="form-control form-control-sm item-cantidad text-end"></td>'
@@ -518,9 +518,8 @@ ui_page_header('bi-pencil-square', 'Editar Factura N° ' . $factura['numero_fact
     }
 
     function destacarFila(tr) {
-        tr.style.transition = 'background .4s';
-        tr.style.background = '#fff3cd';
-        setTimeout(function() { tr.style.background = ''; }, 600);
+        tr.classList.add('row-flash');
+        setTimeout(function() { tr.classList.remove('row-flash'); }, 600);
     }
 
     function recalcularFila(tr) {

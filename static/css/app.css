@@ -24,6 +24,10 @@
     --app-border: #d8dfec;
     --app-border-strong: #c0cadb;
 
+    /* Cabeceras de tarjeta (distinguibles del relleno) */
+    --app-card-header-bg: #eef2f9;
+    --app-card-header-border: #d9dfec;
+
     /* Texto */
     --app-text: #182131;
     --app-text-muted: #55637b;
@@ -98,6 +102,10 @@
     --app-border: #293343;
     --app-border-strong: #3b485e;
 
+    /* Cabeceras de tarjeta: panel levemente elevado sobre la superficie, borde suave */
+    --app-card-header-bg: #1b2537;
+    --app-card-header-border: rgba(255, 255, 255, 0.09);
+
     --app-text: #eceff5;
     --app-text-muted: #a7b2c6;
 
@@ -112,18 +120,18 @@
     --app-sidebar-hover: rgba(255, 255, 255, 0.07);
     --app-sidebar-shadow: 2px 0 20px rgba(0, 0, 0, 0.40);
 
-    --app-success-bg: rgba(84, 200, 145, 0.13);
-    --app-success-border: rgba(84, 200, 145, 0.32);
-    --app-success-text: #9ce6c2;
-    --app-danger-bg: rgba(255, 120, 120, 0.13);
-    --app-danger-border: rgba(255, 120, 120, 0.32);
-    --app-danger-text: #ffb8b8;
-    --app-warning-bg: rgba(255, 205, 60, 0.13);
-    --app-warning-border: rgba(255, 205, 60, 0.32);
-    --app-warning-text: #ffdc8a;
-    --app-info-bg: rgba(80, 200, 255, 0.13);
-    --app-info-border: rgba(80, 200, 255, 0.32);
-    --app-info-text: #ade6ff;
+    --app-success-bg: rgba(94, 232, 166, 0.12);
+    --app-success-border: rgba(94, 232, 166, 0.42);
+    --app-success-text: #5ee8a6;
+    --app-danger-bg: rgba(255, 157, 157, 0.12);
+    --app-danger-border: rgba(255, 157, 157, 0.42);
+    --app-danger-text: #ff9d9d;
+    --app-warning-bg: rgba(255, 209, 102, 0.12);
+    --app-warning-border: rgba(255, 209, 102, 0.42);
+    --app-warning-text: #ffd166;
+    --app-info-bg: rgba(143, 216, 255, 0.12);
+    --app-info-border: rgba(143, 216, 255, 0.42);
+    --app-info-text: #8fd8ff;
 
     --app-table-header-bg: #1c2434;
     --app-table-stripe-bg: rgba(255, 255, 255, 0.025);
@@ -584,9 +592,14 @@ a { color: var(--app-brand); }
 }
 .card.shadow-sm { box-shadow: var(--shadow-sm) !important; }
 .card .card-header {
-    background-color: var(--app-surface-alt);
-    border-bottom: 1px solid var(--app-border);
+    background-color: var(--app-card-header-bg, var(--app-surface-alt));
+    border-bottom: 1px solid var(--app-card-header-border, var(--app-border));
     padding: 0.85rem 1.25rem;
+}
+/* Cabeceras con bg-body (legado): usan el tono de cabecera, no el color del cuerpo,
+   así en claro no se confunden con el relleno y en oscuro no quedan como bloque gris */
+.card-header.bg-body {
+    background-color: var(--app-card-header-bg, var(--app-surface-alt)) !important;
 }
 .card .card-header h6,
 .card .card-header h5 {
@@ -646,12 +659,12 @@ a { color: var(--app-brand); }
 .badge-soft-secondary { background: rgba(108, 117, 125, 0.14);  color: #495057; }
 .badge-soft-dark      { background: rgba(33, 37, 41, 0.14);     color: #212529; }
 
-[data-bs-theme="dark"] .badge-soft-primary   { background: rgba(77, 148, 255, 0.16); color: #9ec5ff; }
-[data-bs-theme="dark"] .badge-soft-success   { background: rgba(84, 200, 145, 0.16); color: #9be3c3; }
-[data-bs-theme="dark"] .badge-soft-danger    { background: rgba(255, 120, 120, 0.16); color: #ffb4b4; }
-[data-bs-theme="dark"] .badge-soft-warning   { background: rgba(255, 205, 60, 0.18);  color: #ffd97a; }
-[data-bs-theme="dark"] .badge-soft-info      { background: rgba(80, 200, 255, 0.16);  color: #a8e4ff; }
-[data-bs-theme="dark"] .badge-soft-secondary { background: rgba(154, 164, 180, 0.16); color: #c9d1dc; }
+[data-bs-theme="dark"] .badge-soft-primary   { background: rgba(77, 148, 255, 0.18); color: #7fb4ff; }
+[data-bs-theme="dark"] .badge-soft-success   { background: rgba(94, 232, 166, 0.16); color: #5ee8a6; }
+[data-bs-theme="dark"] .badge-soft-danger    { background: rgba(255, 157, 157, 0.16); color: #ff9d9d; }
+[data-bs-theme="dark"] .badge-soft-warning   { background: rgba(255, 209, 102, 0.18); color: #ffd166; }
+[data-bs-theme="dark"] .badge-soft-info      { background: rgba(143, 216, 255, 0.16); color: #8fd8ff; }
+[data-bs-theme="dark"] .badge-soft-secondary { background: rgba(160, 170, 186, 0.16); color: #cbd3df; }
 [data-bs-theme="dark"] .badge-soft-dark      { background: rgba(220, 225, 235, 0.18); color: #e7eaf0; }
 
 /* Badges Bootstrap estándar adaptados al tema */
@@ -792,6 +805,13 @@ a { color: var(--app-brand); }
     background-color: var(--app-surface);
     color: var(--app-text);
 }
+/* Readonly/disabled: relleno adaptativo al tema (evita los grises claros en dark) */
+.form-control[readonly],
+.form-control:disabled,
+.form-select:disabled {
+    background-color: var(--app-surface-alt);
+    color: var(--app-text);
+}
 .form-label { font-size: 0.82rem; font-weight: 600; color: var(--app-text-muted); margin-bottom: 0.35rem; }
 .req { color: #ef4444; }
 .required-note { font-size: 0.75rem; color: var(--app-text-muted); margin-bottom: 1.25rem; }
@@ -917,6 +937,10 @@ a { color: var(--app-brand); }
 .producto-item .btn-add { opacity: 0.7; transition: all .15s; font-size: 1.35rem; }
 .producto-item:hover .btn-add { opacity: 1; transform: scale(1.15); }
 .producto-item kbd { background: var(--app-surface-alt); border: 1px solid var(--app-border); border-radius: 3px; padding: 1px 5px; font-size: 0.75em; }
+
+/* Flash de fila recién agregada (adaptativo al tema) */
+.row-flash { background-color: #fff3cd; }
+[data-bs-theme="dark"] .row-flash { background-color: rgba(255, 209, 102, 0.18); }
 
 /* ===== 15. COMPONENTE: FORMULARIOS (secciones) ===== */
 .form-section { padding: 1.4rem 1.5rem; }

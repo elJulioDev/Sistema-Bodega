@@ -208,7 +208,7 @@ ui_page_header('bi-pencil-square', 'Editar Orden de Compra', '', ob_get_clean())
                             <td><input type="text" name="item_descripcion[]" class="form-control item-descripcion" value="<?php echo h($d['descripcion_item']); ?>"></td>
                             <td><input type="number" step="0.01" min="0" name="item_cantidad[]" class="form-control item-cantidad" value="<?php echo (float)$d['cantidad']; ?>"></td>
                             <td><input type="number" step="0.01" min="0" name="item_precio[]" class="form-control item-precio" value="<?php echo (float)$d['precio_unitario']; ?>"></td>
-                            <td><input type="text" class="form-control item-subtotal bg-light" value="<?php echo (float)$d['subtotal']; ?>" readonly></td>
+                            <td><input type="text" class="form-control item-subtotal" value="<?php echo (float)$d['subtotal']; ?>" readonly></td>
                             <td class="text-center"><button type="button" class="btn btn-sm btn-outline-danger btn-eliminar-fila"><i class="bi bi-x-lg"></i></button></td>
                         </tr>
                         <?php endforeach; ?>
@@ -284,7 +284,7 @@ ui_page_header('bi-pencil-square', 'Editar Orden de Compra', '', ob_get_clean())
             <td><input type="text" name="item_descripcion[]" class="form-control item-descripcion"></td>
             <td><input type="number" step="0.01" min="0" name="item_cantidad[]" class="form-control item-cantidad" value="1"></td>
             <td><input type="number" step="0.01" min="0" name="item_precio[]" class="form-control item-precio" value="0"></td>
-            <td><input type="text" class="form-control item-subtotal bg-light" value="0" readonly></td>
+            <td><input type="text" class="form-control item-subtotal" value="0" readonly></td>
             <td class="text-center"><button type="button" class="btn btn-sm btn-outline-danger btn-eliminar-fila"><i class="bi bi-x-lg"></i></button></td>
         `;
         // Limpiamos el selected del clonado
