@@ -206,27 +206,12 @@ $pageTitle = 'Nueva Solicitud';
 require_once __DIR__ . '/../../inc/header.php';
 ?>
 
-<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
-    <div>
-        <div class="text-muted small mb-1">
-            <a href="solicitudes_lista.php" class="text-decoration-none text-muted">
-                <i class="bi bi-chevron-left"></i> Solicitudes
-            </a>
-        </div>
-        <h1 class="h3 mb-0 text-gray-800">
-            <i class="bi bi-clipboard-plus text-primary me-2"></i>Nueva Solicitud de Traslado
-        </h1>
-        <p class="text-muted mb-0 small mt-1">
-            <?php if (is_solicitante()): ?>
-                Solicita productos hacia las bodegas de tu unidad.
-            <?php elseif (is_encargado()): ?>
-                Solicita productos hacia una de tus bodegas asignadas.
-            <?php else: ?>
-                Crea una solicitud de traslado entre bodegas.
-            <?php endif; ?>
-        </p>
-    </div>
-</div>
+<?php
+if (is_solicitante())   $subtitulo = 'Solicita productos hacia las bodegas de tu unidad.';
+elseif (is_encargado()) $subtitulo = 'Solicita productos hacia una de tus bodegas asignadas.';
+else                    $subtitulo = 'Crea una solicitud de traslado entre bodegas.';
+ui_page_header('bi-clipboard-plus', 'Nueva Solicitud de Traslado', $subtitulo);
+?>
 
 <?php if ($error): ?>
     <div class="alert alert-danger"><i class="bi bi-exclamation-triangle me-2"></i><?php echo h($error); ?></div>
@@ -245,7 +230,7 @@ require_once __DIR__ . '/../../inc/header.php';
 
     <!-- PASO 1 -->
     <div class="card border-0 shadow-sm mb-4">
-        <div class="card-header bg-white py-3">
+        <div class="card-header bg-body py-3">
             <h6 class="mb-0 fw-bold">
                 <span class="badge bg-primary rounded-circle me-2">1</span> Datos de la solicitud
             </h6>
@@ -278,7 +263,7 @@ require_once __DIR__ . '/../../inc/header.php';
                         <?php if (count($bodegasDestino) === 1): ?>
                             <?php $b = $bodegasDestino[0]; ?>
                             <input type="hidden" name="id_bodega_destino" value="<?php echo (int)$b['id']; ?>">
-                            <input type="text" class="form-control bg-light" value="<?php echo h($b['nombre']); ?>" readonly>
+                            <input type="text" class="form-control bg-body" value="<?php echo h($b['nombre']); ?>" readonly>
                             <div class="form-text">
                                 <?php if (is_solicitante()): ?>Única bodega de tu unidad.<?php else: ?>Única bodega asignada.<?php endif; ?>
                             </div>
@@ -333,7 +318,7 @@ require_once __DIR__ . '/../../inc/header.php';
 
     <!-- PASO 2 -->
     <div class="card border-0 shadow-sm mb-4">
-        <div class="card-header bg-white d-flex justify-content-between align-items-center py-3">
+        <div class="card-header bg-body d-flex justify-content-between align-items-center py-3">
             <h6 class="mb-0 fw-bold">
                 <span class="badge bg-primary rounded-circle me-2">2</span>
                 Productos a solicitar
@@ -361,7 +346,7 @@ require_once __DIR__ . '/../../inc/header.php';
         <div class="d-none" id="contenidoProductos" >
             <div class="table-responsive">
                 <table class="table table-hover align-middle mb-0">
-                    <thead class="table-light small text-uppercase text-muted">
+                    <thead class="small text-uppercase text-muted">
                         <tr>
                             <th class="input-w-36" ><input type="checkbox" class="form-check-input" id="chkTodos"></th>
                             <th>Código</th>
@@ -377,7 +362,7 @@ require_once __DIR__ . '/../../inc/header.php';
         </div>
     </div>
 
-    <div class="card border-0 shadow-sm sticky-bottom bg-white">
+    <div class="card border-0 shadow-sm sticky-bottom bg-body">
         <div class="card-body d-flex justify-content-between align-items-center flex-wrap gap-3 py-3">
             <div class="d-flex gap-4">
                 <div>
@@ -505,7 +490,7 @@ require_once __DIR__ . '/../../inc/header.php';
                   + ' data-codigo="' + escapeHtml(d.codigo.toLowerCase()) + '">'
                   + '<td class="px-3"><input type="checkbox" class="form-check-input chk-item"'
                   +   (agotado ? ' disabled' : '') + '></td>'
-                  + '<td><span class="badge bg-light text-dark border">' + escapeHtml(d.codigo) + '</span></td>'
+                  + '<td><span class="badge bg-body text-body border">' + escapeHtml(d.codigo) + '</span></td>'
                   + '<td><div class="fw-bold">' + escapeHtml(d.nombre) + '</div>'
                   +   '<div class="text-muted small">' + (d.unidad ? escapeHtml(d.unidad) : '')
                   +   (d.tipo ? ' · ' + escapeHtml(d.tipo) : '') + '</div></td>'

@@ -116,10 +116,11 @@ $pageTitle = 'Nueva Orden de Compra';
 require_once __DIR__ . '/../../inc/header.php';
 ?>
 
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h1 class="h3 mb-0 text-gray-800"><i class="bi bi-cart-plus text-primary me-2"></i>Nueva Orden de Compra</h1>
-    <a href="oc_lista.php" class="btn btn-outline-secondary"><i class="bi bi-arrow-left me-1"></i> Volver</a>
-</div>
+<?php
+ob_start();
+ui_btn_link('Volver', 'oc_lista.php', 'outline-secondary', 'bi-arrow-left');
+ui_page_header('bi-cart-plus', 'Nueva Orden de Compra', '', ob_get_clean());
+?>
 
 <?php if ($error !== ''): ?>
     <div class="alert alert-danger"><i class="bi bi-exclamation-triangle-fill me-2"></i><?php echo h($error); ?></div>
@@ -128,7 +129,7 @@ require_once __DIR__ . '/../../inc/header.php';
 <form method="post" id="formOC">
     <?php echo csrf_field(); ?>
     <div class="card shadow-sm border-0 mb-4">
-        <div class="card-header bg-white pt-3 pb-2 border-0">
+        <div class="card-header bg-body pt-3 pb-2 border-0">
             <h5 class="mb-0 fw-bold">Datos Generales</h5>
         </div>
         <div class="card-body">
@@ -180,14 +181,14 @@ require_once __DIR__ . '/../../inc/header.php';
     </div>
 
     <div class="card shadow-sm border-0 mb-4">
-        <div class="card-header bg-white pt-3 pb-2 border-0 d-flex justify-content-between align-items-center">
+        <div class="card-header bg-body pt-3 pb-2 border-0 d-flex justify-content-between align-items-center">
             <h5 class="mb-0 fw-bold">Detalle de Ítems</h5>
             <button type="button" class="btn btn-sm btn-success" id="btnAgregarFila"><i class="bi bi-plus-lg me-1"></i> Agregar Ítem</button>
         </div>
         <div class="card-body p-0">
             <div class="table-responsive">
                 <table class="table table-hover align-middle mb-0" id="tablaDetalle">
-                    <thead class="table-light text-secondary">
+                    <thead class="text-secondary">
                         <tr>
                             <th class="w-25" >Producto</th>
                             <th class="tw-30" >Descripción</th>
@@ -223,7 +224,7 @@ require_once __DIR__ . '/../../inc/header.php';
 
     <div class="row mb-5">
         <div class="col-md-4 offset-md-8">
-            <div class="card shadow-sm border-0 bg-light">
+            <div class="card shadow-sm border-0 bg-body">
                 <div class="card-body">
                     <div class="d-flex justify-content-between mb-2">
                         <span class="fw-bold text-secondary">Neto:</span>
@@ -235,7 +236,7 @@ require_once __DIR__ . '/../../inc/header.php';
                     </div>
                     <hr>
                     <div class="d-flex justify-content-between fs-5">
-                        <span class="fw-bold text-dark">Total:</span>
+                        <span class="fw-bold text-body">Total:</span>
                         <span class="fw-bold text-primary">$ <input type="text" id="resumenTotal" readonly value="0" class="border-0 bg-transparent text-end text-primary fw-bold input-w-120 outline-0" ></span>
                     </div>
                     <button type="submit" class="btn btn-primary w-100 mt-4 py-2"><i class="bi bi-floppy me-2"></i>Guardar Orden de Compra</button>

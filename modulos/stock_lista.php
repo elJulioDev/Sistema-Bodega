@@ -177,39 +177,24 @@ else                       $pageTitle = 'Control de Stock';
 require_once __DIR__ . '/../inc/header.php';
 ?>
 
-<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
-    <div>
-        <h1 class="h4 mb-0 text-dark fw-bold">
-            <i class="bi bi-inboxes text-primary me-2"></i><?php echo h($pageTitle); ?>
-        </h1>
-        <?php if (is_encargado()): ?>
-            <small class="text-muted">
-                <i class="bi bi-geo-alt-fill me-1"></i>
-                <?php echo count($bodegasPermitidasIds); ?> bodega<?php echo count($bodegasPermitidasIds)===1?'':'s'; ?> a tu cargo
-            </small>
-        <?php elseif (is_solicitante()): ?>
-            <small class="text-muted">
-                <i class="bi bi-diagram-3 me-1"></i>
-                Bodegas de tu unidad (<?php echo count($bodegasPermitidasIds); ?>)
-            </small>
-        <?php else: ?>
-            <small class="text-muted">Stock actual por bodega y producto</small>
-        <?php endif; ?>
-    </div>
-    <div class="d-flex gap-2">
-        <?php if (is_admin()): ?>
-            <a href="facturas/facturas_crear.php" class="btn btn-sm btn-success">
-                <i class="bi bi-receipt me-1"></i> Ingresar Factura
-            </a>
-        <?php endif; ?>
-        <?php if ($canOperate): ?>
-            <a href="movimientos/movimientos_crear.php" class="btn btn-sm btn-primary">
-                <i class="bi bi-arrow-left-right me-1"></i>
-                <?php echo is_encargado() ? 'Nuevo Traslado' : 'Registrar Movimiento'; ?>
-            </a>
-        <?php endif; ?>
-    </div>
-</div>
+<?php
+$subtitulo = 'Stock actual por bodega y producto';
+if (is_encargado()) {
+    $subtitulo = count($bodegasPermitidasIds) . ' bodega' . (count($bodegasPermitidasIds) === 1 ? '' : 's') . ' a tu cargo';
+} elseif (is_solicitante()) {
+    $subtitulo = 'Bodegas de tu unidad (' . count($bodegasPermitidasIds) . ')';
+}
+
+ob_start();
+if (is_admin()) {
+    ui_btn_link('Ingresar Factura', 'facturas/facturas_crear.php', 'success', 'bi-receipt');
+}
+if ($canOperate) {
+    $accionLabel = is_encargado() ? 'Nuevo Traslado' : 'Registrar Movimiento';
+    ui_btn_link($accionLabel, 'movimientos/movimientos_crear.php', 'primary', 'bi-arrow-left-right');
+}
+ui_page_header('bi-inboxes', $pageTitle, $subtitulo, ob_get_clean());
+?>
 
 <!-- KPIs -->
 <div class="row g-2 mb-3">
@@ -253,7 +238,7 @@ require_once __DIR__ . '/../inc/header.php';
         <form method="get" class="row g-2 align-items-center">
             <div class="col-md-<?php echo (count($bodegas) > 1) ? '4' : '6'; ?>">
                 <div class="input-group input-group-sm">
-                    <span class="input-group-text bg-light text-secondary border-end-0"><i class="bi bi-search"></i></span>
+                    <span class="input-group-text bg-body text-secondary border-end-0"><i class="bi bi-search"></i></span>
                     <input type="text" name="buscar" value="<?php echo h($buscar); ?>" class="form-control border-start-0 ps-0" placeholder="Buscar por código o nombre...">
                 </div>
             </div>
@@ -295,7 +280,7 @@ require_once __DIR__ . '/../inc/header.php';
     <div class="card-body p-0">
         <div class="table-responsive">
             <table class="table table-hover align-middle mb-0 fs-md" >
-                <thead class="table-light text-secondary fs-sm" >
+                <thead class="text-secondary fs-sm" >
                     <tr>
                         <th class="px-3 py-2">BODEGA</th>
                         <th class="py-2">PRODUCTO</th>
@@ -400,7 +385,7 @@ require_once __DIR__ . '/../inc/header.php';
             </table>
         </div>
         <?php if ($stocks): ?>
-            <div class="card-footer bg-white py-2 px-3 border-top">
+            <div class="card-footer bg-body py-2 px-3 border-top">
                 <small class="text-muted">
                     Mostrando <strong><?php echo count($stocks); ?></strong> registro(s).
                     Filas <span class="badge bg-warning bg-opacity-25 text-warning">amarillas</span> = stock bajo mínimo.

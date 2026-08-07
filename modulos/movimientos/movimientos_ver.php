@@ -117,42 +117,22 @@ function estado_badge_ver($estado) {
 <?php /* ===================== ESTILOS PANTALLA + IMPRESIÓN ===================== */ ?>
 
 <?php /* ======================== BREADCRUMB + BOTONES ======================== */ ?>
-<div class="d-flex justify-content-between align-items-start mb-4 flex-wrap gap-3 d-print-none">
-    <div>
-        <div class="text-muted small mb-1">
-            <a href="movimientos_lista.php" class="text-decoration-none text-muted">
-                <i class="bi bi-chevron-left"></i> Movimientos
-            </a>
-            <span class="mx-1">/</span>
-            <span>Traslado #<?php echo (int)$traspaso['id']; ?></span>
-        </div>
-        <h1 class="h3 mb-1 text-gray-800">
-            <i class="bi bi-arrow-left-right text-primary me-2"></i>Traslado
-            <span class="fw-light">#<?php echo (int)$traspaso['id']; ?></span>
-            <span class="ms-2"><?php echo estado_badge_ver($traspaso['estado']); ?></span>
-        </h1>
-        <div class="text-muted small">
-            <i class="bi bi-calendar3 me-1"></i>
-            <?php echo h(date('d/m/Y', strtotime($traspaso['fecha']))); ?>
-            &nbsp;·&nbsp;
-            <i class="bi bi-person me-1"></i>
-            <?php echo h($creadoPor); ?>
-            <?php if (!empty($traspaso['created_at'])): ?>
-                &nbsp;·&nbsp;
-                <i class="bi bi-clock me-1"></i>
-                <?php echo h(date('d/m/Y H:i', strtotime($traspaso['created_at']))); ?>
-            <?php endif; ?>
-        </div>
-    </div>
-
-    <div class="d-flex gap-2 flex-wrap">
-        <a href="movimientos_lista.php" class="btn btn-outline-secondary btn-sm">
-            <i class="bi bi-arrow-left me-1"></i> Volver
-        </a>
-        <button type="button" class="btn btn-success btn-sm" onclick="window.print();">
-            <i class="bi bi-printer-fill me-1"></i> Imprimir / PDF
-        </button>
-    </div>
+<div class="d-print-none">
+<?php
+$subtitulo = 'Fecha: ' . date('d/m/Y', strtotime($traspaso['fecha'])) . ' · Por: ' . $creadoPor;
+if (!empty($traspaso['created_at'])) {
+    $subtitulo .= ' · Creado: ' . date('d/m/Y H:i', strtotime($traspaso['created_at']));
+}
+ob_start();
+echo estado_badge_ver($traspaso['estado']);
+ui_btn_link('Volver', 'movimientos_lista.php', 'outline-secondary', 'bi-arrow-left');
+?>
+<button type="button" class="btn btn-success btn-sm" onclick="window.print();">
+    <i class="bi bi-printer-fill me-1"></i> Imprimir / PDF
+</button>
+<?php
+ui_page_header('bi-arrow-left-right', 'Traslado #' . (int)$traspaso['id'], $subtitulo, ob_get_clean());
+?>
 </div>
 
 <?php /* ========== ENCABEZADO EXCLUSIVO PARA IMPRESIÓN ========== */ ?>
@@ -266,7 +246,7 @@ function estado_badge_ver($estado) {
 <div class="row g-4 mb-4 info-cards-row d-print-none">
     <div class="col-md-6">
         <div class="card shadow-sm border-0 h-100">
-            <div class="card-header bg-white border-0 pt-3 pb-2">
+            <div class="card-header bg-body border-0 pt-3 pb-2">
                 <h6 class="mb-0 fw-bold text-secondary text-uppercase fs-sm ls-1" >
                     <i class="bi bi-info-circle me-1"></i>Información del Traslado
                 </h6>
@@ -296,7 +276,7 @@ function estado_badge_ver($estado) {
 
     <div class="col-md-6">
         <div class="card shadow-sm border-0 h-100">
-            <div class="card-header bg-white border-0 pt-3 pb-2">
+            <div class="card-header bg-body border-0 pt-3 pb-2">
                 <h6 class="mb-0 fw-bold text-secondary text-uppercase fs-sm ls-1" >
                     <i class="bi bi-chat-left-text me-1"></i>Observación
                 </h6>
@@ -318,17 +298,17 @@ function estado_badge_ver($estado) {
 <span class="print-section-title">Detalle de Productos Trasladados</span>
 
 <div class="card shadow-sm border-0 mb-4">
-    <div class="card-header bg-white border-0 pt-3 pb-2 d-flex justify-content-between align-items-center d-print-none">
+    <div class="card-header bg-body border-0 pt-3 pb-2 d-flex justify-content-between align-items-center d-print-none">
         <h5 class="mb-0 fw-bold">
             <i class="bi bi-box-seam me-2 text-primary"></i>Productos Trasladados
         </h5>
-        <span class="badge bg-light text-dark border"><?php echo $totalItems; ?> registros</span>
+        <span class="badge bg-body text-body border"><?php echo $totalItems; ?> registros</span>
     </div>
 
     <div class="card-body p-0">
         <div class="table-responsive table-wrap">
             <table class="table table-hover align-middle mb-0 print-table tbl-detalle">
-                <thead class="table-light">
+                <thead class="text-secondary">
                     <tr class="small text-uppercase text-secondary">
                         <th class="px-3 text-center tw-4" >#</th>
                         <th class="tw-12" >Código</th>
@@ -354,12 +334,12 @@ function estado_badge_ver($estado) {
                         <tr>
                             <td class="px-3 text-center text-muted small"><?php echo $n; ?></td>
                             <td>
-                                <span class="badge bg-light text-dark border fs-sm" >
+                                <span class="badge bg-body text-body border fs-sm" >
                                     <?php echo h($d['producto_codigo']); ?>
                                 </span>
                             </td>
                             <td>
-                                <div class="fw-medium text-dark"><?php echo h($d['producto_nombre']); ?></div>
+                                <div class="fw-medium text-body"><?php echo h($d['producto_nombre']); ?></div>
                                 <?php if (!empty($d['unidad_nombre'])): ?>
                                     <div class="text-muted small mt-1 fs-sm" >
                                         <i class="bi bi-ruler me-1"></i><?php echo h($d['unidad_nombre']); ?>
@@ -395,7 +375,7 @@ function estado_badge_ver($estado) {
                 <?php endif; ?>
                 </tbody>
                 <?php if ($detalle): ?>
-                <tfoot class="table-light">
+                <tfoot class="text-secondary">
                     <tr>
                         <th colspan="3" class="text-end text-muted small text-uppercase fs-sm" >
                             Total
@@ -413,7 +393,7 @@ function estado_badge_ver($estado) {
                 <?php endif; ?>
             </table>
         </div>
-        <div class="px-3 py-2 small text-muted bg-light border-top d-print-none">
+        <div class="px-3 py-2 small text-muted bg-body border-top d-print-none">
             <i class="bi bi-info-circle me-1"></i>
             El stock mostrado es el <strong>actual</strong> en bodega destino (posterior al traslado).
         </div>

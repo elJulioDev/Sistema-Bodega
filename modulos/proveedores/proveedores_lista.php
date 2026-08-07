@@ -47,17 +47,7 @@ require_once __DIR__ . '/../../inc/header.php';
 
 
 <!-- Cabecera -->
-<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
-    <div>
-        <h1 class="h3 mb-0 text-gray-800">
-            <i class="bi bi-truck text-primary me-2"></i>Proveedores
-        </h1>
-        <small class="text-muted">Gestiona el directorio de proveedores registrados</small>
-    </div>
-    <a href="proveedores_crear.php" class="btn btn-primary">
-        <i class="bi bi-plus-lg me-1"></i> Nuevo Proveedor
-    </a>
-</div>
+<?php ui_page_header('bi-truck', 'Proveedores', 'Gestiona el directorio de proveedores registrados', '<a href="proveedores_crear.php" class="btn btn-primary"><i class="bi bi-plus-lg me-1"></i> Nuevo Proveedor</a>'); ?>
 
 <!-- KPIs -->
 <div class="row g-2 mb-3">
@@ -93,7 +83,7 @@ require_once __DIR__ . '/../../inc/header.php';
         <form method="get" class="row g-2 align-items-center">
             <div class="col">
                 <div class="input-group input-group-sm">
-                    <span class="input-group-text bg-light border-end-0 text-secondary">
+                    <span class="input-group-text bg-body border-end-0 text-secondary">
                         <i class="bi bi-search"></i>
                     </span>
                     <input type="text" name="buscar"
@@ -122,7 +112,7 @@ require_once __DIR__ . '/../../inc/header.php';
 <div class="card shadow-sm border-0">
     <div class="card-body text-center py-5 text-muted">
         <i class="bi bi-truck display-4 d-block mb-2 opacity-25"></i>
-        <p class="fw-semibold text-dark mb-1">
+        <p class="fw-semibold text-body mb-1">
             <?php echo $buscar !== '' ? 'Sin resultados' : 'Sin proveedores registrados'; ?>
         </p>
         <p class="small mb-0">
@@ -143,7 +133,7 @@ require_once __DIR__ . '/../../inc/header.php';
     <div class="card-body p-0">
         <div class="table-responsive">
             <table class="table table-hover align-middle mb-0">
-                <thead class="table-light text-secondary fs-sm ls-3" >
+                <thead class="text-secondary fs-sm ls-3" >
                     <tr>
                         <th class="px-4 py-3">RUT</th>
                         <th class="py-3">RAZÓN SOCIAL</th>
@@ -160,9 +150,9 @@ require_once __DIR__ . '/../../inc/header.php';
                 ?>
                 <tr>
                     <td class="px-4">
-                        <span class="badge bg-light text-dark border font-monospace"><?php echo h($p['rut']); ?></span>
+                        <span class="badge bg-body text-secondary border font-monospace"><?php echo h($p['rut']); ?></span>
                     </td>
-                    <td class="fw-semibold text-dark"><?php echo h($p['razon_social']); ?></td>
+                    <td class="fw-semibold"><?php echo h($p['razon_social']); ?></td>
                     <td class="text-muted">
                         <?php echo $p['nombre_fantasia'] !== '' ? h($p['nombre_fantasia']) : '—'; ?>
                     </td>
@@ -240,7 +230,7 @@ require_once __DIR__ . '/../../inc/header.php';
         <div class="prov-cf">
             <span class="prov-cf-l">RUT</span>
             <span class="prov-cf-v">
-                <span class="badge bg-light text-dark border font-monospace"><?php echo h($p['rut']); ?></span>
+                <span class="badge bg-body text-secondary border font-monospace"><?php echo h($p['rut']); ?></span>
             </span>
         </div>
 
@@ -350,13 +340,15 @@ document.addEventListener('DOMContentLoaded', function () {
         var btn    = document.getElementById('modalToggleBtn');
 
         if (on) {
-            head.style.background  = 'linear-gradient(135deg,#fff5f5,#ffecec)';
+            head.classList.remove('grad-active', 'grad-inactive');
+            head.classList.add('grad-active');
             title.textContent      = 'Desactivar proveedor';
             msg.innerHTML          = '¿Deseas <strong>desactivar</strong> a <em>' + nombre + '</em>?';
             btn.className          = 'btn btn-sm btn-danger';
             btn.textContent        = 'Sí, desactivar';
         } else {
-            head.style.background  = 'linear-gradient(135deg,#f0fdf4,#dcfce7)';
+            head.classList.remove('grad-active', 'grad-inactive');
+            head.classList.add('grad-inactive');
             title.textContent      = 'Activar proveedor';
             msg.innerHTML          = '¿Deseas <strong>activar</strong> nuevamente a <em>' + nombre + '</em>?';
             btn.className          = 'btn btn-sm btn-success';

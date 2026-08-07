@@ -129,22 +129,14 @@ $pageTitle = 'Editar Bodega';
 require_once __DIR__ . '/../../inc/header.php';
 ?>
 
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h1 class="h3 mb-0 text-gray-800">
-        <i class="bi bi-pencil-square text-primary me-2"></i>Editar Bodega
-    </h1>
-    <div class="d-flex gap-2">
-        <a href="bodegas_encargados.php?id=<?php echo (int)$bodega['id']; ?>" class="btn btn-outline-success">
-            <i class="bi bi-people-fill me-1"></i> Encargados (<?php echo $totalEncMn; ?>)
-        </a>
-        <a href="bodegas_ver.php?id=<?php echo (int)$bodega['id']; ?>" class="btn btn-outline-secondary">
-            <i class="bi bi-eye me-1"></i> Ver detalle
-        </a>
-        <a href="bodegas_lista.php" class="btn btn-outline-secondary">
-            <i class="bi bi-arrow-left me-1"></i> Volver
-        </a>
-    </div>
-</div>
+<?php ui_page_header(
+    'bi-pencil-square',
+    'Editar Bodega',
+    '',
+    '<a href="bodegas_encargados.php?id=' . (int)$bodega['id'] . '" class="btn btn-outline-success"><i class="bi bi-people-fill me-1"></i> Encargados (' . $totalEncMn . ')</a>'
+    . '<a href="bodegas_ver.php?id=' . (int)$bodega['id'] . '" class="btn btn-outline-secondary"><i class="bi bi-eye me-1"></i> Ver detalle</a>'
+    . '<a href="bodegas_lista.php" class="btn btn-outline-secondary"><i class="bi bi-arrow-left me-1"></i> Volver</a>'
+); ?>
 
 <?php if ($totalEncMn > 1): ?>
 <div class="alert alert-info">
@@ -167,7 +159,7 @@ require_once __DIR__ . '/../../inc/header.php';
             <?php echo csrf_field(); ?>
             <div class="col-md-4">
                 <label class="form-label fw-bold text-secondary">Código interno</label>
-                <input type="text" value="<?php echo h($bodega['codigo']); ?>" class="form-control bg-light" readonly>
+                <input type="text" value="<?php echo h($bodega['codigo']); ?>" class="form-control bg-body" readonly>
                 <div class="form-text">Generado por el sistema, no editable.</div>
             </div>
 
@@ -198,7 +190,7 @@ require_once __DIR__ . '/../../inc/header.php';
                 <label class="form-label fw-bold text-secondary">Encargado principal</label>
 
                 <div class="input-group mb-2">
-                    <span class="input-group-text bg-white"><i class="bi bi-search"></i></span>
+                    <span class="input-group-text bg-body"><i class="bi bi-search"></i></span>
                     <input type="text" id="buscadorEncargado" class="form-control" placeholder="Filtrar por nombre, RUT o cargo...">
                 </div>
 
@@ -219,7 +211,7 @@ require_once __DIR__ . '/../../inc/header.php';
                                 $esActual = ($principalActualId === (int)$e['id']);
                                 $tieneOtras = ((int)$e['total_bodegas'] > 0);
                             ?>
-                                <label class="list-group-item list-group-item-action encargado-item <?php echo $esActual ? 'bg-light' : ''; ?>"
+                                <label class="list-group-item list-group-item-action encargado-item <?php echo $esActual ? 'list-group-item-primary' : ''; ?>"
                                        data-search="<?php echo h($searchText); ?>">
                                     <div class="d-flex align-items-start gap-2">
                                         <input type="radio" class="form-check-input mt-1" name="id_encargado" value="<?php echo (int)$e['id']; ?>"
@@ -227,7 +219,7 @@ require_once __DIR__ . '/../../inc/header.php';
                                         <div class="flex-grow-1">
                                             <div class="d-flex justify-content-between align-items-start">
                                                 <div>
-                                                    <div class="fw-bold small text-dark">
+                                                    <div class="fw-bold small text-body">
                                                         <?php echo h($e['nombre']); ?>
                                                         <?php if ($esActual): ?>
                                                             <span class="badge bg-primary bg-opacity-10 text-primary border border-primary-subtle ms-1 fs-2xs" >PRINCIPAL ACTUAL</span>

@@ -71,13 +71,7 @@ $pageTitle = 'Editar Producto';
 require_once __DIR__ . '/../../inc/header.php';
 ?>
 
-<div class="d-flex justify-content-between align-items-center mb-3">
-    <div>
-        <h1 class="h4 mb-0 text-dark fw-bold"><i class="bi bi-pencil-square text-primary me-2"></i>Editar Producto</h1>
-        <small class="text-muted">ID #<?php echo (int)$producto['id']; ?> &middot; Modifica los datos del producto</small>
-    </div>
-    <a href="productos_lista.php" class="btn btn-sm btn-outline-secondary"><i class="bi bi-arrow-left me-1"></i> Volver</a>
-</div>
+<?php ui_page_header('bi-pencil-square', 'Editar Producto', 'ID #' . (int)$producto['id'] . ' · Modifica los datos del producto', '<a href="productos_lista.php" class="btn btn-sm btn-outline-secondary"><i class="bi bi-arrow-left me-1"></i> Volver</a>'); ?>
 
 <div class="row g-3">
     <div class="col-lg-8">
@@ -112,7 +106,7 @@ require_once __DIR__ . '/../../inc/header.php';
                     <div class="col-md-6">
                         <label class="form-label fw-semibold small text-secondary text-uppercase">Stock Mínimo (alerta)</label>
                         <div class="input-group">
-                            <span class="input-group-text bg-light"><i class="bi bi-bell"></i></span>
+                            <span class="input-group-text bg-body"><i class="bi bi-bell"></i></span>
                             <input type="number" step="0.01" min="0" name="stock_minimo" value="<?php echo h($producto['stock_minimo']); ?>" class="form-control">
                         </div>
                         <small class="text-muted">Se alerta cuando el stock llegue a este valor.</small>
@@ -153,7 +147,7 @@ require_once __DIR__ . '/../../inc/header.php';
     </div>
 
     <div class="col-lg-4">
-        <div class="card shadow-sm border-0 bg-light">
+        <div class="card shadow-sm border-0 bg-body">
             <div class="card-body p-3">
                 <h6 class="fw-bold text-primary"><i class="bi bi-info-circle me-1"></i> Información</h6>
                 <dl class="small mb-0">

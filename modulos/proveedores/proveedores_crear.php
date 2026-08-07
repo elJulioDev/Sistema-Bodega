@@ -75,17 +75,7 @@ require_once __DIR__ . '/../../inc/header.php';
 
 
 <!-- Cabecera -->
-<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
-    <div>
-        <h1 class="h3 mb-0 text-gray-800">
-            <i class="bi bi-truck text-primary me-2"></i>Nuevo Proveedor
-        </h1>
-        <small class="text-muted">Registra una nueva empresa proveedora en el sistema</small>
-    </div>
-    <a href="proveedores_lista.php" class="btn btn-outline-secondary">
-        <i class="bi bi-arrow-left me-1"></i> Volver al listado
-    </a>
-</div>
+<?php ui_page_header('bi-truck', 'Nuevo Proveedor', 'Registra una nueva empresa proveedora en el sistema', '<a href="proveedores_lista.php" class="btn btn-outline-secondary"><i class="bi bi-arrow-left me-1"></i> Volver al listado</a>'); ?>
 
 <?php if ($error !== ''): ?>
 <div class="alert alert-danger alert-dismissible fade show d-flex align-items-center gap-2 mb-3" role="alert">
@@ -213,7 +203,7 @@ require_once __DIR__ . '/../../inc/header.php';
     </div>
 
     <!-- ── Footer ── -->
-    <div class="card-footer bg-light border-top d-flex justify-content-end gap-2 py-3 px-4">
+    <div class="card-footer bg-body border-top d-flex justify-content-end gap-2 py-3 px-4">
         <a href="proveedores_lista.php" class="btn btn-light border">
             <i class="bi bi-x-lg me-1"></i> Cancelar
         </a>

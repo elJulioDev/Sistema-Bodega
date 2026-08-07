@@ -191,14 +191,12 @@ $pageTitle = 'Importar Funcionarios';
 require_once __DIR__ . '/../../inc/header.php';
 ?>
 
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h1 class="h3 mb-0 text-gray-800">
-        <i class="bi bi-file-earmark-arrow-up text-primary me-2"></i>Importar Funcionarios desde CSV
-    </h1>
-    <a href="funcionarios_lista.php" class="btn btn-outline-secondary">
-        <i class="bi bi-arrow-left me-1"></i> Volver al listado
-    </a>
-</div>
+<?php ui_page_header(
+    'bi-file-earmark-arrow-up',
+    'Importar Funcionarios desde CSV',
+    '',
+    '<a href="funcionarios_lista.php" class="btn btn-outline-secondary"><i class="bi bi-arrow-left me-1"></i> Volver al listado</a>'
+); ?>
 
 <div class="row g-3">
     <div class="col-lg-7">
@@ -252,9 +250,9 @@ require_once __DIR__ . '/../../inc/header.php';
     </div>
 
     <div class="col-lg-5">
-        <div class="card shadow-sm border-0 bg-light">
+        <div class="card shadow-sm border-0 bg-body">
             <div class="card-body p-4">
-                <h6 class="fw-bold text-dark mb-3">
+                <h6 class="fw-bold text-body mb-3">
                     <i class="bi bi-info-circle me-2"></i>Instrucciones
                 </h6>
 
@@ -272,7 +270,7 @@ require_once __DIR__ . '/../../inc/header.php';
 
                 <hr>
 
-                <h6 class="fw-bold text-dark mb-2 small">Columnas requeridas</h6>
+                <h6 class="fw-bold text-body mb-2 small">Columnas requeridas</h6>
                 <ul class="small text-muted ps-3 mb-0">
                     <li><code>Codigo</code> — Código interno RRHH (contraseña inicial)</li>
                     <li><code>RUT</code> — Formato 12345678-9 (nombre de usuario)</li>

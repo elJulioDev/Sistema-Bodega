@@ -140,32 +140,23 @@ function tipo_badge($tipo) {
         'traslado_entrada'  => array('bg-primary',   'bi-arrow-down-left',   'Traslado Entrada'),
         'traslado_salida'   => array('bg-secondary', 'bi-arrow-up-right',    'Traslado Salida'),
     );
-    return isset($map[$tipo]) ? $map[$tipo] : array('bg-light text-dark', 'bi-question-circle', $tipo);
+    return isset($map[$tipo]) ? $map[$tipo] : array('bg-body text-body', 'bi-question-circle', $tipo);
 }
 
 $pageTitle = is_encargado() ? 'Movimientos de mis Bodegas' : 'Movimientos';
 require_once __DIR__ . '/../../inc/header.php';
 ?>
 
-<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
-    <div>
-        <h1 class="h3 mb-1 text-gray-800">
-            <i class="bi bi-arrow-left-right text-primary me-2"></i>
-            <?php echo is_encargado() ? 'Movimientos de mis Bodegas' : 'Historial de Movimientos'; ?>
-        </h1>
-        <?php if (is_encargado()): ?>
-            <p class="text-muted mb-0 small">
-                <i class="bi bi-geo-alt-fill me-1"></i>
-                Gestionando <strong><?php echo count($misBodegasDetalle); ?> bodega<?php echo count($misBodegasDetalle) > 1 ? 's' : ''; ?></strong>.
-            </p>
-        <?php else: ?>
-            <p class="text-muted mb-0 small">Registro unificado de entradas, salidas, ajustes y traslados.</p>
-        <?php endif; ?>
-    </div>
-    <a href="movimientos_crear.php" class="btn btn-primary">
-        <i class="bi bi-plus-lg me-1"></i> Registrar Movimiento
-    </a>
-</div>
+<?php
+$subtitulo = 'Registro unificado de entradas, salidas, ajustes y traslados.';
+if (is_encargado()) {
+    $subtitulo = 'Gestionando ' . count($misBodegasDetalle) . ' bodega' . (count($misBodegasDetalle) > 1 ? 's' : '') . '.';
+}
+$titulo = is_encargado() ? 'Movimientos de mis Bodegas' : 'Historial de Movimientos';
+ob_start();
+ui_btn_link('Registrar Movimiento', 'movimientos_crear.php', 'primary', 'bi-plus-lg');
+ui_page_header('bi-arrow-left-right', $titulo, $subtitulo, ob_get_clean());
+?>
 
 <div class="row g-3 mb-4">
     <div class="col-6 col-md-3">
@@ -256,7 +247,7 @@ require_once __DIR__ . '/../../inc/header.php';
     <div class="card-body p-0">
         <div class="table-responsive">
             <table class="table table-hover align-middle mb-0 fs-md" >
-                <thead class="table-light text-secondary">
+                <thead class="text-secondary">
                     <tr>
                         <th class="px-3 py-3">FECHA</th>
                         <th class="py-3">BODEGA</th>
@@ -285,7 +276,7 @@ require_once __DIR__ . '/../../inc/header.php';
                             <div class="fs-xs" ><?php echo date('H:i', strtotime($m['fecha_movimiento'])); ?></div>
                         </td>
                         <td>
-                            <span class="badge bg-light text-dark border"><?php echo h($m['bodega_codigo']); ?></span>
+                            <span class="badge bg-body text-body border"><?php echo h($m['bodega_codigo']); ?></span>
                             <div class="small"><?php echo h($m['bodega_nombre']); ?></div>
                         </td>
                         <td>
@@ -317,7 +308,7 @@ require_once __DIR__ . '/../../inc/header.php';
     </div>
 
     <?php if ($totalPaginas > 1): ?>
-    <div class="card-footer bg-white border-top d-flex justify-content-between align-items-center py-2">
+    <div class="card-footer bg-body border-top d-flex justify-content-between align-items-center py-2">
         <div class="text-muted small">
             Mostrando <strong><?php echo count($movimientos); ?></strong> de <strong><?php echo number_format($totalRows, 0, ',', '.'); ?></strong>
         </div>

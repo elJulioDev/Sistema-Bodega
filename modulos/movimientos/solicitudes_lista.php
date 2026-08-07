@@ -202,30 +202,23 @@ function badge_estado($estado) {
 }
 ?>
 
-<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
-    <div>
-        <h1 class="h3 mb-0">
-            <i class="bi bi-clipboard-check text-primary me-2"></i>
-            <?php
-            if (is_encargado())       echo ($vista === 'enviadas') ? 'Mis Solicitudes Enviadas' : 'Solicitudes Recibidas';
-            elseif (is_solicitante()) echo 'Mis Solicitudes';
-            else                      echo 'Solicitudes de Traslado';
-            ?>
-        </h1>
-        <?php if (is_encargado() && $misBodegasDetalle): ?>
-        <p class="text-muted mb-0 small mt-1">
-            <?php if ($vista === 'enviadas'): ?>
-                Solicitudes que tú enviaste.
-            <?php else: ?>
-                Gestionando <strong><?php echo count($misBodegasDetalle); ?> bodega<?php echo count($misBodegasDetalle) > 1 ? 's' : ''; ?></strong>.
-            <?php endif; ?>
-        </p>
-        <?php endif; ?>
-    </div>
-    <a href="solicitudes_crear.php" class="btn btn-primary">
-        <i class="bi bi-plus-lg me-1"></i> Nueva Solicitud
-    </a>
-</div>
+<?php
+$titulo    = 'Solicitudes de Traslado';
+$subtitulo = '';
+if (is_encargado()) {
+    $titulo = ($vista === 'enviadas') ? 'Mis Solicitudes Enviadas' : 'Solicitudes Recibidas';
+    if ($misBodegasDetalle) {
+        $subtitulo = ($vista === 'enviadas')
+            ? 'Solicitudes que tú enviaste.'
+            : 'Gestionando ' . count($misBodegasDetalle) . ' bodega' . (count($misBodegasDetalle) > 1 ? 's' : '') . '.';
+    }
+} elseif (is_solicitante()) {
+    $titulo = 'Mis Solicitudes';
+}
+ob_start();
+ui_btn_link('Nueva Solicitud', 'solicitudes_crear.php', 'primary', 'bi-plus-lg');
+ui_page_header('bi-clipboard-check', $titulo, $subtitulo, ob_get_clean());
+?>
 
 <?php if (is_encargado()): ?>
 <ul class="nav nav-tabs mb-3">
@@ -295,7 +288,7 @@ function badge_estado($estado) {
 <div class="card shadow-sm border-0">
     <div class="table-responsive">
         <table class="table table-hover align-middle mb-0">
-            <thead class="table-light small text-uppercase text-muted">
+            <thead class="small text-uppercase text-muted">
                 <tr>
                     <th>N° Solicitud</th>
                     <th class="d-none d-md-table-cell">Origen</th>

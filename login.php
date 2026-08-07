@@ -3,6 +3,7 @@ require_once __DIR__ . '/inc/db.php';
 require_once __DIR__ . '/inc/auth.php';
 require_once __DIR__ . '/inc/functions.php';
 require_once __DIR__ . '/inc/csrf.php';
+require_once __DIR__ . '/inc/settings.php';
 
 if (is_logged_in()) {
     redirect(BASE_URL . '/index.php');
@@ -10,6 +11,17 @@ if (is_logged_in()) {
 
 $error = '';
 $year  = date('Y');
+
+$siteNombre    = site_config('site_nombre', 'Sistema de Bodega');
+$siteDescrip   = site_config('site_descripcion', 'Panel de Administración y Control');
+$siteIcono     = site_config('site_icono', 'bi-box-seam');
+$orgNombre     = site_config('org_nombre', '');
+$orgDominio    = site_config('org_email_dominio', '');
+$siteColor     = site_config('site_color', '#0d6efd');
+$siteColorSec  = site_config('site_color_secundario', '#8b5cf6');
+$brandDeep     = site_color_darken($siteColor, 0.18);
+$brandSoft     = site_color_rgba($siteColor, 0.12);
+$temaDefault   = site_config('tema_default', 'auto');
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     csrf_check();
@@ -50,73 +62,80 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 ?>
 <!doctype html>
-<html lang="es">
+<html lang="es" data-bs-theme="<?php echo $temaDefault === 'auto' ? 'light' : h($temaDefault); ?>">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Iniciar Sesion | Sistema de Bodega</title>
+    <title>Iniciar Sesión | <?php echo h($siteNombre); ?></title>
+    <script>
+        (function () {
+            var s = '<?php echo $temaDefault === 'dark' ? 'dark' : 'light'; ?>';
+            try { s = localStorage.getItem('sb_theme') || s; } catch (e) {}
+            if (s === 'auto') s = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+            document.documentElement.setAttribute('data-bs-theme', s);
+        })();
+    </script>
+    <style>
+        :root {
+            --app-brand: <?php echo h($siteColor); ?>;
+            --app-brand-deep: <?php echo h($brandDeep); ?>;
+            --app-brand-soft: <?php echo h($brandSoft); ?>;
+            --app-accent: <?php echo h($siteColorSec); ?>;
+        }
+    </style>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <link rel="stylesheet" href="static/css/login.css">
 </head>
 <body>
 
+<button type="button" class="theme-toggle" id="themeToggle" title="Cambiar tema" aria-label="Cambiar tema">
+    <i class="bi bi-moon-stars" id="themeToggleIcon"></i>
+</button>
+
 <div class="login-container">
 
+    <?php if ($orgNombre !== ''): ?>
     <div class="institution-badge">
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
-            <polyline points="9 22 9 12 15 12 15 22"></polyline>
-        </svg>
-        Municipalidad de Coltauco
+        <i class="bi bi-building"></i>
+        <?php echo h($orgNombre); ?>
     </div>
+    <?php endif; ?>
 
     <div class="login-card">
 
         <div class="card-header">
-            <h1>Sistema de Bodega</h1>
-            <p>Panel de Administración y Control</p>
+            <div class="logo-wrap"><i class="<?php echo h($siteIcono); ?>"></i></div>
+            <h1><?php echo h($siteNombre); ?></h1>
+            <p><?php echo h($siteDescrip); ?></p>
         </div>
 
         <div class="card-body">
 
             <?php if ($error): ?>
             <div class="alert alert-error">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <circle cx="12" cy="12" r="10"></circle>
-                    <line x1="12" y1="8" x2="12" y2="12"></line>
-                    <line x1="12" y1="16" x2="12.01" y2="16"></line>
-                </svg>
-                <?php echo htmlspecialchars($error); ?>
+                <i class="bi bi-exclamation-circle"></i>
+                <?php echo h($error); ?>
             </div>
             <?php endif; ?>
 
             <form method="post" autocomplete="off">
-                <input type="hidden" name="csrf" value="<?php echo htmlspecialchars(csrf_token()); ?>">
+                <input type="hidden" name="csrf" value="<?php echo h(csrf_token()); ?>">
 
                 <div class="form-row">
                     <div class="form-group">
                         <label for="usuario">RUT Funcionario</label>
                         <div class="input-wrap">
-                            <span class="input-icon">
-                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                                    <circle cx="12" cy="7" r="4"></circle>
-                                </svg>
-                            </span>
+                            <span class="input-icon"><i class="bi bi-person"></i></span>
                             <input id="usuario" class="form-control" type="text" name="usuario"
                                    placeholder="Ej: admin o 12345678-9" required autofocus
-                                   value="<?php echo $error ? htmlspecialchars(isset($_POST['usuario']) ? $_POST['usuario'] : '') : ''; ?>">
+                                   value="<?php echo $error ? h(isset($_POST['usuario']) ? $_POST['usuario'] : '') : ''; ?>">
                         </div>
                     </div>
 
                     <div class="form-group">
                         <label for="clave">Contraseña</label>
                         <div class="input-wrap">
-                            <span class="input-icon">
-                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-                                    <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
-                                </svg>
-                            </span>
+                            <span class="input-icon"><i class="bi bi-lock"></i></span>
                             <input id="clave" class="form-control" type="password" name="clave"
                                    placeholder="••••••••" required>
                         </div>
@@ -127,20 +146,42 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                 <button type="submit" class="btn-submit">
                     Ingresar al Sistema
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M5 12h14"></path>
-                        <path d="m12 5 7 7-7 7"></path>
-                    </svg>
+                    <i class="bi bi-box-arrow-in-right"></i>
                 </button>
             </form>
         </div>
 
         <div class="card-footer">
-            &copy; <?php echo $year; ?> <strong>Depto. de Informática</strong> — Municipalidad de Coltauco
+            &copy; <?php echo $year; ?>
+            <?php if ($orgNombre !== ''): ?><strong><?php echo h($orgNombre); ?></strong><?php endif; ?>
+            — <?php echo h($siteNombre); ?>
         </div>
 
     </div>
 </div>
+
+<script>
+    (function () {
+        var btn = document.getElementById('themeToggle');
+        var icon = document.getElementById('themeToggleIcon');
+        function current() {
+            var s = document.documentElement.getAttribute('data-bs-theme');
+            return s === 'dark' ? 'dark' : 'light';
+        }
+        function sync() {
+            icon.className = current() === 'dark' ? 'bi bi-sun' : 'bi bi-moon-stars';
+        }
+        if (btn) {
+            btn.addEventListener('click', function () {
+                var next = current() === 'dark' ? 'light' : 'dark';
+                document.documentElement.setAttribute('data-bs-theme', next);
+                try { localStorage.setItem('sb_theme', next); } catch (e) {}
+                sync();
+            });
+            sync();
+        }
+    })();
+</script>
 
 </body>
 </html>

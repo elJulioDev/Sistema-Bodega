@@ -95,25 +95,16 @@ $activo = (int)$proveedor['estado'] === 1;
 
 
 <!-- Cabecera -->
-<div class="d-flex justify-content-between align-items-start mb-4 flex-wrap gap-2">
-    <div>
-        <h1 class="h3 mb-0 text-gray-800">
-            <i class="bi bi-pencil-square text-primary me-2"></i>Editar Proveedor
-        </h1>
-        <small class="text-muted d-block mb-2">Modifica los datos del proveedor seleccionado</small>
-        <div class="d-flex align-items-center gap-2 flex-wrap fs-md text-secondary" >
-            <span class="badge bg-light text-dark border font-monospace"><?php echo h($proveedor['rut']); ?></span>
-            <span><?php echo h($proveedor['razon_social']); ?></span>
-            <?php if ($activo): ?>
-                <span class="badge bg-success bg-opacity-10 text-success border-0">Activo</span>
-            <?php else: ?>
-                <span class="badge bg-danger bg-opacity-10 text-danger border-0">Inactivo</span>
-            <?php endif; ?>
-        </div>
-    </div>
-    <a href="proveedores_lista.php" class="btn btn-outline-secondary btn-sm">
-        <i class="bi bi-arrow-left me-1"></i> Volver
-    </a>
+<?php ui_page_header('bi-pencil-square', 'Editar Proveedor', 'Modifica los datos del proveedor seleccionado', '<a href="proveedores_lista.php" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-left me-1"></i> Volver</a>'); ?>
+
+<div class="d-flex align-items-center gap-2 flex-wrap fs-md text-secondary mb-3">
+    <span class="badge bg-body text-secondary border font-monospace"><?php echo h($proveedor['rut']); ?></span>
+    <span><?php echo h($proveedor['razon_social']); ?></span>
+    <?php if ($activo): ?>
+        <span class="badge bg-success bg-opacity-10 text-success border-0">Activo</span>
+    <?php else: ?>
+        <span class="badge bg-danger bg-opacity-10 text-danger border-0">Inactivo</span>
+    <?php endif; ?>
 </div>
 
 <?php if ($error !== ''): ?>
@@ -242,7 +233,7 @@ $activo = (int)$proveedor['estado'] === 1;
     </div>
 
     <!-- ── Footer guardar ── -->
-    <div class="card-footer bg-light border-top d-flex justify-content-end gap-2 py-3 px-4">
+    <div class="card-footer bg-body border-top d-flex justify-content-end gap-2 py-3 px-4">
         <a href="proveedores_lista.php" class="btn btn-light border">
             <i class="bi bi-x-lg me-1"></i> Cancelar
         </a>

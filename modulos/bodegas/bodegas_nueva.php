@@ -46,14 +46,12 @@ $pageTitle = 'Nueva Bodega';
 require_once __DIR__ . '/../../inc/header.php';
 ?>
 
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h1 class="h3 mb-0 text-gray-800">
-        <i class="bi bi-building-add text-primary me-2"></i>Nueva Bodega
-    </h1>
-    <a href="bodegas_lista.php" class="btn btn-outline-secondary">
-        <i class="bi bi-arrow-left me-1"></i> Volver al listado
-    </a>
-</div>
+<?php ui_page_header(
+    'bi-building-add',
+    'Nueva Bodega',
+    '',
+    '<a href="bodegas_lista.php" class="btn btn-outline-secondary"><i class="bi bi-arrow-left me-1"></i> Volver al listado</a>'
+); ?>
 
 <div class="card shadow-sm border-0">
     <div class="card-body p-4">
@@ -116,7 +114,7 @@ require_once __DIR__ . '/../../inc/header.php';
 
             <div class="col-12">
                 <label class="form-label fw-bold text-secondary">Estado</label>
-                <input type="text" class="form-control bg-light" value="Activa" readonly>
+                <input type="text" class="form-control bg-body" value="Activa" readonly>
                 <div class="form-text">Las bodegas nuevas se crean activas por defecto.</div>
             </div>
 

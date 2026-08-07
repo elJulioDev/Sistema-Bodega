@@ -401,6 +401,15 @@ CREATE TABLE solicitudes_log (
     CONSTRAINT fk_sl_solicitud FOREIGN KEY (id_solicitud) REFERENCES solicitudes (id) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
+-- ---------------------------------------------------------
+-- configuraciones (personalización del sitio)
+-- ---------------------------------------------------------
+CREATE TABLE configuraciones (
+    clave VARCHAR(60) NOT NULL,
+    valor TEXT NULL,
+    PRIMARY KEY (clave)
+) ENGINE=InnoDB;
+
 SET FOREIGN_KEY_CHECKS = 1;
 
 -- =========================================================
@@ -427,3 +436,13 @@ INSERT INTO tipos_producto (nombre, estado) VALUES
 ('Insumo de oficina', 1),
 ('Aseo', 1),
 ('Activo fijo', 1);
+
+INSERT INTO configuraciones (clave, valor) VALUES
+('site_nombre',       'Sistema Bodega'),
+('site_descripcion',  'Gestión de inventario y bodegas'),
+('site_icono',        'bi-box-seam'),
+('site_color',        '#0d6efd'),
+('site_color_secundario', '#8b5cf6'),
+('tema_default',      'auto'),
+('org_nombre',        ''),
+('org_email_dominio', '');

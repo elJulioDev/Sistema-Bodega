@@ -114,7 +114,35 @@ Rol destinado a los funcionarios que requieren pedir materiales a la bodega.
 
 ---
 
+## Personalización y Diseño
+
+La interfaz se rediseñó con un design system propio (Bootstrap 5.3 + Bootstrap Icons) con tema claro/oscuro.
+
+* **Tema claro / oscuro / automático:** botón en la barra superior (y en la pantalla de login). La preferencia se guarda en `localStorage` (`sb_theme`) y el tema por defecto se define en la configuración.
+* **Panel de Personalización** (`admin` → Personalización): permite cambiar el nombre del sistema, descripción, ícono (clase de Bootstrap Icons), **dos colores de marca** (principal y secundario/acento), tema por defecto y nombre de la organización. Todo se guarda en la tabla `configuraciones` (`inc/settings.php`). El color secundario se usa en la línea de acento de la barra superior y en el indicador del menú activo.
+* **Sidebar colapsable** en escritorio (preferencia guardada, sin parpadeo al navegar) y menú desplegable en móvil.
+* **Consistencia:** las páginas usan los helpers de `inc/ui.php` (`ui_page_header`, `ui_badge`, `ui_empty_state`, `ui_alert`, `ui_btn_link`) y estilos en `static/css/app.css` con variables CSS adaptativas al tema.
+
+---
+
 ## Documentación Técnica para Desarrolladores
+
+### Helpers de UI (`inc/ui.php`)
+```php
+ui_page_header('bi-boxes', 'Título', 'Subtítulo', '<a class="btn btn-sm btn-primary">...</a>');
+ui_btn_link('Nuevo', 'crear.php', 'primary', 'bi-plus-lg');   // hace echo de un <a class="btn">
+ui_badge('Activo', 'success');                                 // primary|success|danger|warning|info|secondary|dark
+ui_empty_state('bi-inbox', 'Sin resultados', 'Texto', '<a ...>Crear</a>');
+ui_alert('success', 'Mensaje');                                // success|error|warning|info
+```
+
+### Configuración del sitio (`inc/settings.php`)
+```php
+site_config('site_nombre', 'Sistema Bodega');   // lee de la tabla `configuraciones`
+site_save_config('site_nombre', 'Nuevo nombre'); // upsert
+site_color_rgba('#0d6efd', 0.12);               // hex -> rgba (variantes de marca)
+site_color_darken('#0d6efd', 0.18);             // hex oscurecido para gradientes
+```
 
 ### Helpers de Autorización y Contexto
 Para facilitar el desarrollo de nuevas vistas, el sistema expone funciones de validación integradas:

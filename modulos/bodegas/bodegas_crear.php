@@ -96,14 +96,12 @@ $pageTitle = 'Nueva Bodega';
 require_once __DIR__ . '/../../inc/header.php';
 ?>
 
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h1 class="h3 mb-0 text-gray-800">
-        <i class="bi bi-building-add text-primary me-2"></i>Nueva Bodega
-    </h1>
-    <a href="bodegas_lista.php" class="btn btn-outline-secondary">
-        <i class="bi bi-arrow-left me-1"></i> Volver al listado
-    </a>
-</div>
+<?php ui_page_header(
+    'bi-building-add',
+    'Nueva Bodega',
+    '',
+    '<a href="bodegas_lista.php" class="btn btn-outline-secondary"><i class="bi bi-arrow-left me-1"></i> Volver al listado</a>'
+); ?>
 
 <div class="card shadow-sm border-0">
     <div class="card-body p-4">
@@ -146,7 +144,7 @@ require_once __DIR__ . '/../../inc/header.php';
                 <label class="form-label fw-bold text-secondary">Encargado inicial <span class="text-muted fw-normal">(opcional)</span></label>
 
                 <div class="input-group mb-2">
-                    <span class="input-group-text bg-white"><i class="bi bi-search"></i></span>
+                    <span class="input-group-text bg-body"><i class="bi bi-search"></i></span>
                     <input type="text" id="buscadorEncargado" class="form-control" placeholder="Filtrar por nombre, RUT o cargo...">
                 </div>
 
@@ -174,7 +172,7 @@ require_once __DIR__ . '/../../inc/header.php';
                                         <div class="flex-grow-1">
                                             <div class="d-flex justify-content-between align-items-start">
                                                 <div>
-                                                    <div class="fw-bold small text-dark"><?php echo h($e['nombre']); ?></div>
+                                                    <div class="fw-bold small text-body"><?php echo h($e['nombre']); ?></div>
                                                     <div class="text-muted fs-xs" >
                                                         <i class="bi bi-person-badge me-1"></i><?php echo h($e['rut'] ? $e['rut'] : $e['usuario']); ?>
                                                         <?php if (!empty($e['cargo'])): ?> · <?php echo h($e['cargo']); ?><?php endif; ?>

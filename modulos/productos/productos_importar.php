@@ -121,13 +121,7 @@ $pageTitle = 'Importar Productos';
 require_once __DIR__ . '/../../inc/header.php';
 ?>
 
-<div class="d-flex justify-content-between align-items-center mb-3">
-    <div>
-        <h1 class="h4 mb-0 text-dark fw-bold"><i class="bi bi-file-earmark-arrow-up text-primary me-2"></i>Importación Masiva</h1>
-        <small class="text-muted">Carga múltiples productos desde un archivo CSV</small>
-    </div>
-    <a href="productos_lista.php" class="btn btn-sm btn-outline-secondary"><i class="bi bi-arrow-left me-1"></i> Volver</a>
-</div>
+<?php ui_page_header('bi-file-earmark-arrow-up', 'Importación Masiva', 'Carga múltiples productos desde un archivo CSV', '<a href="productos_lista.php" class="btn btn-sm btn-outline-secondary"><i class="bi bi-arrow-left me-1"></i> Volver</a>'); ?>
 
 <?php if ($error): ?>
     <div class="alert alert-danger shadow-sm border-start border-4 border-danger">
@@ -151,8 +145,8 @@ require_once __DIR__ . '/../../inc/header.php';
         </div>
 
         <div class="card shadow-sm border-0">
-            <div class="card-header bg-white py-2 border-0">
-                <h6 class="m-0 fw-bold text-dark small"><i class="bi bi-info-circle me-1"></i> Reglas de datos</h6>
+            <div class="card-header bg-body py-2 border-0">
+                <h6 class="m-0 fw-bold small"><i class="bi bi-info-circle me-1"></i> Reglas de datos</h6>
             </div>
             <div class="card-body p-3 small">
                 <ul class="text-secondary ps-3 mb-3">
@@ -165,10 +159,10 @@ require_once __DIR__ . '/../../inc/header.php';
                 </ul>
                 
                 <hr class="my-2">
-                <p class="fw-bold small text-dark mb-1">Unidades disponibles:</p>
+                <p class="fw-bold small mb-1">Unidades disponibles:</p>
                 <div class="d-flex flex-wrap gap-1">
                     <?php foreach ($unidadesDisp as $u): ?>
-                        <span class="badge bg-light text-dark border"><?php echo h($u['nombre']); ?> <span class="text-muted">(<?php echo h($u['codigo']); ?>)</span></span>
+                        <span class="badge bg-body text-secondary border"><?php echo h($u['nombre']); ?> <span class="text-muted">(<?php echo h($u['codigo']); ?>)</span></span>
                     <?php endforeach; ?>
                 </div>
             </div>
@@ -185,7 +179,7 @@ require_once __DIR__ . '/../../inc/header.php';
                 
                 <form method="post" enctype="multipart/form-data">
                     <?php echo csrf_field(); ?>
-                    <div class="py-5 border border-2 border-dashed rounded-3 bg-light mb-3 text-center">
+                    <div class="py-5 border border-2 border-dashed rounded-3 bg-body mb-3 text-center">
                         <i class="bi bi-cloud-arrow-up fs-1 text-primary"></i>
                         <p class="text-muted mb-2">Selecciona tu archivo CSV</p>
                         <input class="form-control w-75 mx-auto" type="file" name="archivo_csv" accept=".csv" required>

@@ -220,20 +220,20 @@ $rolTxt = isset($rolLabel[$rol]) ? $rolLabel[$rol] : ucfirst($rol);
 <style>
 /* ── Compacidad global del dashboard ── */
 .dash-kpi .card-body       { padding: .85rem 1rem; }
-.dash-kpi .kpi-label       { font-size: .68rem; font-weight: 700; letter-spacing: .5px; text-transform: uppercase; color: #8b949e; margin-bottom: .2rem; }
-.dash-kpi .kpi-value       { font-size: 1.55rem; font-weight: 700; line-height: 1; color: #1a1f36; }
+.dash-kpi .kpi-label       { font-size: .68rem; font-weight: 700; letter-spacing: .5px; text-transform: uppercase; color: var(--app-text-muted); margin-bottom: .2rem; }
+.dash-kpi .kpi-value       { font-size: 1.55rem; font-weight: 700; line-height: 1; color: var(--app-text); }
 .dash-kpi .kpi-icon        { width: 38px; height: 38px; flex-shrink: 0; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.05rem; }
 
 .dash-card                 { border: 0; border-radius: 10px; box-shadow: 0 1px 6px rgba(0,0,0,.07); }
-.dash-card .card-header    { background: #fff; border-bottom: 1px solid #f0f2f5; padding: .7rem 1rem; border-radius: 10px 10px 0 0; }
+.dash-card .card-header    { background: var(--app-surface-alt); border-bottom: 1px solid var(--app-border); padding: .7rem 1rem; border-radius: 10px 10px 0 0; }
 .dash-card .card-header h6 { font-size: .82rem; font-weight: 700; margin: 0; }
 .dash-table                { font-size: .82rem; }
-.dash-table th             { font-size: .67rem; font-weight: 700; letter-spacing: .4px; text-transform: uppercase; color: #8b949e; padding: .55rem .75rem; border-bottom: 1px solid #f0f2f5; background: #fafbfc; }
-.dash-table td             { padding: .5rem .75rem; vertical-align: middle; border-bottom: 1px solid #f8f9fa; }
+.dash-table th             { font-size: .67rem; font-weight: 700; letter-spacing: .4px; text-transform: uppercase; color: var(--app-text-muted); padding: .55rem .75rem; border-bottom: 1px solid var(--app-border); background: var(--app-surface-alt); }
+.dash-table td             { padding: .5rem .75rem; vertical-align: middle; border-bottom: 1px solid var(--app-border); }
 .dash-table tr:last-child td { border-bottom: 0; }
 
 .badge-tipo                { font-size: .63rem; padding: .25em .55em; }
-.section-label             { font-size: .68rem; font-weight: 700; letter-spacing: .8px; text-transform: uppercase; color: #8b949e; margin-bottom: .6rem; }
+.section-label             { font-size: .68rem; font-weight: 700; letter-spacing: .8px; text-transform: uppercase; color: var(--app-text-muted); margin-bottom: .6rem; }
 
 @media (max-width: 575.98px) {
     .dash-kpi .kpi-icon { display: none; }
@@ -242,22 +242,19 @@ $rolTxt = isset($rolLabel[$rol]) ? $rolLabel[$rol] : ucfirst($rol);
 </style>
 
 <!-- ── Encabezado ── -->
-<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
-    <div>
-        <h1 class="h5 mb-0 fw-bold text-dark">
-            Panel principal
-        </h1>
-        <p class="text-muted mb-0 small">
-            Hola, <strong><?php echo h($user['nombre']); ?></strong> ·
-            <span class="text-secondary"><?php echo h($rolTxt); ?></span>
-            <?php if ($miBodegaNombre): ?> · <i class="bi bi-geo-alt"></i> <?php echo h($miBodegaNombre); ?> <?php if ($rol === 'bodega' && count($misBodegasIds) > 1): ?> <span class="text-muted">+<?php echo count($misBodegasIds) - 1; ?> más</span> <?php endif; ?>
-    <?php endif; ?>
-        </p>
-    </div>
-    <span class="badge bg-light text-secondary border d-none d-md-inline-flex align-items-center gap-1 py-2 px-3">
-        <i class="bi bi-calendar3"></i> <?php echo date('d/m/Y'); ?>
-    </span>
-</div>
+<?php
+$dashSub = 'Hola, ' . $user['nombre'] . ' · ' . $rolTxt;
+if ($miBodegaNombre) {
+    $dashSub .= ' · ' . $miBodegaNombre;
+}
+ob_start();
+?>
+<span class="badge bg-body text-secondary border d-none d-md-inline-flex align-items-center gap-1 py-2 px-3">
+    <i class="bi bi-calendar3"></i> <?php echo date('d/m/Y'); ?>
+</span>
+<?php
+ui_page_header('bi-speedometer2', 'Panel principal', $dashSub, ob_get_clean());
+?>
 
 
 <?php /* ================================================================
@@ -359,7 +356,7 @@ $rolTxt = isset($rolLabel[$rol]) ? $rolLabel[$rol] : ucfirst($rol);
                     <?php foreach ($data['stockBajo'] as $p): ?>
                     <tr>
                         <td>
-                            <div class="fw-medium text-dark text-truncate" style="max-width:160px"><?php echo h($p['nombre']); ?></div>
+                            <div class="fw-medium text-body text-truncate" style="max-width:160px"><?php echo h($p['nombre']); ?></div>
                             <div class="text-muted" style="font-size:.7rem"><?php echo h($p['codigo']); ?></div>
                         </td>
                         <td class="text-end fw-bold text-danger"><?php echo number_format((float)$p['stock_total'],2,',','.'); ?></td>
@@ -402,7 +399,7 @@ $rolTxt = isset($rolLabel[$rol]) ? $rolLabel[$rol] : ucfirst($rol);
                     <tr>
                         <td class="text-muted d-none d-sm-table-cell" style="font-size:.75rem;white-space:nowrap"><?php echo date('d/m H:i', strtotime($m['fecha_movimiento'])); ?></td>
                         <td>
-                            <div class="fw-medium text-dark text-truncate" style="max-width:150px"><?php echo h($m['producto']); ?></div>
+                            <div class="fw-medium text-body text-truncate" style="max-width:150px"><?php echo h($m['producto']); ?></div>
                             <div class="text-muted" style="font-size:.7rem"><i class="bi bi-geo-alt"></i> <?php echo h($m['bodega']); ?></div>
                         </td>
                         <td>
@@ -436,7 +433,7 @@ $rolTxt = isset($rolLabel[$rol]) ? $rolLabel[$rol] : ucfirst($rol);
                     <tbody>
                     <?php foreach ($data['ultimasSolicitudes'] as $s):
                         $est = $s['estado'];
-                        $ec  = $est === 'pendiente' ? 'bg-warning text-dark' : ($est === 'procesada' ? 'bg-success' : ($est === 'rechazada' ? 'bg-danger' : 'bg-secondary'));
+                        $ec  = $est === 'pendiente' ? 'bg-warning bg-opacity-10 text-warning' : ($est === 'procesada' ? 'bg-success bg-opacity-10 text-success' : ($est === 'rechazada' ? 'bg-danger bg-opacity-10 text-danger' : 'bg-secondary bg-opacity-10 text-secondary'));
                     ?>
                     <tr>
                         <td>
@@ -540,7 +537,7 @@ $rolTxt = isset($rolLabel[$rol]) ? $rolLabel[$rol] : ucfirst($rol);
                     <?php foreach ($data['stockBajoBodega'] as $p): ?>
                     <tr>
                         <td>
-                            <div class="fw-medium text-dark text-truncate" style="max-width:150px"><?php echo h($p['nombre']); ?></div>
+                            <div class="fw-medium text-body text-truncate" style="max-width:150px"><?php echo h($p['nombre']); ?></div>
                             <div class="text-muted" style="font-size:.7rem">
                                 <?php echo h($p['codigo']); ?>
                                 <?php if (!empty($p['bodega_nombre']) && count($misBodegasIds) > 1): ?>
@@ -583,7 +580,7 @@ $rolTxt = isset($rolLabel[$rol]) ? $rolLabel[$rol] : ucfirst($rol);
                     <tr>
                         <td class="text-muted d-none d-sm-table-cell" style="font-size:.75rem;white-space:nowrap"><?php echo date('d/m H:i', strtotime($m['fecha_movimiento'])); ?></td>
                         <td>
-                            <div class="fw-medium text-dark text-truncate" style="max-width:150px"><?php echo h($m['producto']); ?></div>
+                            <div class="fw-medium text-body text-truncate" style="max-width:150px"><?php echo h($m['producto']); ?></div>
                             <div class="text-muted" style="font-size:.7rem"><?php echo h($m['codigo']); ?></div>
                         </td>
                         <td>
@@ -654,7 +651,7 @@ $rolTxt = isset($rolLabel[$rol]) ? $rolLabel[$rol] : ucfirst($rol);
         <div class="card-body d-flex flex-column justify-content-center align-items-center text-center py-4">
             <div class="mb-3">
                 <i class="bi bi-box-seam text-primary" style="font-size: 2.2rem;"></i>
-                <p class="fw-semibold text-dark mb-0 mt-2">¿Necesitas productos?</p>
+                <p class="fw-semibold text-body mb-0 mt-2">¿Necesitas productos?</p>
                 <span class="text-muted" style="font-size: 0.75rem;">Crea una solicitud de insumos</span>
             </div>
             
@@ -686,7 +683,7 @@ $rolTxt = isset($rolLabel[$rol]) ? $rolLabel[$rol] : ucfirst($rol);
                     <tbody>
                     <?php foreach ($data['misSolicitudes'] as $s):
                         $est = $s['estado'];
-                        $ec  = $est === 'pendiente' ? 'bg-warning text-dark' : ($est === 'procesada' ? 'bg-success' : ($est === 'rechazada' ? 'bg-danger' : 'bg-secondary'));
+                        $ec  = $est === 'pendiente' ? 'bg-warning bg-opacity-10 text-warning' : ($est === 'procesada' ? 'bg-success bg-opacity-10 text-success' : ($est === 'rechazada' ? 'bg-danger bg-opacity-10 text-danger' : 'bg-secondary bg-opacity-10 text-secondary'));
                     ?>
                     <tr>
                         <td class="fw-medium small"><?php echo h($s['numero_solicitud']); ?></td>

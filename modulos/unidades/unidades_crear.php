@@ -41,24 +41,12 @@ $pageTitle = 'Nueva Unidad Organizacional';
 require_once __DIR__ . '/../../inc/header.php';
 ?>
 
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <div>
-        <nav aria-label="breadcrumb" class="small mb-1">
-            <ol class="breadcrumb mb-0">
-                <li class="breadcrumb-item">
-                    <a href="unidades_lista.php" class="text-decoration-none">Unidades</a>
-                </li>
-                <li class="breadcrumb-item active">Nueva</li>
-            </ol>
-        </nav>
-        <h1 class="h3 mb-0 text-gray-800">
-            <i class="bi bi-diagram-3 text-primary me-2"></i>Nueva Unidad Organizacional
-        </h1>
-    </div>
-    <a href="unidades_lista.php" class="btn btn-outline-secondary">
-        <i class="bi bi-arrow-left me-1"></i> Volver al listado
-    </a>
-</div>
+<?php ui_page_header(
+    'bi-diagram-3',
+    'Nueva Unidad Organizacional',
+    '',
+    '<a href="unidades_lista.php" class="btn btn-outline-secondary"><i class="bi bi-arrow-left me-1"></i> Volver al listado</a>'
+); ?>
 
 <?php if ($error !== ''): ?>
     <div class="alert alert-danger">
@@ -73,8 +61,8 @@ require_once __DIR__ . '/../../inc/header.php';
     <!-- Columna principal -->
     <div class="col-lg-8">
         <div class="card shadow-sm border-0">
-            <div class="card-header bg-white border-bottom">
-                <h5 class="mb-0 fw-bold text-dark">
+            <div class="card-header bg-body border-bottom">
+                <h5 class="mb-0 fw-bold text-body">
                     <i class="bi bi-building text-primary me-2"></i>Datos de la unidad
                 </h5>
             </div>
@@ -114,9 +102,9 @@ require_once __DIR__ . '/../../inc/header.php';
 
     <!-- Panel lateral -->
     <div class="col-lg-4">
-        <div class="card shadow-sm border-0 bg-light mb-3">
+        <div class="card shadow-sm border-0 bg-body mb-3">
             <div class="card-body p-4">
-                <h6 class="fw-bold text-dark mb-3">
+                <h6 class="fw-bold text-body mb-3">
                     <i class="bi bi-info-circle me-2"></i>¿Qué es una unidad?
                 </h6>
                 <p class="small text-muted mb-2">

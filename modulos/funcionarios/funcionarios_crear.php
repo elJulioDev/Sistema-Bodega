@@ -93,14 +93,12 @@ $pageTitle = 'Nuevo Funcionario';
 require_once __DIR__ . '/../../inc/header.php';
 ?>
 
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h1 class="h3 mb-0 text-gray-800">
-        <i class="bi bi-person-plus text-primary me-2"></i>Nuevo Funcionario
-    </h1>
-    <a href="funcionarios_lista.php" class="btn btn-outline-secondary">
-        <i class="bi bi-arrow-left me-1"></i> Volver al listado
-    </a>
-</div>
+<?php ui_page_header(
+    'bi-person-plus',
+    'Nuevo Funcionario',
+    '',
+    '<a href="funcionarios_lista.php" class="btn btn-outline-secondary"><i class="bi bi-arrow-left me-1"></i> Volver al listado</a>'
+); ?>
 
 <?php if ($error !== ''): ?>
     <div class="alert alert-danger">
@@ -115,8 +113,8 @@ require_once __DIR__ . '/../../inc/header.php';
     <div class="col-lg-8">
 
         <div class="card shadow-sm border-0 mb-3">
-            <div class="card-header bg-white border-bottom">
-                <h5 class="mb-0 fw-bold text-dark">
+            <div class="card-header bg-body border-bottom">
+                <h5 class="mb-0 fw-bold text-body">
                     <i class="bi bi-person-vcard text-primary me-2"></i>Datos del funcionario
                 </h5>
             </div>
@@ -181,9 +179,9 @@ require_once __DIR__ . '/../../inc/header.php';
     </div>
 
     <div class="col-lg-4">
-        <div class="card shadow-sm border-0 bg-light mb-3">
+        <div class="card shadow-sm border-0 bg-body mb-3">
             <div class="card-body p-4">
-                <h6 class="fw-bold text-dark mb-3">
+                <h6 class="fw-bold text-body mb-3">
                     <i class="bi bi-info-circle me-2"></i>Roles del sistema
                 </h6>
                 <div class="mb-3">
