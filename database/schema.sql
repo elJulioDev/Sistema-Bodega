@@ -379,6 +379,7 @@ CREATE TABLE solicitudes_detalle (
     cantidad      DECIMAL(12,2) NOT NULL,
     cantidad_aprobada DECIMAL(12,2) NULL,
     observacion   TEXT NULL,
+    motivo_ajuste TEXT NULL,
     estado        ENUM('pendiente','aprobado','rechazado') NOT NULL DEFAULT 'pendiente',
     KEY idx_sd_solicitud (id_solicitud),
     KEY idx_sd_producto (id_producto),

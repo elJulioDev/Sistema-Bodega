@@ -542,11 +542,11 @@ $rolTxt = isset($rolLabel[$rol]) ? $rolLabel[$rol] : ucfirst($rol);
                     <?php foreach ($data['stockBajoBodega'] as $p): ?>
                     <tr>
                         <td>
-                            <div class="fw-medium text-dark text-truncate" style="max-width:150px"><?php echo h($m['producto']); ?></div>
+                            <div class="fw-medium text-dark text-truncate" style="max-width:150px"><?php echo h($p['nombre']); ?></div>
                             <div class="text-muted" style="font-size:.7rem">
-                                <?php echo h($m['codigo']); ?>
-                                <?php if (!empty($m['bodega_nombre']) && count($misBodegasIds) > 1): ?>
-                                    · <i class="bi bi-geo-alt"></i> <?php echo h($m['bodega_nombre']); ?>
+                                <?php echo h($p['codigo']); ?>
+                                <?php if (!empty($p['bodega_nombre']) && count($misBodegasIds) > 1): ?>
+                                    · <i class="bi bi-geo-alt"></i> <?php echo h($p['bodega_nombre']); ?>
                                 <?php endif; ?>
                             </div>
                         </td>
