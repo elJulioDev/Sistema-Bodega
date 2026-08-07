@@ -7,8 +7,8 @@ require_login();
 require_role('admin');
 
 // --- LÓGICA DE ESTADO (DESACTIVAR/ACTIVAR) ---
-if (isset($_GET['toggle'])) {
-    $id = (int)$_GET['toggle'];
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['toggle'])) {
+    $id = (int)$_POST['toggle'];
     $stmt = $pdo->prepare("UPDATE productos SET estado = IF(estado=1,0,1) WHERE id = ?");
     $stmt->execute(array($id));
     set_flash('success', 'Estado del producto actualizado correctamente.');
@@ -232,12 +232,15 @@ require_once __DIR__ . '/../../inc/header.php';
                                     <a href="productos_editar.php?id=<?php echo (int)$p['id']; ?>" class="btn btn-outline-primary" title="Editar">
                                         <i class="bi bi-pencil"></i>
                                     </a>
-                                    <a href="productos_lista.php?toggle=<?php echo (int)$p['id']; ?>" 
-                                       class="btn btn-outline-<?php echo $p['estado'] ? 'warning' : 'success'; ?>" 
-                                       onclick="return confirm('¿Deseas cambiar el estado de este producto?');"
-                                       title="<?php echo $p['estado'] ? 'Desactivar' : 'Activar'; ?>">
-                                       <i class="bi bi-<?php echo $p['estado'] ? 'pause-circle' : 'check-circle'; ?>"></i>
-                                    </a>
+                                    <form method="post" class="d-inline"
+                                          onsubmit="return confirm('¿Deseas cambiar el estado de este producto?');">
+                                        <?php echo csrf_field(); ?>
+                                        <input type="hidden" name="toggle" value="<?php echo (int)$p['id']; ?>">
+                                        <button type="submit" class="btn btn-outline-<?php echo $p['estado'] ? 'warning' : 'success'; ?>"
+                                                title="<?php echo $p['estado'] ? 'Desactivar' : 'Activar'; ?>">
+                                            <i class="bi bi-<?php echo $p['estado'] ? 'pause-circle' : 'check-circle'; ?>"></i>
+                                        </button>
+                                    </form>
                                 </div>
                             </td>
                         </tr>

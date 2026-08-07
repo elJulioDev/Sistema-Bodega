@@ -151,6 +151,7 @@ require_once __DIR__ . '/../../inc/header.php';
                 <?php else: ?>
 
                 <form method="post" class="row g-3" id="formUsuario">
+                    <?php echo csrf_field(); ?>
 
                     <!-- Funcionario -->
                     <div class="col-12">

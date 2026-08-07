@@ -215,19 +215,24 @@ require_once __DIR__ . '/../../inc/header.php';
                                         <a href="facturas_editar.php?id=<?php echo (int)$f['id']; ?>" class="btn btn-outline-secondary" title="Editar">
                                             <i class="bi bi-pencil"></i>
                                         </a>
-                                        <a href="facturas_anular.php?id=<?php echo (int)$f['id']; ?>" 
-                                           class="btn btn-outline-danger" 
-                                           onclick="return confirm('¿Anular esta factura?\n\nSe revertirá el stock ingresado a bodega. Esta acción puede deshacerse reactivando manualmente.');"
-                                           title="Anular">
-                                            <i class="bi bi-x-circle"></i>
-                                        </a>
+                                        <form method="post" action="facturas_anular.php" class="d-inline"
+                                              onsubmit="return confirm('¿Anular esta factura?\n\nSe revertirá el stock ingresado a bodega. Esta acción puede deshacerse reactivando manualmente.');">
+                                            <?php echo csrf_field(); ?>
+                                            <input type="hidden" name="id" value="<?php echo (int)$f['id']; ?>">
+                                            <button type="submit" class="btn btn-outline-danger" title="Anular">
+                                                <i class="bi bi-x-circle"></i>
+                                            </button>
+                                        </form>
                                     <?php else: ?>
-                                        <a href="facturas_anular.php?id=<?php echo (int)$f['id']; ?>&reactivar=1" 
-                                           class="btn btn-outline-success" 
-                                           onclick="return confirm('¿Reactivar esta factura?\n\nSe volverá a ingresar el stock a bodega.');"
-                                           title="Reactivar">
-                                            <i class="bi bi-arrow-counterclockwise"></i>
-                                        </a>
+                                        <form method="post" action="facturas_anular.php" class="d-inline"
+                                              onsubmit="return confirm('¿Reactivar esta factura?\n\nSe volverá a ingresar el stock a bodega.');">
+                                            <?php echo csrf_field(); ?>
+                                            <input type="hidden" name="id" value="<?php echo (int)$f['id']; ?>">
+                                            <input type="hidden" name="reactivar" value="1">
+                                            <button type="submit" class="btn btn-outline-success" title="Reactivar">
+                                                <i class="bi bi-arrow-counterclockwise"></i>
+                                            </button>
+                                        </form>
                                     <?php endif; ?>
                                 </div>
                             </td>

@@ -6,8 +6,14 @@ require_once __DIR__ . '/../../inc/functions.php';
 require_login();
 require_role('admin');
 
-$id = (int)get('id');
-$reactivar = (int)get('reactivar');
+// Solo se acepta POST (la validación CSRF corre automáticamente al cargar functions.php).
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    set_flash('error', 'Acción no permitida.');
+    redirect('facturas_lista.php');
+}
+
+$id = (int)post('id');
+$reactivar = (int)post('reactivar');
 
 if ($id <= 0) {
     set_flash('error', 'ID de factura inválido.');

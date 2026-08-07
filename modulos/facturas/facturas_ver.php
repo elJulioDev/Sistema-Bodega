@@ -59,17 +59,20 @@ require_once __DIR__ . '/../../inc/header.php';
         <a href="facturas_lista.php" class="btn btn-sm btn-outline-secondary"><i class="bi bi-arrow-left me-1"></i> Volver</a>
         <?php if (!$anulada): ?>
             <a href="facturas_editar.php?id=<?php echo $id; ?>" class="btn btn-sm btn-outline-primary"><i class="bi bi-pencil me-1"></i> Editar</a>
-            <a href="facturas_anular.php?id=<?php echo $id; ?>" 
-               class="btn btn-sm btn-outline-danger"
-               onclick="return confirm('¿Anular esta factura?\n\nSe revertirá el stock ingresado.');">
-                <i class="bi bi-x-circle me-1"></i> Anular
-            </a>
+            <form method="post" action="facturas_anular.php" class="d-inline"
+                  onsubmit="return confirm('¿Anular esta factura?\n\nSe revertirá el stock ingresado.');">
+                <?php echo csrf_field(); ?>
+                <input type="hidden" name="id" value="<?php echo (int)$id; ?>">
+                <button type="submit" class="btn btn-sm btn-outline-danger"><i class="bi bi-x-circle me-1"></i> Anular</button>
+            </form>
         <?php else: ?>
-            <a href="facturas_anular.php?id=<?php echo $id; ?>&reactivar=1" 
-               class="btn btn-sm btn-success"
-               onclick="return confirm('¿Reactivar esta factura?\n\nSe reingresará el stock.');">
-                <i class="bi bi-arrow-counterclockwise me-1"></i> Reactivar
-            </a>
+            <form method="post" action="facturas_anular.php" class="d-inline"
+                  onsubmit="return confirm('¿Reactivar esta factura?\n\nSe reingresará el stock.');">
+                <?php echo csrf_field(); ?>
+                <input type="hidden" name="id" value="<?php echo (int)$id; ?>">
+                <input type="hidden" name="reactivar" value="1">
+                <button type="submit" class="btn btn-sm btn-success"><i class="bi bi-arrow-counterclockwise me-1"></i> Reactivar</button>
+            </form>
         <?php endif; ?>
     </div>
 </div>

@@ -96,6 +96,7 @@ require_once __DIR__ . '/../../inc/header.php';
 <?php endif; ?>
 
 <form method="post" novalidate>
+<?php echo csrf_field(); ?>
 
 <div class="card shadow-sm border-0 mb-0">
 

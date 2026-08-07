@@ -377,6 +377,7 @@ function badge_estado($estado) {
     <div class="modal-dialog">
         <div class="modal-content">
             <form method="post">
+                <?php echo csrf_field(); ?>
                 <input type="hidden" name="action" value="rechazar">
                 <input type="hidden" name="id_sol" id="rechazarIdSol" value="">
                 <div class="modal-header border-0">

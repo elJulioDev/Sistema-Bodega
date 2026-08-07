@@ -7,8 +7,8 @@ require_login();
 require_role('admin');
 
 // activar / desactivar
-if (isset($_GET['toggle'])) {
-    $id = (int)$_GET['toggle'];
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['toggle'])) {
+    $id = (int)$_POST['toggle'];
     $stmt = $pdo->prepare("UPDATE proveedores SET estado = IF(estado=1,0,1) WHERE id = ?");
     $stmt->execute(array($id));
     set_flash('success', 'Estado del proveedor actualizado.');
@@ -326,7 +326,11 @@ require_once __DIR__ . '/../../inc/header.php';
             </div>
             <div class="modal-footer border-0 pt-1 gap-2">
                 <button type="button" class="btn btn-sm btn-light border" data-bs-dismiss="modal">Cancelar</button>
-                <a href="#" id="modalToggleBtn" class="btn btn-sm btn-danger">Confirmar</a>
+                <form method="post" action="proveedores_lista.php" class="d-inline">
+                    <?php echo csrf_field(); ?>
+                    <input type="hidden" name="toggle" id="modalToggleId">
+                    <button type="submit" id="modalToggleBtn" class="btn btn-sm btn-danger">Confirmar</button>
+                </form>
             </div>
         </div>
     </div>
@@ -359,7 +363,7 @@ document.addEventListener('DOMContentLoaded', function () {
             btn.textContent        = 'Sí, activar';
         }
 
-        btn.href = 'proveedores_lista.php?toggle=' + id;
+        document.getElementById('modalToggleId').value = id;
     });
 });
 </script>

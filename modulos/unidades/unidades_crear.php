@@ -67,6 +67,7 @@ require_once __DIR__ . '/../../inc/header.php';
 <?php endif; ?>
 
 <form method="post" id="formUnidad">
+<?php echo csrf_field(); ?>
 <div class="row g-3">
 
     <!-- Columna principal -->

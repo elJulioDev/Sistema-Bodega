@@ -116,6 +116,7 @@ require_once __DIR__ . '/../../inc/header.php';
                 </div>
 
                 <form method="post" class="row g-3">
+                    <?php echo csrf_field(); ?>
 
                     <!-- Clave -->
                     <div class="col-md-6">

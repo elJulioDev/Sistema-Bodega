@@ -9,8 +9,8 @@ require_role('admin');
 $error = '';
 
 // --- LÓGICA PARA ACTIVAR/DESACTIVAR ---
-if (isset($_GET['toggle'])) {
-    $id = (int)$_GET['toggle'];
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['toggle'])) {
+    $id = (int)$_POST['toggle'];
     $stmt = $pdo->prepare("UPDATE unidades_medida SET estado = IF(estado=1,0,1) WHERE id = ?");
     $stmt->execute(array($id));
     set_flash('success', 'Estado de la unidad actualizado correctamente.');
@@ -78,6 +78,7 @@ require_once __DIR__ . '/../../inc/header.php';
                 <?php endif; ?>
 
                 <form method="post">
+                    <?php echo csrf_field(); ?>
                     <input type="hidden" name="id" value="<?php echo $editando ? (int)$editando['id'] : 0; ?>">
                     
                     <div class="mb-3">
@@ -138,12 +139,15 @@ require_once __DIR__ . '/../../inc/header.php';
                                             <a href="?editar=<?php echo $u['id']; ?>" class="btn btn-sm btn-outline-primary" title="Editar">
                                                 <i class="bi bi-pencil"></i>
                                             </a>
-                                            <a href="?toggle=<?php echo $u['id']; ?>" 
-                                               class="btn btn-sm btn-outline-<?php echo $u['estado'] ? 'danger' : 'success'; ?>" 
-                                               onclick="return confirm('¿Deseas cambiar el estado de esta unidad?');"
-                                               title="<?php echo $u['estado'] ? 'Desactivar' : 'Activar'; ?>">
-                                                <i class="bi bi-<?php echo $u['estado'] ? 'power' : 'check-circle'; ?>"></i>
-                                            </a>
+                                            <form method="post" class="d-inline"
+                                                  onsubmit="return confirm('¿Deseas cambiar el estado de esta unidad?');">
+                                                <?php echo csrf_field(); ?>
+                                                <input type="hidden" name="toggle" value="<?php echo (int)$u['id']; ?>">
+                                                <button type="submit" class="btn btn-sm btn-outline-<?php echo $u['estado'] ? 'danger' : 'success'; ?>"
+                                                        title="<?php echo $u['estado'] ? 'Desactivar' : 'Activar'; ?>">
+                                                    <i class="bi bi-<?php echo $u['estado'] ? 'power' : 'check-circle'; ?>"></i>
+                                                </button>
+                                            </form>
                                         </div>
                                     </td>
                                 </tr>

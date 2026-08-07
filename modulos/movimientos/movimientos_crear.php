@@ -264,6 +264,7 @@ require_once __DIR__ . '/../../inc/header.php';
 <?php endif; ?>
 
 <form method="post" id="formTraslado" autocomplete="off">
+<?php echo csrf_field(); ?>
 
     <!-- PASO 1 -->
     <div class="card shadow-sm border-0 mb-4">

@@ -241,6 +241,7 @@ require_once __DIR__ . '/../../inc/header.php';
 </div>
 
 <form method="post" id="formSolicitud">
+<?php echo csrf_field(); ?>
 
     <!-- PASO 1 -->
     <div class="card border-0 shadow-sm mb-4">

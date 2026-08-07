@@ -183,6 +183,7 @@ require_once __DIR__ . '/../../inc/header.php';
 <?php endif; ?>
 
 <form method="post" id="formFactura">
+<?php echo csrf_field(); ?>
 
 <div class="card shadow-sm border-0 mb-3">
     <div class="card-header bg-white py-2 border-0">

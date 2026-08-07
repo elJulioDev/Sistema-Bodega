@@ -121,6 +121,7 @@ require_once __DIR__ . '/../../inc/header.php';
 <?php endif; ?>
 
 <form method="post" id="formOC">
+    <?php echo csrf_field(); ?>
     <div class="card shadow-sm border-0 mb-4">
         <div class="card-header bg-white pt-3 pb-2 border-0">
             <h5 class="mb-0 fw-bold">Datos Generales</h5>

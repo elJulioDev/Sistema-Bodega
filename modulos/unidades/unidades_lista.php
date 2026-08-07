@@ -9,8 +9,8 @@ require_role('admin');
 // ============================================================
 // TOGGLE ESTADO
 // ============================================================
-if (isset($_GET['toggle'])) {
-    $tid = (int)$_GET['toggle'];
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['toggle'])) {
+    $tid = (int)$_POST['toggle'];
     $stmt = $pdo->prepare("SELECT id, estado FROM unidades_organizacionales WHERE id = ? LIMIT 1");
     $stmt->execute(array($tid));
     $row = $stmt->fetch();
@@ -220,12 +220,15 @@ require_once __DIR__ . '/../../inc/header.php';
                                    class="btn btn-outline-primary" title="Editar">
                                     <i class="bi bi-pencil"></i>
                                 </a>
-                                <a href="?toggle=<?php echo (int)$u['id']; ?>"
-                                   class="btn btn-outline-<?php echo $activa ? 'warning' : 'success'; ?>"
-                                   title="<?php echo $activa ? 'Desactivar' : 'Activar'; ?>"
-                                   onclick="return confirm('<?php echo $activa ? '¿Desactivar esta unidad?' : '¿Activar esta unidad?'; ?>')">
-                                    <i class="bi bi-<?php echo $activa ? 'pause-circle' : 'play-circle'; ?>"></i>
-                                </a>
+                                <form method="post" class="d-inline"
+                                      onsubmit="return confirm('<?php echo $activa ? '¿Desactivar esta unidad?' : '¿Activar esta unidad?'; ?>')">
+                                    <?php echo csrf_field(); ?>
+                                    <input type="hidden" name="toggle" value="<?php echo (int)$u['id']; ?>">
+                                    <button type="submit" class="btn btn-outline-<?php echo $activa ? 'warning' : 'success'; ?>"
+                                            title="<?php echo $activa ? 'Desactivar' : 'Activar'; ?>">
+                                        <i class="bi bi-<?php echo $activa ? 'pause-circle' : 'play-circle'; ?>"></i>
+                                    </button>
+                                </form>
                             </div>
                         </td>
                     </tr>

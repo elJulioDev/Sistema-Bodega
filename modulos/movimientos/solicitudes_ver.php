@@ -477,6 +477,7 @@ function badge_item($est) {
 
 <?php if ($puedeGestionar && $esPendiente): ?>
 <form method="post" id="formRevision">
+<?php echo csrf_field(); ?>
 
     <div class="card border-0 shadow-sm mb-4">
         <div class="card-header bg-white d-flex justify-content-between align-items-center py-3">
@@ -692,6 +693,7 @@ function badge_item($est) {
 <div class="modal fade" id="modalRechazar" tabindex="-1">
     <div class="modal-dialog">
         <form method="post" class="modal-content">
+            <?php echo csrf_field(); ?>
             <div class="modal-header">
                 <h5 class="modal-title text-danger">
                     <i class="bi bi-x-octagon me-2"></i>Rechazar solicitud

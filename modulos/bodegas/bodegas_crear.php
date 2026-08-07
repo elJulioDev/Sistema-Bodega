@@ -114,6 +114,7 @@ require_once __DIR__ . '/../../inc/header.php';
         <?php endif; ?>
 
         <form method="post" class="row g-4">
+            <?php echo csrf_field(); ?>
             <div class="col-12">
                 <label class="form-label fw-bold text-secondary">
                     Nombre de la bodega <span class="text-danger">*</span>

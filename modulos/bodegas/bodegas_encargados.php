@@ -157,6 +157,7 @@ require_once __DIR__ . '/../../inc/header.php';
                                             </span>
                                         <?php else: ?>
                                             <form method="post" class="d-inline">
+                                                <?php echo csrf_field(); ?>
                                                 <input type="hidden" name="accion" value="principal">
                                                 <input type="hidden" name="id_usuario" value="<?php echo (int)$e['id']; ?>">
                                                 <button type="submit" class="btn btn-sm btn-outline-warning" title="Marcar como principal">
@@ -168,6 +169,7 @@ require_once __DIR__ . '/../../inc/header.php';
                                     <td class="px-3 text-end">
                                         <form method="post" class="d-inline"
                                               onsubmit="return confirm('¿Quitar a <?php echo h(addslashes($e['nombre'])); ?> como encargado de esta bodega?');">
+                                            <?php echo csrf_field(); ?>
                                             <input type="hidden" name="accion" value="quitar">
                                             <input type="hidden" name="id_usuario" value="<?php echo (int)$e['id']; ?>">
                                             <button type="submit" class="btn btn-sm btn-outline-danger" title="Quitar">
@@ -201,6 +203,7 @@ require_once __DIR__ . '/../../inc/header.php';
                     </div>
                 <?php else: ?>
                 <form method="post">
+                    <?php echo csrf_field(); ?>
                     <input type="hidden" name="accion" value="asignar">
 
                     <div class="input-group input-group-sm mb-2">

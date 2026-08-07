@@ -184,6 +184,7 @@ require_once __DIR__ . '/../../inc/header.php';
                 </div>
                 
                 <form method="post" enctype="multipart/form-data">
+                    <?php echo csrf_field(); ?>
                     <div class="py-5 border border-2 border-dashed rounded-3 bg-light mb-3 text-center">
                         <i class="bi bi-cloud-arrow-up fs-1 text-primary"></i>
                         <p class="text-muted mb-2">Selecciona tu archivo CSV</p>

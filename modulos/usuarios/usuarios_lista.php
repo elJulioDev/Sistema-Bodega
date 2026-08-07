@@ -8,8 +8,8 @@ require_login();
 require_role('admin');
 
 // Toggle estado
-if (isset($_GET['toggle'])) {
-    $id = (int)$_GET['toggle'];
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['toggle'])) {
+    $id = (int)$_POST['toggle'];
     if ($id === (int)$_SESSION['user_id']) {
         set_flash('error', 'No puedes desactivar tu propia cuenta.');
     } else {
@@ -21,8 +21,8 @@ if (isset($_GET['toggle'])) {
 }
 
 // Eliminar
-if (isset($_GET['eliminar'])) {
-    $id = (int)$_GET['eliminar'];
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['eliminar'])) {
+    $id = (int)$_POST['eliminar'];
     if ($id === (int)$_SESSION['user_id']) {
         set_flash('error', 'No puedes eliminar tu propia cuenta.');
     } else {
@@ -197,17 +197,23 @@ require_once __DIR__ . '/../../inc/header.php';
                                    class="btn btn-outline-primary" title="Editar">
                                     <i class="bi bi-pencil"></i>
                                 </a>
-                                <a href="?toggle=<?php echo (int)$u['id']; ?>"
-                                   class="btn btn-outline-<?php echo ((int)$u['estado'] === 1) ? 'warning' : 'success'; ?>"
-                                   title="<?php echo ((int)$u['estado'] === 1) ? 'Desactivar' : 'Activar'; ?>"
-                                   onclick="return confirm('¿Cambiar estado de este usuario?');">
-                                    <i class="bi bi-<?php echo ((int)$u['estado'] === 1) ? 'pause-fill' : 'play-fill'; ?>"></i>
-                                </a>
-                                <a href="?eliminar=<?php echo (int)$u['id']; ?>"
-                                   class="btn btn-outline-danger" title="Eliminar"
-                                   onclick="return confirm('¿Eliminar definitivamente? Esta acción no se puede deshacer.');">
-                                    <i class="bi bi-trash"></i>
-                                </a>
+                                <form method="post" class="d-inline"
+                                      onsubmit="return confirm('¿Cambiar estado de este usuario?');">
+                                    <?php echo csrf_field(); ?>
+                                    <input type="hidden" name="toggle" value="<?php echo (int)$u['id']; ?>">
+                                    <button type="submit" class="btn btn-outline-<?php echo ((int)$u['estado'] === 1) ? 'warning' : 'success'; ?>"
+                                            title="<?php echo ((int)$u['estado'] === 1) ? 'Desactivar' : 'Activar'; ?>">
+                                        <i class="bi bi-<?php echo ((int)$u['estado'] === 1) ? 'pause-fill' : 'play-fill'; ?>"></i>
+                                    </button>
+                                </form>
+                                <form method="post" class="d-inline"
+                                      onsubmit="return confirm('¿Eliminar definitivamente? Esta acción no se puede deshacer.');">
+                                    <?php echo csrf_field(); ?>
+                                    <input type="hidden" name="eliminar" value="<?php echo (int)$u['id']; ?>">
+                                    <button type="submit" class="btn btn-outline-danger" title="Eliminar">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </form>
                             </div>
                         </td>
                     </tr>

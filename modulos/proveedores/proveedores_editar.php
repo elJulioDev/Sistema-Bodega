@@ -125,6 +125,7 @@ $activo = (int)$proveedor['estado'] === 1;
 <?php endif; ?>
 
 <form method="post" novalidate>
+<?php echo csrf_field(); ?>
 
 <div class="card shadow-sm border-0 mb-3">
 
@@ -296,10 +297,13 @@ $activo = (int)$proveedor['estado'] === 1;
             </div>
             <div class="modal-footer border-0 pt-1 gap-2">
                 <button type="button" class="btn btn-sm btn-light border" data-bs-dismiss="modal">Cancelar</button>
-                <a href="proveedores_lista.php?toggle=<?php echo (int)$proveedor['id']; ?>"
-                   class="btn btn-sm <?php echo $activo ? 'btn-danger' : 'btn-success'; ?>">
-                    <?php echo $activo ? 'Sí, desactivar' : 'Sí, activar'; ?>
-                </a>
+                <form method="post" action="proveedores_lista.php" class="d-inline">
+                    <?php echo csrf_field(); ?>
+                    <input type="hidden" name="toggle" value="<?php echo (int)$proveedor['id']; ?>">
+                    <button type="submit" class="btn btn-sm <?php echo $activo ? 'btn-danger' : 'btn-success'; ?>">
+                        <?php echo $activo ? 'Sí, desactivar' : 'Sí, activar'; ?>
+                    </button>
+                </form>
             </div>
         </div>
     </div>

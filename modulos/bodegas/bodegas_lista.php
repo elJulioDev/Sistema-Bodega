@@ -12,8 +12,8 @@ require_role('admin');
 | Toggle estado
 |--------------------------------------------------------------------------
 */
-if (isset($_GET['toggle'])) {
-    $id = (int)$_GET['toggle'];
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['toggle'])) {
+    $id = (int)$_POST['toggle'];
 
     if ($id > 0) {
         $stmt = $pdo->prepare("SELECT id, nombre, estado FROM bodegas WHERE id = :id LIMIT 1");
@@ -51,8 +51,8 @@ if (isset($_GET['toggle'])) {
 | Eliminar bodega
 |--------------------------------------------------------------------------
 */
-if (isset($_GET['delete'])) {
-    $id = (int)$_GET['delete'];
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete'])) {
+    $id = (int)$_POST['delete'];
 
     if ($id > 0) {
         $stmt = $pdo->prepare("SELECT id, nombre, estado FROM bodegas WHERE id = :id LIMIT 1");
@@ -314,11 +314,14 @@ require_once __DIR__ . '/../../inc/header.php';
                                         <i class="bi bi-pencil"></i>
                                     </a>
                                     <?php if ($puedeDesactivar): ?>
-                                        <a href="?toggle=<?php echo (int)$b['id']; ?>"
-                                           class="btn btn-sm btn-outline-danger" title="Desactivar"
-                                           onclick="return confirm('¿Desactivar esta bodega?');">
-                                            <i class="bi bi-power"></i>
-                                        </a>
+                                        <form method="post" class="d-inline"
+                                              onsubmit="return confirm('¿Desactivar esta bodega?');">
+                                            <?php echo csrf_field(); ?>
+                                            <input type="hidden" name="toggle" value="<?php echo (int)$b['id']; ?>">
+                                            <button type="submit" class="btn btn-sm btn-outline-danger" title="Desactivar">
+                                                <i class="bi bi-power"></i>
+                                            </button>
+                                        </form>
                                     <?php else: ?>
                                         <button type="button" class="btn btn-sm btn-outline-danger" disabled
                                                 title="No se puede desactivar: contiene stock">
@@ -399,17 +402,23 @@ require_once __DIR__ . '/../../inc/header.php';
                                        class="btn btn-sm btn-outline-primary" title="Editar">
                                         <i class="bi bi-pencil"></i>
                                     </a>
-                                    <a href="?toggle=<?php echo (int)$b['id']; ?>"
-                                       class="btn btn-sm btn-outline-success" title="Activar"
-                                       onclick="return confirm('¿Activar esta bodega?');">
-                                        <i class="bi bi-check-circle"></i>
-                                    </a>
+                                    <form method="post" class="d-inline"
+                                          onsubmit="return confirm('¿Activar esta bodega?');">
+                                        <?php echo csrf_field(); ?>
+                                        <input type="hidden" name="toggle" value="<?php echo (int)$b['id']; ?>">
+                                        <button type="submit" class="btn btn-sm btn-outline-success" title="Activar">
+                                            <i class="bi bi-check-circle"></i>
+                                        </button>
+                                    </form>
                                     <?php if ($puedeEliminar): ?>
-                                        <a href="?delete=<?php echo (int)$b['id']; ?>"
-                                           class="btn btn-sm btn-outline-danger" title="Eliminar definitivamente"
-                                           onclick="return confirm('¿Eliminar definitivamente esta bodega? Esta acción no se puede deshacer.');">
-                                            <i class="bi bi-trash"></i>
-                                        </a>
+                                        <form method="post" class="d-inline"
+                                              onsubmit="return confirm('¿Eliminar definitivamente esta bodega? Esta acción no se puede deshacer.');">
+                                            <?php echo csrf_field(); ?>
+                                            <input type="hidden" name="delete" value="<?php echo (int)$b['id']; ?>">
+                                            <button type="submit" class="btn btn-sm btn-outline-danger" title="Eliminar definitivamente">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </form>
                                     <?php else: ?>
                                         <button type="button" class="btn btn-sm btn-outline-danger" disabled
                                                 title="No se puede eliminar: tiene stock o movimientos registrados">

@@ -234,6 +234,7 @@ require_once __DIR__ . '/../../inc/header.php';
                 <?php endif; ?>
 
                 <form method="post" enctype="multipart/form-data">
+                    <?php echo csrf_field(); ?>
                     <div class="mb-3">
                         <label class="form-label fw-bold text-secondary">Archivo CSV</label>
                         <input type="file" name="archivo_csv" class="form-control" accept=".csv" required>

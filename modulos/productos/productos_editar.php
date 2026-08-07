@@ -87,6 +87,7 @@ require_once __DIR__ . '/../../inc/header.php';
                     <div class="alert alert-danger py-2 small"><i class="bi bi-exclamation-triangle-fill me-2"></i><?php echo h($error); ?></div>
                 <?php endif; ?>
                 <form method="post" class="row g-3">
+                    <?php echo csrf_field(); ?>
                     <div class="col-md-4">
                         <label class="form-label fw-semibold small text-secondary text-uppercase">Código <span class="text-danger">*</span></label>
                         <input type="text" name="codigo" value="<?php echo h($producto['codigo']); ?>" class="form-control" required>

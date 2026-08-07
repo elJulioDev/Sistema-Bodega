@@ -15,8 +15,8 @@ require_role('admin');
 */
 
 // Toggle estado funcionario (y su usuario si existe)
-if (isset($_GET['toggle'])) {
-    $id = (int)$_GET['toggle'];
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['toggle'])) {
+    $id = (int)$_POST['toggle'];
     $stmt = $pdo->prepare("UPDATE funcionarios SET estado = IF(estado=1,0,1) WHERE id = ?");
     $stmt->execute(array($id));
 
@@ -29,8 +29,8 @@ if (isset($_GET['toggle'])) {
 }
 
 // Revocar acceso al sistema (eliminar usuario pero conservar funcionario)
-if (isset($_GET['revocar_acceso'])) {
-    $id = (int)$_GET['revocar_acceso'];
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['revocar_acceso'])) {
+    $id = (int)$_POST['revocar_acceso'];
 
     // Validar que no sea su propio usuario
     $stmt = $pdo->prepare("SELECT id FROM usuarios WHERE id_funcionario = ? LIMIT 1");
@@ -59,8 +59,8 @@ if (isset($_GET['revocar_acceso'])) {
 }
 
 // Eliminar funcionario
-if (isset($_GET['eliminar'])) {
-    $id = (int)$_GET['eliminar'];
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['eliminar'])) {
+    $id = (int)$_POST['eliminar'];
 
     // Bloquear si tiene usuario ligado
     $stmt = $pdo->prepare("SELECT COUNT(*) FROM usuarios WHERE id_funcionario = ?");
@@ -363,24 +363,33 @@ require_once __DIR__ . '/../../inc/header.php';
                                     <i class="bi bi-pencil"></i>
                                 </a>
                                 <?php if ($tieneUsuario): ?>
-                                    <a href="?revocar_acceso=<?php echo (int)$f['id']; ?>"
-                                       class="btn btn-sm btn-outline-warning" title="Revocar acceso al sistema"
-                                       onclick="return confirm('¿Revocar el acceso al sistema de <?php echo h(addslashes($f['nombre'])); ?>? El funcionario se mantiene, pero ya no podrá ingresar.');">
-                                        <i class="bi bi-shield-slash"></i>
-                                    </a>
+                                    <form method="post" class="d-inline"
+                                          onsubmit="return confirm('¿Revocar el acceso al sistema de <?php echo h(addslashes($f['nombre'])); ?>? El funcionario se mantiene, pero ya no podrá ingresar.');">
+                                        <?php echo csrf_field(); ?>
+                                        <input type="hidden" name="revocar_acceso" value="<?php echo (int)$f['id']; ?>">
+                                        <button type="submit" class="btn btn-sm btn-outline-warning" title="Revocar acceso al sistema">
+                                            <i class="bi bi-shield-slash"></i>
+                                        </button>
+                                    </form>
                                 <?php endif; ?>
-                                <a href="?toggle=<?php echo (int)$f['id']; ?>"
-                                   class="btn btn-sm btn-outline-<?php echo ((int)$f['estado'] === 1) ? 'danger' : 'success'; ?>"
-                                   title="<?php echo ((int)$f['estado'] === 1) ? 'Desactivar' : 'Activar'; ?>"
-                                   onclick="return confirm('¿Cambiar estado de este funcionario?');">
-                                    <i class="bi bi-power"></i>
-                                </a>
+                                <form method="post" class="d-inline"
+                                      onsubmit="return confirm('¿Cambiar estado de este funcionario?');">
+                                    <?php echo csrf_field(); ?>
+                                    <input type="hidden" name="toggle" value="<?php echo (int)$f['id']; ?>">
+                                    <button type="submit" class="btn btn-sm btn-outline-<?php echo ((int)$f['estado'] === 1) ? 'danger' : 'success'; ?>"
+                                            title="<?php echo ((int)$f['estado'] === 1) ? 'Desactivar' : 'Activar'; ?>">
+                                        <i class="bi bi-power"></i>
+                                    </button>
+                                </form>
                                 <?php if (!$tieneUsuario): ?>
-                                    <a href="?eliminar=<?php echo (int)$f['id']; ?>"
-                                       class="btn btn-sm btn-outline-danger" title="Eliminar"
-                                       onclick="return confirm('¿Eliminar definitivamente este funcionario?');">
-                                        <i class="bi bi-trash"></i>
-                                    </a>
+                                    <form method="post" class="d-inline"
+                                          onsubmit="return confirm('¿Eliminar definitivamente este funcionario?');">
+                                        <?php echo csrf_field(); ?>
+                                        <input type="hidden" name="eliminar" value="<?php echo (int)$f['id']; ?>">
+                                        <button type="submit" class="btn btn-sm btn-outline-danger" title="Eliminar">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </form>
                                 <?php endif; ?>
                             </div>
                         </td>

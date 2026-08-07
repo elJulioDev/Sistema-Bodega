@@ -64,6 +64,7 @@ require_once __DIR__ . '/../../inc/header.php';
         <?php endif; ?>
 
         <form method="post" class="row g-4">
+            <?php echo csrf_field(); ?>
             <div class="col-md-4">
                 <label class="form-label fw-bold text-secondary">
                     Código Interno <span class="text-danger">*</span>

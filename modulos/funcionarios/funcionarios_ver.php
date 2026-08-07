@@ -196,11 +196,14 @@ require_once __DIR__ . '/../../inc/header.php';
                         <a href="funcionarios_editar.php?id=<?php echo (int)$f['id']; ?>" class="btn btn-sm btn-outline-primary">
                             <i class="bi bi-key me-1"></i> Cambiar rol / bodegas / contraseña
                         </a>
-                        <a href="funcionarios_lista.php?revocar_acceso=<?php echo (int)$f['id']; ?>"
-                           class="btn btn-sm btn-outline-warning"
-                           onclick="return confirm('¿Revocar el acceso al sistema? El funcionario se mantiene.');">
-                            <i class="bi bi-shield-slash me-1"></i> Revocar acceso
-                        </a>
+                        <form method="post" action="funcionarios_lista.php" class="d-inline"
+                              onsubmit="return confirm('¿Revocar el acceso al sistema? El funcionario se mantiene.');">
+                            <?php echo csrf_field(); ?>
+                            <input type="hidden" name="revocar_acceso" value="<?php echo (int)$f['id']; ?>">
+                            <button type="submit" class="btn btn-sm btn-outline-warning">
+                                <i class="bi bi-shield-slash me-1"></i> Revocar acceso
+                            </button>
+                        </form>
                     </div>
                 <?php endif; ?>
             </div>

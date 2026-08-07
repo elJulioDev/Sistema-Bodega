@@ -1,5 +1,8 @@
 <?php
 // inc/functions.php
+// Protección CSRF global: al cargar functions.php en cualquier página
+// se valida automáticamente todo POST (ver inc/csrf.php).
+require_once __DIR__ . '/csrf.php';
 
 function h($text)
 {
