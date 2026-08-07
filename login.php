@@ -5,7 +5,7 @@ require_once __DIR__ . '/inc/functions.php';
 require_once __DIR__ . '/inc/csrf.php';
 
 if (is_logged_in()) {
-    redirect('/Bodega/index.php');
+    redirect(BASE_URL . '/index.php');
 }
 
 $error = '';
@@ -42,7 +42,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $_SESSION['usuario_rol']    = $row['rol'];
 
             set_flash('success', 'Bienvenido al sistema.');
-            redirect('/Bodega/index.php');
+            redirect(BASE_URL . '/index.php');
         } else {
             $error = 'Usuario o contraseña incorrectos.';
         }

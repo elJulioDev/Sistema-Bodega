@@ -40,20 +40,20 @@ if (is_admin()) {
 
     if (!$bodegasPermitidasIds) {
         set_flash('error', 'No tienes bodegas asignadas. Contacta al administrador.');
-        redirect('/Bodega/index.php');
+        redirect(BASE_URL . '/index.php');
     }
 } else {
     // Solicitante: bodegas de su unidad
     if ($uniId <= 0) {
         set_flash('error', 'Tu usuario no tiene unidad asignada. Contacta al administrador.');
-        redirect('/Bodega/index.php');
+        redirect(BASE_URL . '/index.php');
     }
     $bodegas = bodegas_de_unidad($uniId);
     foreach ($bodegas as $b) { $bodegasPermitidasIds[] = (int)$b['id']; }
 
     if (!$bodegasPermitidasIds) {
         set_flash('error', 'Tu unidad no tiene bodegas asignadas. Contacta al administrador.');
-        redirect('/Bodega/index.php');
+        redirect(BASE_URL . '/index.php');
     }
 }
 

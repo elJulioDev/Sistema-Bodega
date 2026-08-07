@@ -28,7 +28,7 @@ if (is_encargado()) {
     $misBodegasDetalle = user_bodegas();
     if (!$misBodegasIds) {
         set_flash('error', 'Tu usuario no tiene bodegas asignadas. Contacta al administrador.');
-        redirect('/Bodega/index.php');
+        redirect(BASE_URL . '/index.php');
     }
     // Si pidió una bodega por URL, solo se acepta si está entre las suyas
     if ($id_bodega !== '' && !in_array((int)$id_bodega, $misBodegasIds, true)) {

@@ -366,7 +366,7 @@ $rolLabel = ($user && isset($rolLabels[$user['rol']])) ? $rolLabels[$user['rol']
 
         <div class="sidebar-header">
             <div class="sidebar-header-row">
-                <a href="/Bodega/index.php" class="sidebar-brand">
+                <a href="<?php echo BASE_URL; ?>/index.php" class="sidebar-brand">
                     <i class="bi bi-box-seam"></i>
                     <span>Sistema Bodega</span>
                 </a>
@@ -382,7 +382,7 @@ $rolLabel = ($user && isset($rolLabels[$user['rol']])) ? $rolLabels[$user['rol']
 
                 <!-- Inicio: todos los roles -->
                 <li>
-                    <a href="/Bodega/index.php" class="nav-link <?php echo (strpos($current_script, '/Bodega/index.php') !== false) ? 'active' : ''; ?>">
+                    <a href="<?php echo BASE_URL; ?>/index.php" class="nav-link <?php echo (strpos($current_script, BASE_URL . '/index.php') !== false) ? 'active' : ''; ?>">
                         <i class="bi bi-house-door"></i> Inicio
                     </a>
                 </li>
@@ -395,7 +395,7 @@ $rolLabel = ($user && isset($rolLabels[$user['rol']])) ? $rolLabels[$user['rol']
                     <li class="nav-section">Consultas</li>
 
                     <li>
-                        <a href="/Bodega/modulos/stock_lista.php" class="nav-link <?php echo nav_active('stock_lista'); ?>">
+                        <a href="<?php echo BASE_URL; ?>/modulos/stock_lista.php" class="nav-link <?php echo nav_active('stock_lista'); ?>">
                             <i class="bi bi-inboxes"></i> Stock de mi Unidad
                         </a>
                     </li>
@@ -403,13 +403,13 @@ $rolLabel = ($user && isset($rolLabels[$user['rol']])) ? $rolLabels[$user['rol']
                     <li class="nav-section">Mis Solicitudes</li>
 
                     <li>
-                        <a href="/Bodega/modulos/movimientos/solicitudes_crear.php" class="nav-link <?php echo nav_active('solicitudes_crear'); ?>">
+                        <a href="<?php echo BASE_URL; ?>/modulos/movimientos/solicitudes_crear.php" class="nav-link <?php echo nav_active('solicitudes_crear'); ?>">
                             <i class="bi bi-plus-circle"></i> Nueva Solicitud
                         </a>
                     </li>
 
                     <li>
-                        <a href="/Bodega/modulos/movimientos/solicitudes_lista.php" class="nav-link <?php echo nav_active('solicitudes_lista'); ?>">
+                        <a href="<?php echo BASE_URL; ?>/modulos/movimientos/solicitudes_lista.php" class="nav-link <?php echo nav_active('solicitudes_lista'); ?>">
                             <i class="bi bi-clipboard-check"></i> Historial
                         </a>
                     </li>
@@ -424,19 +424,19 @@ $rolLabel = ($user && isset($rolLabels[$user['rol']])) ? $rolLabels[$user['rol']
                     <li class="nav-section">Operaciones</li>
 
                     <li>
-                        <a href="/Bodega/modulos/stock_lista.php" class="nav-link <?php echo nav_active('stock_lista'); ?>">
+                        <a href="<?php echo BASE_URL; ?>/modulos/stock_lista.php" class="nav-link <?php echo nav_active('stock_lista'); ?>">
                             <i class="bi bi-inboxes"></i> Stock de mi Bodega
                         </a>
                     </li>
 
                     <li>
-                        <a href="/Bodega/modulos/movimientos/movimientos_lista.php" class="nav-link <?php echo nav_active('movimientos_lista'); ?>">
+                        <a href="<?php echo BASE_URL; ?>/modulos/movimientos/movimientos_lista.php" class="nav-link <?php echo nav_active('movimientos_lista'); ?>">
                             <i class="bi bi-arrow-left-right"></i> Movimientos
                         </a>
                     </li>
 
                     <li>
-                        <a href="/Bodega/modulos/movimientos/movimientos_crear.php" class="nav-link <?php echo nav_active('movimientos_crear'); ?>">
+                        <a href="<?php echo BASE_URL; ?>/modulos/movimientos/movimientos_crear.php" class="nav-link <?php echo nav_active('movimientos_crear'); ?>">
                             <i class="bi bi-box-arrow-right"></i> Nuevo Traslado
                         </a>
                     </li>
@@ -444,13 +444,13 @@ $rolLabel = ($user && isset($rolLabels[$user['rol']])) ? $rolLabels[$user['rol']
                     <li class="nav-section">Solicitudes</li>
 
                     <li>
-                        <a href="/Bodega/modulos/movimientos/solicitudes_crear.php" class="nav-link <?php echo nav_active('solicitudes_crear'); ?>">
+                        <a href="<?php echo BASE_URL; ?>/modulos/movimientos/solicitudes_crear.php" class="nav-link <?php echo nav_active('solicitudes_crear'); ?>">
                             <i class="bi bi-plus-circle"></i> Solicitar Reposición
                         </a>
                     </li>
 
                     <li>
-                        <a href="/Bodega/modulos/movimientos/solicitudes_lista.php" class="nav-link <?php echo nav_active('solicitudes_lista'); ?>">
+                        <a href="<?php echo BASE_URL; ?>/modulos/movimientos/solicitudes_lista.php" class="nav-link <?php echo nav_active('solicitudes_lista'); ?>">
                             <i class="bi bi-clipboard-check"></i> Bandeja Solicitudes
                         </a>
                     </li>
@@ -465,17 +465,17 @@ $rolLabel = ($user && isset($rolLabels[$user['rol']])) ? $rolLabels[$user['rol']
                     <li class="nav-section">Operaciones</li>
 
                     <li>
-                        <a href="/Bodega/modulos/stock_lista.php" class="nav-link <?php echo nav_active('stock_lista'); ?>">
+                        <a href="<?php echo BASE_URL; ?>/modulos/stock_lista.php" class="nav-link <?php echo nav_active('stock_lista'); ?>">
                             <i class="bi bi-inboxes"></i> Stock
                         </a>
                     </li>
                     <li>
-                        <a href="/Bodega/modulos/movimientos/movimientos_lista.php" class="nav-link <?php echo nav_active('movimientos_'); ?>">
+                        <a href="<?php echo BASE_URL; ?>/modulos/movimientos/movimientos_lista.php" class="nav-link <?php echo nav_active('movimientos_'); ?>">
                             <i class="bi bi-arrow-left-right"></i> Movimientos
                         </a>
                     </li>
                     <li>
-                        <a href="/Bodega/modulos/movimientos/solicitudes_lista.php" class="nav-link <?php echo nav_active('solicitudes'); ?>">
+                        <a href="<?php echo BASE_URL; ?>/modulos/movimientos/solicitudes_lista.php" class="nav-link <?php echo nav_active('solicitudes'); ?>">
                             <i class="bi bi-clipboard-check"></i> Solicitudes
                         </a>
                     </li>
@@ -483,22 +483,22 @@ $rolLabel = ($user && isset($rolLabels[$user['rol']])) ? $rolLabels[$user['rol']
                     <li class="nav-section">Maestros</li>
 
                     <li>
-                        <a href="/Bodega/modulos/bodegas/bodegas_lista.php" class="nav-link <?php echo nav_active('/bodegas/'); ?>">
+                        <a href="<?php echo BASE_URL; ?>/modulos/bodegas/bodegas_lista.php" class="nav-link <?php echo nav_active('/bodegas/'); ?>">
                             <i class="bi bi-buildings"></i> Bodegas
                         </a>
                     </li>
                     <li>
-                        <a href="/Bodega/modulos/productos/productos_lista.php" class="nav-link <?php echo nav_active('/productos/'); ?>">
+                        <a href="<?php echo BASE_URL; ?>/modulos/productos/productos_lista.php" class="nav-link <?php echo nav_active('/productos/'); ?>">
                             <i class="bi bi-boxes"></i> Productos
                         </a>
                     </li>
                     <li>
-                        <a href="/Bodega/modulos/proveedores/proveedores_lista.php" class="nav-link <?php echo nav_active('/proveedores/'); ?>">
+                        <a href="<?php echo BASE_URL; ?>/modulos/proveedores/proveedores_lista.php" class="nav-link <?php echo nav_active('/proveedores/'); ?>">
                             <i class="bi bi-truck"></i> Proveedores
                         </a>
                     </li>
                     <li>
-                        <a href="/Bodega/modulos/facturas/facturas_lista.php" class="nav-link <?php echo nav_active('/facturas/'); ?>">
+                        <a href="<?php echo BASE_URL; ?>/modulos/facturas/facturas_lista.php" class="nav-link <?php echo nav_active('/facturas/'); ?>">
                             <i class="bi bi-receipt"></i> Facturas
                         </a>
                     </li>
@@ -506,13 +506,13 @@ $rolLabel = ($user && isset($rolLabels[$user['rol']])) ? $rolLabels[$user['rol']
                     <li class="nav-section">Administración</li>
 
                     <li>
-                        <a href="/Bodega/modulos/funcionarios/funcionarios_lista.php" class="nav-link <?php echo nav_active('/funcionarios/'); ?>">
+                        <a href="<?php echo BASE_URL; ?>/modulos/funcionarios/funcionarios_lista.php" class="nav-link <?php echo nav_active('/funcionarios/'); ?>">
                             <i class="bi bi-person-badge"></i> Funcionarios
                         </a>
                     </li>
 
                     <li>
-                        <a href="/Bodega/modulos/unidades/unidades_lista.php" class="nav-link <?php echo nav_active('/unidades/'); ?>">
+                        <a href="<?php echo BASE_URL; ?>/modulos/unidades/unidades_lista.php" class="nav-link <?php echo nav_active('/unidades/'); ?>">
                             <i class="bi bi-diagram-3"></i> Unidades
                         </a>
                     </li>
@@ -532,7 +532,7 @@ $rolLabel = ($user && isset($rolLabels[$user['rol']])) ? $rolLabels[$user['rol']
                     <div class="user-role"><?php echo h($rolLabel ? $rolLabel : $user['rol']); ?></div>
                 </div>
             </div>
-            <a href="/Bodega/logout.php" class="btn-logout">
+            <a href="<?php echo BASE_URL; ?>/logout.php" class="btn-logout">
                 <i class="bi bi-box-arrow-right"></i>
                 Cerrar sesión
             </a>
@@ -550,7 +550,7 @@ $rolLabel = ($user && isset($rolLabels[$user['rol']])) ? $rolLabels[$user['rol']
             <button class="btn-toggle" id="btnSidebarToggle" type="button" aria-label="Abrir menú">
                 <i class="bi bi-list"></i>
             </button>
-            <a href="/Bodega/index.php" class="mobile-brand">
+            <a href="<?php echo BASE_URL; ?>/index.php" class="mobile-brand">
                 <i class="bi bi-box-seam"></i>
                 <span>Sistema Bodega</span>
             </a>

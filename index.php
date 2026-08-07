@@ -271,10 +271,10 @@ $rolTxt = isset($rolLabel[$rol]) ? $rolLabel[$rol] : ucfirst($rol);
 <div class="row g-2 mb-2 dash-kpi">
     <?php
     $kpis1 = array(
-        array('Productos',   $data['totalProductos'],   'bi-boxes',      'bg-primary bg-opacity-10 text-primary',  '/Bodega/modulos/productos/productos_lista.php'),
-        array('Bodegas',     $data['totalBodegas'],     'bi-buildings',  'bg-info bg-opacity-10 text-info',        '/Bodega/modulos/bodegas/bodegas_lista.php'),
-        array('Proveedores', $data['totalProveedores'], 'bi-truck',      'bg-success bg-opacity-10 text-success',  '/Bodega/modulos/proveedores/proveedores_lista.php'),
-        array('Usuarios',    $data['totalUsuarios'],    'bi-people',     'bg-warning bg-opacity-10 text-warning',  $rol === 'admin' ? '/Bodega/modulos/usuarios/usuarios_lista.php' : null),
+        array('Productos',   $data['totalProductos'],   'bi-boxes',      'bg-primary bg-opacity-10 text-primary',  BASE_URL . '/modulos/productos/productos_lista.php'),
+        array('Bodegas',     $data['totalBodegas'],     'bi-buildings',  'bg-info bg-opacity-10 text-info',        BASE_URL . '/modulos/bodegas/bodegas_lista.php'),
+        array('Proveedores', $data['totalProveedores'], 'bi-truck',      'bg-success bg-opacity-10 text-success',  BASE_URL . '/modulos/proveedores/proveedores_lista.php'),
+        array('Usuarios',    $data['totalUsuarios'],    'bi-people',     'bg-warning bg-opacity-10 text-warning',  $rol === 'admin' ? BASE_URL . '/modulos/usuarios/usuarios_lista.php' : null),
     );
     foreach ($kpis1 as $k): ?>
     <div class="col-6 col-md-3">
@@ -384,7 +384,7 @@ $rolTxt = isset($rolLabel[$rol]) ? $rolLabel[$rol] : ucfirst($rol);
         <div class="card dash-card h-100">
             <div class="card-header d-flex justify-content-between align-items-center">
                 <h6><i class="bi bi-arrow-left-right text-primary me-2"></i>Últimos movimientos</h6>
-                <a href="/Bodega/modulos/movimientos/movimientos_lista.php" class="btn btn-sm btn-outline-primary py-0 px-2" style="font-size:.75rem">Ver todos</a>
+                <a href="<?php echo BASE_URL; ?>/modulos/movimientos/movimientos_lista.php" class="btn btn-sm btn-outline-primary py-0 px-2" style="font-size:.75rem">Ver todos</a>
             </div>
             <?php if (!$data['ultimosMov']): ?>
                 <div class="card-body text-center text-muted py-4 small">Sin movimientos</div>
@@ -427,7 +427,7 @@ $rolTxt = isset($rolLabel[$rol]) ? $rolLabel[$rol] : ucfirst($rol);
         <div class="card dash-card h-100">
             <div class="card-header d-flex justify-content-between align-items-center">
                 <h6><i class="bi bi-clipboard-check text-warning me-2"></i>Solicitudes recientes</h6>
-                <a href="/Bodega/modulos/movimientos/solicitudes_lista.php" class="btn btn-sm btn-outline-primary py-0 px-2" style="font-size:.75rem">Ver todas</a>
+                <a href="<?php echo BASE_URL; ?>/modulos/movimientos/solicitudes_lista.php" class="btn btn-sm btn-outline-primary py-0 px-2" style="font-size:.75rem">Ver todas</a>
             </div>
             <?php if (!$data['ultimasSolicitudes']): ?>
                 <div class="card-body text-center text-muted py-4 small">Sin solicitudes</div>
@@ -510,11 +510,11 @@ $rolTxt = isset($rolLabel[$rol]) ? $rolLabel[$rol] : ucfirst($rol);
 
 <!-- Acciones rápidas -->
 <div class="d-flex gap-2 mb-3 flex-wrap">
-    <a href="/Bodega/modulos/movimientos/movimientos_crear.php" class="btn btn-sm btn-primary"><i class="bi bi-plus-lg me-1"></i>Nuevo traslado</a>
-    <a href="/Bodega/modulos/movimientos/movimientos_lista.php" class="btn btn-sm btn-outline-secondary"><i class="bi bi-list-ul me-1"></i>Movimientos</a>
-    <a href="/Bodega/modulos/stock_lista.php" class="btn btn-sm btn-outline-secondary"><i class="bi bi-inboxes me-1"></i>Ver stock</a>
+    <a href="<?php echo BASE_URL; ?>/modulos/movimientos/movimientos_crear.php" class="btn btn-sm btn-primary"><i class="bi bi-plus-lg me-1"></i>Nuevo traslado</a>
+    <a href="<?php echo BASE_URL; ?>/modulos/movimientos/movimientos_lista.php" class="btn btn-sm btn-outline-secondary"><i class="bi bi-list-ul me-1"></i>Movimientos</a>
+    <a href="<?php echo BASE_URL; ?>/modulos/stock_lista.php" class="btn btn-sm btn-outline-secondary"><i class="bi bi-inboxes me-1"></i>Ver stock</a>
     <?php if ($data['solPendBodega'] > 0): ?>
-        <a href="/Bodega/modulos/movimientos/solicitudes_lista.php" class="btn btn-sm btn-warning">
+        <a href="<?php echo BASE_URL; ?>/modulos/movimientos/solicitudes_lista.php" class="btn btn-sm btn-warning">
             <i class="bi bi-clipboard-check me-1"></i>Solicitudes pendientes
             <span class="badge bg-dark ms-1"><?php echo $data['solPendBodega']; ?></span>
         </a>
@@ -565,7 +565,7 @@ $rolTxt = isset($rolLabel[$rol]) ? $rolLabel[$rol] : ucfirst($rol);
         <div class="card dash-card h-100">
             <div class="card-header d-flex justify-content-between align-items-center">
                 <h6><i class="bi bi-arrow-left-right text-primary me-2"></i>Últimos movimientos</h6>
-                <a href="/Bodega/modulos/movimientos/movimientos_lista.php" class="btn btn-sm btn-outline-primary py-0 px-2" style="font-size:.75rem">Ver todos</a>
+                <a href="<?php echo BASE_URL; ?>/modulos/movimientos/movimientos_lista.php" class="btn btn-sm btn-outline-primary py-0 px-2" style="font-size:.75rem">Ver todos</a>
             </div>
             <?php if (!$data['ultimosMovBodega']): ?>
                 <div class="card-body text-center text-muted py-4 small">Sin movimientos</div>
@@ -660,7 +660,7 @@ $rolTxt = isset($rolLabel[$rol]) ? $rolLabel[$rol] : ucfirst($rol);
                 <span class="text-muted" style="font-size: 0.75rem;">Crea una solicitud de insumos</span>
             </div>
             
-            <a href="/Bodega/modulos/movimientos/solicitudes_lista.php" class="btn btn-primary px-4 py-1 mt-auto" style="font-size: 0.8rem; border-radius: 6px; box-shadow: 0 2px 4px rgba(13,110,253,0.15);">
+            <a href="<?php echo BASE_URL; ?>/modulos/movimientos/solicitudes_lista.php" class="btn btn-primary px-4 py-1 mt-auto" style="font-size: 0.8rem; border-radius: 6px; box-shadow: 0 2px 4px rgba(13,110,253,0.15);">
                 <i class="bi bi-plus-lg me-1"></i> Nueva solicitud
             </a>
         </div>
@@ -670,7 +670,7 @@ $rolTxt = isset($rolLabel[$rol]) ? $rolLabel[$rol] : ucfirst($rol);
         <div class="card dash-card h-100">
             <div class="card-header d-flex justify-content-between align-items-center">
                 <h6><i class="bi bi-clock-history text-primary me-2"></i>Mis últimas solicitudes</h6>
-                <a href="/Bodega/modulos/movimientos/solicitudes_lista.php" class="btn btn-sm btn-outline-primary py-0 px-2" style="font-size:.75rem">Ver todas</a>
+                <a href="<?php echo BASE_URL; ?>/modulos/movimientos/solicitudes_lista.php" class="btn btn-sm btn-outline-primary py-0 px-2" style="font-size:.75rem">Ver todas</a>
             </div>
             <?php if (!$data['misSolicitudes']): ?>
                 <div class="card-body text-center text-muted py-4 small">

@@ -35,7 +35,7 @@ if (is_encargado()) {
 
 if ((is_encargado() || is_solicitante()) && !$bodegasDestino) {
     set_flash('error', 'Tu usuario/unidad no tiene bodegas configuradas como destino. Contacta al administrador.');
-    redirect('/Bodega/index.php');
+    redirect(BASE_URL . '/index.php');
 }
 
 // ── Bodegas origen (todas las activas) ──────────────────────

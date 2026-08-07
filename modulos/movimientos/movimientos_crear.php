@@ -57,7 +57,7 @@ if (is_encargado()) {
 
     if (!$misBodegas) {
         set_flash('error', 'Tu usuario no tiene bodegas asignadas. Contacta al administrador.');
-        redirect('/Bodega/index.php');
+        redirect(BASE_URL . '/index.php');
     }
 }
 

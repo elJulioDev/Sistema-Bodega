@@ -1,4 +1,6 @@
 <?php
+require_once __DIR__ . '/inc/config.php';
+
 // Iniciar la sesión para poder manipularla
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
@@ -27,5 +29,5 @@ session_start();
 set_flash('success', 'Has cerrado sesión correctamente.');
 
 // 5. Redirigir al login
-redirect('/Bodega/login.php');
+redirect(BASE_URL . '/login.php');
 exit;

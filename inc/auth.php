@@ -1,14 +1,10 @@
 <?php
 // inc/auth.php
-
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-// -------------------------------------------------------------
 // Helpers base
-// -------------------------------------------------------------
-
 function is_logged_in()
 {
     return !empty($_SESSION['user_id']);
@@ -17,7 +13,7 @@ function is_logged_in()
 function require_login()
 {
     if (!is_logged_in()) {
-        header('Location: /Bodega/login.php');
+        header('Location: ' . BASE_URL . '/login.php');
         exit;
     }
 }
@@ -39,10 +35,7 @@ function current_user()
     );
 }
 
-// -------------------------------------------------------------
 // Chequeos de rol
-// -------------------------------------------------------------
-
 function has_role($roles)
 {
     if (!is_logged_in()) {
@@ -72,18 +65,15 @@ function require_role($roles)
             set_flash('error', 'Acceso denegado. No tienes permisos para esta sección.');
         }
         if (function_exists('redirect')) {
-            redirect('/Bodega/index.php');
+            redirect(BASE_URL . '/index.php');
         } else {
-            header('Location: /Bodega/index.php');
+            header('Location: ' . BASE_URL . '/index.php');
         }
         exit;
     }
 }
 
-// -------------------------------------------------------------
 // Helpers rapidos por rol
-// -------------------------------------------------------------
-
 function is_admin()       { return has_role('admin'); }
 function is_encargado()   { return has_role('bodega'); }
 function is_solicitante() { return has_role('solicitante'); }
