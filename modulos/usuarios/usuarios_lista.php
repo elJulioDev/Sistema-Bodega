@@ -153,8 +153,6 @@ require_once __DIR__ . '/../../inc/header.php';
                             'admin'       => array('Administrador', 'bg-danger bg-opacity-10 text-danger'),
                             'bodega'      => array('Encargado',     'bg-primary bg-opacity-10 text-primary'),
                             'solicitante' => array('Solicitante',   'bg-info bg-opacity-10 text-info'),
-                            'consulta'    => array('Consulta',      'bg-secondary bg-opacity-10 text-secondary'),
-                            'auditor'     => array('Auditor',       'bg-warning bg-opacity-10 text-warning'),
                         );
                         $rolInfo = isset($rolLabel[$u['rol']]) ? $rolLabel[$u['rol']] : array($u['rol'], 'bg-secondary bg-opacity-10 text-secondary');
 

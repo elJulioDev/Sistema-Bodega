@@ -15,36 +15,6 @@ require_role(array('admin', 'bodega'));
 
 $error = '';
 
-// Tablas legacy (ya existían)
-$pdo->exec("
-    CREATE TABLE IF NOT EXISTS traspasos_bodega (
-        id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-        id_bodega_origen INT UNSIGNED NOT NULL,
-        id_bodega_destino INT UNSIGNED NOT NULL,
-        fecha DATE NOT NULL,
-        estado VARCHAR(30) NOT NULL DEFAULT 'completado',
-        observacion TEXT NULL,
-        created_by INT UNSIGNED NULL,
-        created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-        INDEX idx_origen (id_bodega_origen),
-        INDEX idx_destino (id_bodega_destino)
-    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
-");
-$pdo->exec("
-    CREATE TABLE IF NOT EXISTS traspasos_bodega_detalle (
-        id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-        id_traspaso INT UNSIGNED NOT NULL,
-        id_producto INT UNSIGNED NOT NULL,
-        descripcion_item VARCHAR(255) NULL,
-        cantidad DECIMAL(12,2) NOT NULL DEFAULT 0,
-        costo_unitario DECIMAL(12,2) NOT NULL DEFAULT 0,
-        subtotal DECIMAL(14,2) NOT NULL DEFAULT 0,
-        created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-        INDEX idx_traspaso (id_traspaso),
-        INDEX idx_producto (id_producto)
-    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
-");
-
 // ============================================================
 // Bodegas según rol
 // ============================================================

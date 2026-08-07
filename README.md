@@ -8,7 +8,7 @@ El Sistema de Gestión de Bodegas es una plataforma web modular diseñada para l
 ## Instalación
 
 ### Requisitos
-* PHP 5.5 o superior (probado en 5.6)
+* PHP 7.4 o superior (usa `random_bytes` para CSRF; probado con PHP 8.x)
 * MySQL 5.7+ o MariaDB 10.4+
 * Servidor Apache/Nginx con soporte para `.htaccess` o equivalente
 * Extensión `pdo_mysql` habilitada

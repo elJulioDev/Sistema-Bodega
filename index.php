@@ -59,7 +59,7 @@ $data = array();
 // ==================================================================
 // CONSULTAS: ADMIN
 // ==================================================================
-if (in_array($rol, array('admin', 'auditor', 'consulta'), true)) {
+if (is_admin()) {
 
     $data['totalProductos']   = (int)$pdo->query("SELECT COUNT(id) FROM productos WHERE estado = 1")->fetchColumn();
     $data['totalBodegas']     = (int)$pdo->query("SELECT COUNT(id) FROM bodegas WHERE estado = 1")->fetchColumn();
@@ -212,9 +212,7 @@ require_once __DIR__ . '/inc/header.php';
 $rolLabel = array(
     'admin'       => 'Administrador',
     'bodega'      => 'Encargado de Bodega',
-    'solicitante' => 'Solicitante',
-    'consulta'    => 'Solo Consulta',
-    'auditor'     => 'Auditor'
+    'solicitante' => 'Solicitante'
 );
 $rolTxt = isset($rolLabel[$rol]) ? $rolLabel[$rol] : ucfirst($rol);
 ?>
@@ -263,9 +261,9 @@ $rolTxt = isset($rolLabel[$rol]) ? $rolLabel[$rol] : ucfirst($rol);
 
 
 <?php /* ================================================================
-        ADMIN / AUDITOR / CONSULTA
+        ADMIN
         ================================================================ */ ?>
-<?php if (in_array($rol, array('admin', 'auditor', 'consulta'), true)): ?>
+<?php if (is_admin()): ?>
 
 <!-- KPIs maestros (fila 1) -->
 <div class="row g-2 mb-2 dash-kpi">
@@ -710,14 +708,14 @@ $rolTxt = isset($rolLabel[$rol]) ? $rolLabel[$rol] : ucfirst($rol);
 <?php endif; /* fin solicitante */ ?>
 
 
-<?php if (!in_array($rol, array('admin','bodega','solicitante','consulta','auditor'), true)): ?>
+<?php if (!in_array($rol, array('admin','bodega','solicitante'), true)): ?>
     <div class="alert alert-info shadow-sm">
         <i class="bi bi-info-circle me-2"></i>Tu rol no tiene un panel asignado. Contacta al administrador.
     </div>
 <?php endif; ?>
 
 
-<?php if (in_array($rol, array('admin','auditor','consulta'), true)): ?>
+<?php if (is_admin()): ?>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script>
 (function(){

@@ -43,6 +43,17 @@ if (!$sol) {
     redirect('solicitudes_lista.php');
 }
 
+// ── Permiso de vista (anti-IDOR) ────────────────────────────
+// Admin ve todo; encargado ve las suyas o las de sus bodegas; solicitante solo las propias.
+if (!is_admin()) {
+    $puedeVer = ((int)$sol['id_usuario'] === $miUid)
+        || (is_encargado() && user_puede_operar_bodega((int)$sol['id_bodega_origen']));
+    if (!$puedeVer) {
+        set_flash('error', 'Solicitud no encontrada.');
+        redirect('solicitudes_lista.php');
+    }
+}
+
 // ── Helper permiso ──────────────────────────────────────────
 function puede_procesar_ver($sol) {
     if (is_admin()) return true;
@@ -174,41 +185,44 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         redirect('solicitudes_ver.php?id=' . $id_sol);
     }
 
-    // Validar stock en tiempo real (race-condition safe via SELECT FOR UPDATE)
-    $stmtRel = $pdo->prepare("
-        SELECT sd.id, sd.id_producto, p.nombre AS pnombre,
-               COALESCE(sb.stock_actual, 0) AS stock_disp
-        FROM   solicitudes_detalle sd
-        INNER  JOIN productos p ON p.id = sd.id_producto
-        LEFT   JOIN stock_bodega sb ON sb.id_producto = sd.id_producto AND sb.id_bodega = ?
-        WHERE  sd.id_solicitud = ?
-    ");
-    $stmtRel->execute(array((int)$sol['id_bodega_origen'], $id_sol));
-    $itemsReales = $stmtRel->fetchAll();
-    $stockMap = array();
-    foreach ($itemsReales as $ir) {
-        $stockMap[$ir['id']] = array('stock' => (float)$ir['stock_disp'], 'nombre' => $ir['pnombre'], 'id_producto' => $ir['id_producto']);
-    }
-
-    $errStock = '';
-    foreach ($aprobados as $detId => $cantAp) {
-        if (!isset($stockMap[$detId])) continue;
-        $disp = $stockMap[$detId]['stock'];
-        if ($cantAp > $disp) {
-            $errStock = 'Stock insuficiente para "' . $stockMap[$detId]['nombre']
-                      . '". Disponible: ' . number_format($disp, 2, ',', '.')
-                      . ', aprobado: '    . number_format($cantAp, 2, ',', '.');
-            break;
-        }
-    }
-
-    if ($errStock !== '') {
-        set_flash('error', $errStock . ' Ajusta la cantidad aprobada.');
-        redirect('solicitudes_ver.php?id=' . $id_sol);
-    }
-
     try {
         $pdo->beginTransaction();
+
+        // Validar stock en tiempo real: SELECT FOR UPDATE dentro de la transacción
+        // bloquea las filas de stock y evita ventas concurrentes sobre el mismo producto.
+        $stmtRel = $pdo->prepare("
+            SELECT sd.id, sd.id_producto, p.nombre AS pnombre,
+                   COALESCE(sb.stock_actual, 0) AS stock_disp
+            FROM   solicitudes_detalle sd
+            INNER  JOIN productos p ON p.id = sd.id_producto
+            LEFT   JOIN stock_bodega sb ON sb.id_producto = sd.id_producto AND sb.id_bodega = ?
+            WHERE  sd.id_solicitud = ?
+            FOR UPDATE
+        ");
+        $stmtRel->execute(array((int)$sol['id_bodega_origen'], $id_sol));
+        $itemsReales = $stmtRel->fetchAll();
+        $stockMap = array();
+        foreach ($itemsReales as $ir) {
+            $stockMap[$ir['id']] = array('stock' => (float)$ir['stock_disp'], 'nombre' => $ir['pnombre'], 'id_producto' => $ir['id_producto']);
+        }
+
+        $errStock = '';
+        foreach ($aprobados as $detId => $cantAp) {
+            if (!isset($stockMap[$detId])) continue;
+            $disp = $stockMap[$detId]['stock'];
+            if ($cantAp > $disp) {
+                $errStock = 'Stock insuficiente para "' . $stockMap[$detId]['nombre']
+                          . '". Disponible: ' . number_format($disp, 2, ',', '.')
+                          . ', aprobado: '    . number_format($cantAp, 2, ',', '.');
+                break;
+            }
+        }
+
+        if ($errStock !== '') {
+            $pdo->rollBack();
+            set_flash('error', $errStock . ' Ajusta la cantidad aprobada.');
+            redirect('solicitudes_ver.php?id=' . $id_sol);
+        }
 
         // Guardar estados finales de ítems
         $stmtUpdItm = $pdo->prepare("
@@ -271,9 +285,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         // Actualizar solicitud
         $pdo->prepare("
             UPDATE solicitudes
-            SET    estado='$estadoFinal', id_usuario_respuesta=?, fecha_respuesta=NOW()
+            SET    estado=?, id_usuario_respuesta=?, fecha_respuesta=NOW()
             WHERE  id=?
-        ")->execute(array($miUid, $id_sol));
+        ")->execute(array($estadoFinal, $miUid, $id_sol));
 
         // Log
         $nAprob = count($aprobados);

@@ -28,13 +28,12 @@ Sistema de Bodega: inventario en **PHP puro procedural** (sin framework, sin com
   - Todo `<form method="post">` DEBE incluir `<?php echo csrf_field(); ?>` justo después de abrir el form.
   - Nunca crear acciones destructivas (toggle/eliminar/anular/revocar) por GET: son forms POST con token.
   - `login.php` es la excepción: token manual `name="csrf"` + `csrf_check()` explícito; no tocar.
-- Roles reales (ENUM en schema.sql): `admin`, `bodega`, `solicitante`. `auditor` y `consulta` **no existen**; todo uso actual es código muerto — no agregar usos nuevos. Helpers: `is_admin()`, `is_encargado()`, `is_solicitante()`, `current_user()`.
+- Roles reales (ENUM en schema.sql): `admin`, `bodega`, `solicitante`. `auditor` y `consulta` **no existen** — no agregar usos nuevos. Helpers: `is_admin()`, `is_encargado()`, `is_solicitante()`, `current_user()`.
 - Escapar toda salida con `h()` y usar prepared statements (`$pdo->prepare(...)->execute(array(...))`).
 
 ## Modelo de datos
-- `database/schema.sql` es la fuente de verdad, pero el código tiene divergencias conocidas: verificar toda columna ahí antes de usarla.
-  - `modulos/movimientos/movimientos_crear.php:19-46` auto-crea `traspasos_bodega(_detalle)` con `CREATE TABLE IF NOT EXISTS` (sin FKs y tipos distintos a schema.sql).
-  - `solicitudes_detalle` usa `observacion` para la nota del ítem (no `motivo_ajuste`).
+- `database/schema.sql` es la fuente de verdad: toda tabla y columna que use el código debe existir ahí antes de usarla.
+  - `solicitudes_detalle` tiene tanto `observacion` (nota del solicitante al pedir) como `motivo_ajuste` (nota del encargado al ajustar/revisar).
   - `productos`, `stock_bodega` y `usuarios_bodegas` ya tienen `updated_at`/`created_at` en schema.sql.
 - Encargados↔bodegas es **M:N** vía `usuarios_bodegas` (la columna legacy `bodegas.id_encargado` solo existe para compatibilidad). Usar helpers de `inc/bodegas_helpers.php`: `user_bodegas_ids()`, `user_bodegas()`, `user_puede_operar_bodega()`, `asignar_encargado_bodega()`, `desasignar_encargado_bodega()`, etc.
 
