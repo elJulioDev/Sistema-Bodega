@@ -644,6 +644,21 @@ a { color: var(--app-brand); }
 /* Sin cambio de color al pasar el mouse: filas sólidas */
 .table-hover > tbody > tr:hover > * { background-color: transparent; }
 
+/* Estados de fila (sin stock / bajo stock): usan los tonos suaves del tema,
+   así en oscuro el amarillo/rojo no quedan intensos */
+.table-warning,
+.table-warning > * {
+    --bs-table-bg: var(--app-warning-bg);
+    --bs-table-color: var(--app-warning-text);
+    --bs-table-border-color: var(--app-warning-border);
+}
+.table-danger,
+.table-danger > * {
+    --bs-table-bg: var(--app-danger-bg);
+    --bs-table-color: var(--app-danger-text);
+    --bs-table-border-color: var(--app-danger-border);
+}
+
 /* ===== 9. BADGES (soft) ===== */
 .badge-soft {
     font-weight: 600;
