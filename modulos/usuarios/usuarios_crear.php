@@ -169,7 +169,7 @@ require_once __DIR__ . '/../../inc/header.php';
                     </div>
 
                     <!-- Preview funcionario (solo lectura) -->
-                    <div class="col-12" id="previewFuncionario" style="display:none;">
+                    <div class="col-12 d-none" id="previewFuncionario" >
                         <div class="alert alert-info mb-0">
                             <div class="row g-2 small">
                                 <div class="col-md-4"><strong>RUT:</strong> <span id="pvRut">—</span></div>
@@ -200,7 +200,7 @@ require_once __DIR__ . '/../../inc/header.php';
                     </div>
 
                     <!-- Bodega (solo rol = bodega) -->
-                    <div class="col-12" id="grupoBodega" style="display:none;">
+                    <div class="col-12 d-none" id="grupoBodega" >
                         <label class="form-label fw-bold text-secondary">
                             Bodega a cargo <span class="text-danger">*</span>
                         </label>
@@ -216,7 +216,7 @@ require_once __DIR__ . '/../../inc/header.php';
                     </div>
 
                     <!-- Unidad (solo rol = solicitante) -->
-                    <div class="col-12" id="grupoUnidad" style="display:none;">
+                    <div class="col-12 d-none" id="grupoUnidad" >
                         <label class="form-label fw-bold text-secondary">
                             Unidad asociada <span class="text-danger">*</span>
                         </label>

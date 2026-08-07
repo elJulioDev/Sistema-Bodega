@@ -140,7 +140,7 @@ require_once __DIR__ . '/../../inc/header.php';
         <div class="card shadow-sm border-0 mb-3">
             <div class="card-body p-3">
                 <div class="d-flex align-items-center mb-2">
-                    <span class="badge bg-primary rounded-circle me-2" style="width:28px;height:28px;display:flex;align-items:center;justify-content:center;">1</span>
+                    <span class="badge bg-primary rounded-circle me-2 step-badge" >1</span>
                     <h6 class="fw-bold mb-0">Descarga la plantilla</h6>
                 </div>
                 <p class="text-muted small mb-3">Usa la plantilla oficial con las 6 columnas requeridas.</p>
@@ -179,7 +179,7 @@ require_once __DIR__ . '/../../inc/header.php';
         <div class="card shadow-sm border-0">
             <div class="card-body p-3">
                 <div class="d-flex align-items-center mb-3">
-                    <span class="badge bg-primary rounded-circle me-2" style="width:28px;height:28px;display:flex;align-items:center;justify-content:center;">2</span>
+                    <span class="badge bg-primary rounded-circle me-2 step-badge" >2</span>
                     <h6 class="fw-bold mb-0">Carga el archivo</h6>
                 </div>
                 

@@ -194,7 +194,7 @@ function badge_estado($estado) {
         case 'pendiente':         return '<span class="badge bg-warning text-dark"><i class="bi bi-clock me-1"></i>Pendiente</span>';
         case 'en_revision':       return '<span class="badge bg-info text-dark"><i class="bi bi-search me-1"></i>En revisión</span>';
         case 'procesada':         return '<span class="badge bg-success"><i class="bi bi-check-circle me-1"></i>Ejecutada</span>';
-        case 'procesada_parcial': return '<span class="badge text-white" style="background:#0d9488"><i class="bi bi-check2-all me-1"></i>Parcial</span>';
+        case 'procesada_parcial': return '<span class="badge text-white bg-teal" ><i class="bi bi-check2-all me-1"></i>Parcial</span>';
         case 'rechazada':         return '<span class="badge bg-danger"><i class="bi bi-x-circle me-1"></i>Rechazada</span>';
         case 'caducada':          return '<span class="badge bg-secondary"><i class="bi bi-hourglass-bottom me-1"></i>Caducada</span>';
         default:                  return '<span class="badge bg-secondary">' . h($estado) . '</span>';
@@ -278,7 +278,7 @@ function badge_estado($estado) {
 
             <?php if (is_encargado() && $vista !== 'enviadas' && count($misBodegasDetalle) > 1): ?>
                 <span class="ms-3 fw-bold text-secondary small">Bodega:</span>
-                <select name="id_bodega" class="form-select form-select-sm" style="max-width:250px;" onchange="this.form.submit()">
+                <select name="id_bodega" class="form-select form-select-sm mw-250" onchange="this.form.submit()">
                     <option value="0">Todas mis bodegas</option>
                     <?php foreach ($misBodegasDetalle as $mb): ?>
                         <option value="<?php echo (int)$mb['id']; ?>" <?php echo ($filtroBodega === (int)$mb['id']) ? 'selected' : ''; ?>>

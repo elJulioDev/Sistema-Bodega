@@ -99,7 +99,7 @@ require_once __DIR__ . '/../../inc/header.php';
     <div class="col-6 col-md-4">
         <div class="card shadow-sm border-0 border-start border-primary border-4 h-100">
             <div class="card-body py-3">
-                <p class="text-muted text-uppercase mb-1 fw-bold fs-xs" style="letter-spacing:.5px;">Total</p>
+                <p class="text-muted text-uppercase mb-1 fw-bold fs-xs ls-1" >Total</p>
                 <h3 class="mb-0 fw-bold text-dark"><?php echo (int)$kpis['total']; ?></h3>
             </div>
         </div>
@@ -107,7 +107,7 @@ require_once __DIR__ . '/../../inc/header.php';
     <div class="col-6 col-md-4">
         <div class="card shadow-sm border-0 border-start border-success border-4 h-100">
             <div class="card-body py-3">
-                <p class="text-muted text-uppercase mb-1 fw-bold fs-xs" style="letter-spacing:.5px;">Activas</p>
+                <p class="text-muted text-uppercase mb-1 fw-bold fs-xs ls-1" >Activas</p>
                 <h3 class="mb-0 fw-bold text-success"><?php echo (int)$kpis['activas']; ?></h3>
             </div>
         </div>
@@ -115,7 +115,7 @@ require_once __DIR__ . '/../../inc/header.php';
     <div class="col-6 col-md-4">
         <div class="card shadow-sm border-0 border-start border-secondary border-4 h-100">
             <div class="card-body py-3">
-                <p class="text-muted text-uppercase mb-1 fw-bold fs-xs" style="letter-spacing:.5px;">Inactivas</p>
+                <p class="text-muted text-uppercase mb-1 fw-bold fs-xs ls-1" >Inactivas</p>
                 <h3 class="mb-0 fw-bold text-secondary"><?php echo (int)$kpis['inactivas']; ?></h3>
             </div>
         </div>

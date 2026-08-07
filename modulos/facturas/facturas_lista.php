@@ -190,7 +190,7 @@ require_once __DIR__ . '/../../inc/header.php';
                                 <?php endif; ?>
                             </td>
                             <td>
-                                <div class="fw-semibold text-dark text-truncate" style="max-width:220px;" title="<?php echo h($f['razon_social']); ?>">
+                                <div class="fw-semibold text-dark text-truncate mw-220" title="<?php echo h($f['razon_social']); ?>">
                                     <?php echo h($f['razon_social']); ?>
                                 </div>
                             </td>

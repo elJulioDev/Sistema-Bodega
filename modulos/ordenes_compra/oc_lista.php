@@ -81,7 +81,7 @@ require_once __DIR__ . '/../../inc/header.php';
                             <td class="px-4 fw-bold text-dark">#<?php echo h($oc['numero_oc']); ?></td>
                             <td class="text-muted small"><?php echo date('d/m/Y', strtotime($oc['fecha_oc'])); ?></td>
                             <td>
-                                <div class="text-dark fw-medium text-truncate" style="max-width: 250px;" title="<?php echo h($oc['razon_social']); ?>">
+                                <div class="text-dark fw-medium text-truncate mw-250" title="<?php echo h($oc['razon_social']); ?>">
                                     <?php echo h($oc['razon_social']); ?>
                                 </div>
                             </td>

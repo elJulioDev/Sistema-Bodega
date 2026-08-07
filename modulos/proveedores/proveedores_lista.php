@@ -45,6 +45,7 @@ $pageTitle = 'Proveedores';
 require_once __DIR__ . '/../../inc/header.php';
 ?>
 
+
 <!-- Cabecera -->
 <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
     <div>
@@ -142,7 +143,7 @@ require_once __DIR__ . '/../../inc/header.php';
     <div class="card-body p-0">
         <div class="table-responsive">
             <table class="table table-hover align-middle mb-0">
-                <thead class="table-light text-secondary fs-sm" style="letter-spacing:.03em;">
+                <thead class="table-light text-secondary fs-sm ls-3" >
                     <tr>
                         <th class="px-4 py-3">RUT</th>
                         <th class="py-3">RAZÓN SOCIAL</th>
@@ -251,7 +252,7 @@ require_once __DIR__ . '/../../inc/header.php';
         <?php endif; ?>
 
         <?php if ($p['giro'] !== ''): ?>
-        <div class="prov-cf" style="grid-column:1/-1;">
+        <div class="prov-cf grid-span-all" >
             <span class="prov-cf-l">Giro</span>
             <span class="prov-cf-v"><?php echo h($p['giro']); ?></span>
         </div>
@@ -272,7 +273,7 @@ require_once __DIR__ . '/../../inc/header.php';
         <?php endif; ?>
 
         <?php if ($p['email'] !== ''): ?>
-        <div class="prov-cf" style="grid-column:1/-1;">
+        <div class="prov-cf grid-span-all" >
             <span class="prov-cf-l">Email</span>
             <span class="prov-cf-v"><i class="bi bi-envelope me-1 text-muted"></i><?php echo h($p['email']); ?></span>
         </div>

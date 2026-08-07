@@ -189,7 +189,7 @@ require_once __DIR__ . '/../../inc/header.php';
                             <td>
                                 <div class="fw-semibold text-dark"><?php echo h($p['nombre']); ?></div>
                                 <?php if (!empty($p['descripcion'])): ?>
-                                    <small class="text-muted d-block text-truncate" style="max-width: 280px;"><?php echo h($p['descripcion']); ?></small>
+                                    <small class="text-muted d-block text-truncate mw-280" ><?php echo h($p['descripcion']); ?></small>
                                 <?php endif; ?>
                             </td>
                             <td class="text-center">

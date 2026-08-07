@@ -258,7 +258,7 @@ require_once __DIR__ . '/../../inc/header.php';
                 <div class="small text-muted mb-2 px-1">
                     <i class="bi bi-lightbulb me-1"></i>Click o <kbd>Enter</kbd> para agregar. Si ya existe, suma cantidad.
                 </div>
-                <div id="listaProductos" style="max-height: 420px; overflow-y: auto;" class="border rounded bg-light"></div>
+                <div id="listaProductos" class="border rounded bg-light scroll-420"></div>
                 <div class="small text-muted mt-2 text-center">
                     <span id="contadorProductos">0</span> producto(s) disponibles
                 </div>
@@ -277,11 +277,11 @@ require_once __DIR__ . '/../../inc/header.php';
                     <table class="table table-sm align-middle mb-0" id="tablaDetalle">
                         <thead class="table-light">
                             <tr class="small text-secondary text-uppercase">
-                                <th class="px-2" style="width: 40%;">Producto</th>
-                                <th class="text-end" style="width: 18%;">Cantidad</th>
-                                <th class="text-end" style="width: 20%;">P. Unit.</th>
-                                <th class="text-end" style="width: 17%;">Subtotal</th>
-                                <th class="text-center px-2" style="width: 5%;"></th>
+                                <th class="px-2 tw-40" >Producto</th>
+                                <th class="text-end tw-18" >Cantidad</th>
+                                <th class="text-end tw-20" >P. Unit.</th>
+                                <th class="text-end tw-17" >Subtotal</th>
+                                <th class="text-center px-2 tw-5" ></th>
                             </tr>
                         </thead>
                         <tbody id="detalleBody">
@@ -326,6 +326,7 @@ require_once __DIR__ . '/../../inc/header.php';
 
 </form>
 
+
 <script>
 (function() {
     var PRODUCTOS = <?php echo json_encode($productosJS); ?>;
@@ -368,7 +369,7 @@ require_once __DIR__ . '/../../inc/header.php';
                     : '<i class="bi bi-plus-circle-fill text-primary btn-add"></i>';
                 
                 html += '<div class="producto-item d-flex justify-content-between align-items-center ' + yaAgr + '" data-id="' + p.id + '">';
-                html += '<div style="min-width:0; flex:1;">';
+                html += '<div class="flex-fill-min" >';
                 html += '<div class="small text-truncate">' + icono + '<span class="badge bg-white text-dark border font-monospace me-1">' + escapeHtml(p.codigo) + '</span><strong>' + escapeHtml(p.nombre) + '</strong></div>';
                 html += '<div class="small text-muted">' + (p.unidad ? escapeHtml(p.unidad) : '—') + ' ' + costoStr + '</div>';
                 html += '</div>';
@@ -418,7 +419,7 @@ require_once __DIR__ . '/../../inc/header.php';
             + '<input type="hidden" name="item_id_producto[]" value="' + p.id + '">'
             + '<input type="hidden" name="item_descripcion[]" value="' + escapeHtml(p.nombre) + '">'
             + '<div class="small"><span class="badge bg-light text-dark border font-monospace">' + escapeHtml(p.codigo) + '</span></div>'
-            + '<div class="small fw-semibold text-dark text-truncate" style="max-width:260px;" title="' + escapeHtml(p.nombre) + '">' + escapeHtml(p.nombre) + '</div>'
+            + '<div class="small fw-semibold text-dark text-truncate mw-260" title="' + escapeHtml(p.nombre) + '">' + escapeHtml(p.nombre) + '</div>'
             + '<div class="small text-muted">' + (p.unidad ? escapeHtml(p.unidad) : '—') + '</div>'
             + '</td>'
             + '<td><input type="number" step="0.01" min="0.01" name="item_cantidad[]" value="1" class="form-control form-control-sm item-cantidad text-end"></td>'

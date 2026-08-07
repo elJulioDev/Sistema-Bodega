@@ -182,12 +182,12 @@ require_once __DIR__ . '/../../inc/header.php';
                 <table class="table table-hover align-middle mb-0" id="tablaDetalle">
                     <thead class="table-light text-secondary">
                         <tr>
-                            <th style="width: 25%;">Producto</th>
-                            <th style="width: 30%;">Descripción</th>
-                            <th style="width: 12%;">Cantidad</th>
-                            <th style="width: 15%;">Precio Unit.</th>
-                            <th style="width: 13%;">Subtotal</th>
-                            <th style="width: 5%;" class="text-center"><i class="bi bi-trash"></i></th>
+                            <th class="w-25" >Producto</th>
+                            <th class="tw-30" >Descripción</th>
+                            <th class="tw-12" >Cantidad</th>
+                            <th class="tw-15" >Precio Unit.</th>
+                            <th class="tw-13" >Subtotal</th>
+                            <th class="text-center tw-5"><i class="bi bi-trash"></i></th>
                         </tr>
                     </thead>
                     <tbody id="detalleBody">
@@ -222,16 +222,16 @@ require_once __DIR__ . '/../../inc/header.php';
                 <div class="card-body">
                     <div class="d-flex justify-content-between mb-2">
                         <span class="fw-bold text-secondary">Neto:</span>
-                        <span>$ <input type="text" id="resumenNeto" readonly value="<?php echo (float)$oc['monto_neto']; ?>" class="border-0 bg-transparent text-end fw-medium" style="width: 100px; outline:none;"></span>
+                        <span>$ <input type="text" id="resumenNeto" readonly value="<?php echo (float)$oc['monto_neto']; ?>" class="border-0 bg-transparent text-end fw-medium input-w-100 outline-0"></span>
                     </div>
                     <div class="d-flex justify-content-between mb-2">
                         <span class="fw-bold text-secondary">IVA (19%):</span>
-                        <span>$ <input type="text" id="resumenIva" readonly value="<?php echo (float)$oc['monto_iva']; ?>" class="border-0 bg-transparent text-end fw-medium" style="width: 100px; outline:none;"></span>
+                        <span>$ <input type="text" id="resumenIva" readonly value="<?php echo (float)$oc['monto_iva']; ?>" class="border-0 bg-transparent text-end fw-medium input-w-100 outline-0"></span>
                     </div>
                     <hr>
                     <div class="d-flex justify-content-between fs-5">
                         <span class="fw-bold text-dark">Total:</span>
-                        <span class="fw-bold text-primary">$ <input type="text" id="resumenTotal" readonly value="<?php echo (float)$oc['monto_total']; ?>" class="border-0 bg-transparent text-end text-primary fw-bold" style="width: 120px; outline:none;"></span>
+                        <span class="fw-bold text-primary">$ <input type="text" id="resumenTotal" readonly value="<?php echo (float)$oc['monto_total']; ?>" class="border-0 bg-transparent text-end text-primary fw-bold input-w-120 outline-0"></span>
                     </div>
                     <button type="submit" class="btn btn-primary w-100 mt-4 py-2"><i class="bi bi-floppy me-2"></i>Actualizar Orden de Compra</button>
                 </div>

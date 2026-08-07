@@ -350,7 +350,7 @@ function badge_sol($estado) {
         case 'pendiente':         return '<span class="badge bg-warning text-dark"><i class="bi bi-clock me-1"></i>Pendiente</span>';
         case 'en_revision':       return '<span class="badge bg-info text-dark"><i class="bi bi-search me-1"></i>En revisión</span>';
         case 'procesada':         return '<span class="badge bg-success"><i class="bi bi-check-circle me-1"></i>Ejecutada</span>';
-        case 'procesada_parcial': return '<span class="badge bg-teal text-white" style="background:#0d9488!important"><i class="bi bi-check2-all me-1"></i>Parcial</span>';
+        case 'procesada_parcial': return '<span class="badge bg-teal text-white bg-teal" ><i class="bi bi-check2-all me-1"></i>Parcial</span>';
         case 'rechazada':         return '<span class="badge bg-danger"><i class="bi bi-x-circle me-1"></i>Rechazada</span>';
         case 'caducada':          return '<span class="badge bg-secondary"><i class="bi bi-hourglass-bottom me-1"></i>Caducada</span>';
         default:                  return '<span class="badge bg-secondary">' . h($estado) . '</span>';
@@ -498,13 +498,13 @@ function badge_item($est) {
             <table class="table table-hover align-middle mb-0" id="tablaItems">
                 <thead class="table-light small text-uppercase text-muted">
                     <tr>
-                        <th style="width:30px">#</th>
+                        <th class="input-w-30" >#</th>
                         <th>Producto</th>
                         <th class="text-end">Solicitado</th>
                         <th class="text-end">Stock disp.</th>
-                        <th style="width:130px" class="text-end">Cant. aprobada</th>
-                        <th style="width:170px">Nota</th>
-                        <th style="width:130px" class="text-center">Decisión</th>
+                        <th class="text-end input-w-130">Cant. aprobada</th>
+                        <th class="input-w-170" >Nota</th>
+                        <th class="text-center input-w-130">Decisión</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -536,12 +536,7 @@ function badge_item($est) {
                         </span>
                     </td>
                     <td class="text-end">
-                        <input type="number"
-                               name="item_cant_ap[]"
-                               class="form-control form-control-sm text-end item-cant-ap"
-                               style="min-width:90px"
-                               step="0.01" min="0.01"
-                               max="<?php echo $stock; ?>"
+                        <input type="number" name="item_cant_ap[]" class="form-control form-control-sm text-end item-cant-ap min-w-90" step="0.01" min="0.01" max="<?php echo $stock; ?>"
                                value="<?php echo number_format($cantApDef, 2, '.', ''); ?>"
                                <?php echo ($estadoDet === 'rechazado') ? 'disabled' : ''; ?>>
                     </td>

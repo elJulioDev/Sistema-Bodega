@@ -93,6 +93,7 @@ require_once __DIR__ . '/../../inc/header.php';
 $activo = (int)$proveedor['estado'] === 1;
 ?>
 
+
 <!-- Cabecera -->
 <div class="d-flex justify-content-between align-items-start mb-4 flex-wrap gap-2">
     <div>
@@ -100,7 +101,7 @@ $activo = (int)$proveedor['estado'] === 1;
             <i class="bi bi-pencil-square text-primary me-2"></i>Editar Proveedor
         </h1>
         <small class="text-muted d-block mb-2">Modifica los datos del proveedor seleccionado</small>
-        <div class="d-flex align-items-center gap-2 flex-wrap fs-md" style="color:#6c757d;">
+        <div class="d-flex align-items-center gap-2 flex-wrap fs-md text-secondary" >
             <span class="badge bg-light text-dark border font-monospace"><?php echo h($proveedor['rut']); ?></span>
             <span><?php echo h($proveedor['razon_social']); ?></span>
             <?php if ($activo): ?>
@@ -277,8 +278,7 @@ $activo = (int)$proveedor['estado'] === 1;
 <div class="modal fade" id="modalToggleEstado" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-sm">
         <div class="modal-content">
-            <div class="modal-header border-0 pb-1"
-                 style="background:<?php echo $activo ? 'linear-gradient(135deg,#fff5f5,#ffecec)' : 'linear-gradient(135deg,#f0fdf4,#dcfce7)'; ?>;">
+            <div class="modal-header border-0 pb-1 <?php echo $activo ? 'grad-active' : 'grad-inactive'; ?>">
                 <h6 class="modal-title fw-bold">
                     <?php echo $activo ? 'Desactivar proveedor' : 'Activar proveedor'; ?>
                 </h6>

@@ -318,7 +318,7 @@ require_once __DIR__ . '/../../inc/header.php';
                     </label>
                 </div>
             </div>
-            <div class="card-body p-4" id="seccionAcceso" style="display:<?php echo ($crear_acceso_default === 1) ? 'block' : 'none'; ?>;">
+            <div class="card-body p-4 <?php echo ($crear_acceso_default === 1) ? '' : 'd-none'; ?>" id="seccionAcceso">
 
                 <?php if ($tieneUsuario): ?>
                     <div class="alert alert-light border small mb-3">
@@ -350,9 +350,9 @@ require_once __DIR__ . '/../../inc/header.php';
                     </div>
 
                     <!-- Bodegas M:N (solo rol bodega) -->
-                    <div class="col-12" id="grupoBodegas" style="display:none;">
+                    <div class="col-12 d-none" id="grupoBodegas" >
                         <label class="form-label fw-bold text-secondary">Bodegas a cargo <span class="text-danger">*</span></label>
-                        <div class="border rounded p-2" style="max-height:240px;overflow-y:auto;">
+                        <div class="border rounded p-2 scroll-240" >
                             <?php foreach ($bodegas as $b):
                                 $checked = in_array((int)$b['id'], $bodegasAsignadas, true);
                                 $esPrincipal = ((int)$b['id'] === $bodegaPrincipalActual);
@@ -388,7 +388,7 @@ require_once __DIR__ . '/../../inc/header.php';
                         </div>
                     </div>
 
-                    <div class="col-12" id="grupoUnidadU" style="display:none;">
+                    <div class="col-12 d-none" id="grupoUnidadU" >
                         <label class="form-label fw-bold text-secondary">Unidad asociada <span class="text-danger">*</span></label>
                         <select name="id_unidad_usuario" id="selUnidadU" class="form-select">
                             <option value="">— Selecciona una unidad —</option>

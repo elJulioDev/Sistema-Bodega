@@ -208,7 +208,7 @@ require_once __DIR__ . '/../../inc/header.php';
                         <input type="text" id="filtroUsuario" class="form-control" placeholder="Filtrar por nombre, RUT, unidad...">
                     </div>
 
-                    <div class="border rounded" style="max-height:360px; overflow-y:auto;">
+                    <div class="border rounded scroll-360" >
                         <div class="list-group list-group-flush" id="listaDisp">
                             <?php foreach ($disponibles as $d):
                                 $srch = strtolower(trim(

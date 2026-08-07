@@ -268,7 +268,7 @@ require_once __DIR__ . '/../../inc/header.php';
                             <td class="small text-muted d-none d-md-table-cell">
                                 <?php echo h($b['unidad_nombre'] ? $b['unidad_nombre'] : '—'); ?>
                             </td>
-                            <td class="small" style="min-width:200px;">
+                            <td class="small min-w-200" >
                                 <?php if ($totalEnc === 0): ?>
                                     <span class="text-muted fst-italic">Sin asignar</span>
                                 <?php else: ?>

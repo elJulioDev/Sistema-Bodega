@@ -149,7 +149,7 @@ require_once __DIR__ . '/../../inc/header.php';
                     <input type="text" id="buscadorEncargado" class="form-control" placeholder="Filtrar por nombre, RUT o cargo...">
                 </div>
 
-                <div class="border rounded" style="max-height:260px; overflow-y:auto;">
+                <div class="border rounded scroll-260" >
                     <?php if (!$encargados): ?>
                         <div class="p-3 text-center text-muted small">
                             <i class="bi bi-info-circle me-1"></i>

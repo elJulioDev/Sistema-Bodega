@@ -136,7 +136,7 @@ require_once __DIR__ . '/../../inc/header.php';
                     </div>
 
                     <!-- Bodega -->
-                    <div class="col-12" id="grupoBodega" style="display:none;">
+                    <div class="col-12 d-none" id="grupoBodega" >
                         <label class="form-label fw-bold text-secondary">
                             Bodega a cargo <span class="text-danger">*</span>
                         </label>
@@ -152,7 +152,7 @@ require_once __DIR__ . '/../../inc/header.php';
                     </div>
 
                     <!-- Unidad -->
-                    <div class="col-12" id="grupoUnidad" style="display:none;">
+                    <div class="col-12 d-none" id="grupoUnidad" >
                         <label class="form-label fw-bold text-secondary">
                             Unidad asociada <span class="text-danger">*</span>
                         </label>

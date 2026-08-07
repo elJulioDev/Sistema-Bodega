@@ -232,7 +232,7 @@ require_once __DIR__ . '/../../inc/header.php';
     <div class="alert alert-danger"><i class="bi bi-exclamation-triangle me-2"></i><?php echo h($error); ?></div>
 <?php endif; ?>
 
-<div class="alert alert-info d-flex gap-2 align-items-start border-0 shadow-sm mb-4" id="alertaReservado" style="display:none!important">
+<div class="alert alert-info d-flex gap-2 align-items-start border-0 shadow-sm mb-4 d-none" id="alertaReservado" >
     <i class="bi bi-info-circle-fill fs-5 flex-shrink-0 mt-1"></i>
     <div>
         <strong>Stock con reservas activas</strong> — el stock libre mostrado descuenta cantidades comprometidas
@@ -343,8 +343,7 @@ require_once __DIR__ . '/../../inc/header.php';
                     <i class="bi bi-circle-fill text-success fs-2xs" ></i> libre
                     <i class="bi bi-circle-fill text-warning ms-2 fs-2xs" ></i> reservado
                 </span>
-                <input type="text" id="buscadorProductos" class="form-control form-control-sm"
-                       style="max-width:200px" placeholder="Buscar producto...">
+                <input type="text" id="buscadorProductos" class="form-control form-control-sm mw-200" placeholder="Buscar producto...">
             </div>
         </div>
 
@@ -353,21 +352,21 @@ require_once __DIR__ . '/../../inc/header.php';
             Selecciona la bodega origen para ver productos disponibles.
         </div>
 
-        <div class="text-center text-muted py-5" id="sinProductos" style="display:none">
+        <div class="text-center text-muted py-5 d-none" id="sinProductos" >
             <i class="bi bi-box-seam fs-1 d-block mb-2 opacity-25"></i>
             No hay stock disponible en la bodega seleccionada.
         </div>
 
-        <div id="contenidoProductos" style="display:none">
+        <div class="d-none" id="contenidoProductos" >
             <div class="table-responsive">
                 <table class="table table-hover align-middle mb-0">
                     <thead class="table-light small text-uppercase text-muted">
                         <tr>
-                            <th style="width:36px"><input type="checkbox" class="form-check-input" id="chkTodos"></th>
+                            <th class="input-w-36" ><input type="checkbox" class="form-check-input" id="chkTodos"></th>
                             <th>Código</th>
                             <th>Producto</th>
                             <th class="text-end">Stock libre</th>
-                            <th class="text-end" style="width:130px">Cantidad</th>
+                            <th class="text-end input-w-130" >Cantidad</th>
                             <th class="d-none d-md-table-cell">Nota</th>
                         </tr>
                     </thead>
@@ -381,11 +380,11 @@ require_once __DIR__ . '/../../inc/header.php';
         <div class="card-body d-flex justify-content-between align-items-center flex-wrap gap-3 py-3">
             <div class="d-flex gap-4">
                 <div>
-                    <div class="text-muted small text-uppercase fw-bold fs-2xs" style="letter-spacing:.5px;">Productos</div>
+                    <div class="text-muted small text-uppercase fw-bold fs-2xs ls-1" >Productos</div>
                     <div class="h5 mb-0 fw-bold" id="resumenItems">0</div>
                 </div>
                 <div>
-                    <div class="text-muted small text-uppercase fw-bold fs-2xs" style="letter-spacing:.5px;">Cantidad total</div>
+                    <div class="text-muted small text-uppercase fw-bold fs-2xs ls-1" >Cantidad total</div>
                     <div class="h5 mb-0 fw-bold text-primary" id="resumenCantidad">0,00</div>
                 </div>
             </div>
@@ -510,7 +509,7 @@ require_once __DIR__ . '/../../inc/header.php';
                   +   '<div class="text-muted small">' + (d.unidad ? escapeHtml(d.unidad) : '')
                   +   (d.tipo ? ' · ' + escapeHtml(d.tipo) : '') + '</div></td>'
                   + '<td class="text-end">' + colStock + '</td>'
-                  + '<td class="text-end" style="min-width:110px">'
+                  + '<td class="text-end min-w-110" >'
                   +   (agotado ? '<span class="text-muted small">No disponible</span>'
                                : '<input type="number" class="form-control form-control-sm text-end input-cantidad" '
                                  + 'name="item_cantidad[]" step="0.01" min="0.01" max="' + d.libre + '" '

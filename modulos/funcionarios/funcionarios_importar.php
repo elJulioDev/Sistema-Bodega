@@ -224,7 +224,7 @@ require_once __DIR__ . '/../../inc/header.php';
                     <?php if (!empty($resultado['errores'])): ?>
                         <div class="alert alert-warning">
                             <strong>Advertencias (<?php echo count($resultado['errores']); ?>):</strong>
-                            <ul class="mb-0 small mt-2" style="max-height:200px;overflow-y:auto;">
+                            <ul class="mb-0 small mt-2 scroll-200" >
                                 <?php foreach ($resultado['errores'] as $er): ?>
                                     <li><?php echo h($er); ?></li>
                                 <?php endforeach; ?>

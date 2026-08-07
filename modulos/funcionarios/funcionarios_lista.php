@@ -203,7 +203,7 @@ require_once __DIR__ . '/../../inc/header.php';
     <div class="col-6 col-md-4">
         <div class="card shadow-sm border-0 border-start border-primary border-4 h-100">
             <div class="card-body py-3">
-                <p class="text-muted text-uppercase mb-1 fw-bold fs-xs" style="letter-spacing:.5px;">Funcionarios</p>
+                <p class="text-muted text-uppercase mb-1 fw-bold fs-xs ls-1" >Funcionarios</p>
                 <h3 class="mb-0 fw-bold text-dark"><?php echo (int)$kpis['total']; ?></h3>
             </div>
         </div>
@@ -211,7 +211,7 @@ require_once __DIR__ . '/../../inc/header.php';
     <div class="col-6 col-md-4">
         <div class="card shadow-sm border-0 border-start border-success border-4 h-100">
             <div class="card-body py-3">
-                <p class="text-muted text-uppercase mb-1 fw-bold fs-xs" style="letter-spacing:.5px;">Activos</p>
+                <p class="text-muted text-uppercase mb-1 fw-bold fs-xs ls-1" >Activos</p>
                 <h3 class="mb-0 fw-bold text-success"><?php echo (int)$kpis['activos']; ?></h3>
             </div>
         </div>
@@ -219,7 +219,7 @@ require_once __DIR__ . '/../../inc/header.php';
     <div class="col-12 col-md-4">
         <div class="card shadow-sm border-0 border-start border-info border-4 h-100">
             <div class="card-body py-3">
-                <p class="text-muted text-uppercase mb-1 fw-bold fs-xs" style="letter-spacing:.5px;">Con acceso al sistema</p>
+                <p class="text-muted text-uppercase mb-1 fw-bold fs-xs ls-1" >Con acceso al sistema</p>
                 <h3 class="mb-0 fw-bold text-info"><?php echo (int)$kpis['con_acceso']; ?></h3>
             </div>
         </div>

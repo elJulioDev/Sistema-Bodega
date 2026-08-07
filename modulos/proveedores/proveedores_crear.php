@@ -73,6 +73,7 @@ $pageTitle = 'Nuevo Proveedor';
 require_once __DIR__ . '/../../inc/header.php';
 ?>
 
+
 <!-- Cabecera -->
 <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
     <div>

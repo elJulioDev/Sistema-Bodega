@@ -152,7 +152,7 @@ require_once __DIR__ . '/../../inc/header.php';
     <div class="col-6 col-md-3">
         <div class="card shadow-sm border-0 border-start border-primary border-4 h-100">
             <div class="card-body py-3">
-                <p class="text-muted text-uppercase mb-1 fw-bold fs-xs" style="letter-spacing:.5px;">Productos</p>
+                <p class="text-muted text-uppercase mb-1 fw-bold fs-xs ls-1" >Productos</p>
                 <h3 class="mb-0 fw-bold text-dark"><?php echo number_format((int)$kpi['productos'], 0, ',', '.'); ?></h3>
             </div>
         </div>
@@ -160,7 +160,7 @@ require_once __DIR__ . '/../../inc/header.php';
     <div class="col-6 col-md-3">
         <div class="card shadow-sm border-0 border-start border-info border-4 h-100">
             <div class="card-body py-3">
-                <p class="text-muted text-uppercase mb-1 fw-bold fs-xs" style="letter-spacing:.5px;">Unidades</p>
+                <p class="text-muted text-uppercase mb-1 fw-bold fs-xs ls-1" >Unidades</p>
                 <h3 class="mb-0 fw-bold text-dark"><?php echo number_format((float)$kpi['unidades'], 2, ',', '.'); ?></h3>
             </div>
         </div>
@@ -168,7 +168,7 @@ require_once __DIR__ . '/../../inc/header.php';
     <div class="col-6 col-md-3">
         <div class="card shadow-sm border-0 border-start border-success border-4 h-100">
             <div class="card-body py-3">
-                <p class="text-muted text-uppercase mb-1 fw-bold fs-xs" style="letter-spacing:.5px;">Valor total</p>
+                <p class="text-muted text-uppercase mb-1 fw-bold fs-xs ls-1" >Valor total</p>
                 <h3 class="mb-0 fw-bold text-success">$<?php echo number_format((float)$kpi['valor'], 0, ',', '.'); ?></h3>
             </div>
         </div>
@@ -176,7 +176,7 @@ require_once __DIR__ . '/../../inc/header.php';
     <div class="col-6 col-md-3">
         <div class="card shadow-sm border-0 border-start border-warning border-4 h-100">
             <div class="card-body py-3">
-                <p class="text-muted text-uppercase mb-1 fw-bold fs-xs" style="letter-spacing:.5px;">Stock bajo</p>
+                <p class="text-muted text-uppercase mb-1 fw-bold fs-xs ls-1" >Stock bajo</p>
                 <h3 class="mb-0 fw-bold text-warning"><?php echo (int)$kpi['stock_bajo']; ?></h3>
             </div>
         </div>

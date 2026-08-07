@@ -219,13 +219,13 @@ require_once __DIR__ . '/../../inc/header.php';
                 <div class="row g-3">
                     <div class="col-6 col-md-4">
                         <div class="p-3 rounded bg-light border">
-                            <p class="text-muted text-uppercase mb-1 fw-bold fs-xs" style="letter-spacing:.5px;">Movimientos registrados</p>
+                            <p class="text-muted text-uppercase mb-1 fw-bold fs-xs ls-1" >Movimientos registrados</p>
                             <h3 class="mb-0 fw-bold text-dark"><?php echo number_format($movimientos, 0, ',', '.'); ?></h3>
                         </div>
                     </div>
                     <div class="col-6 col-md-4">
                         <div class="p-3 rounded bg-light border">
-                            <p class="text-muted text-uppercase mb-1 fw-bold fs-xs" style="letter-spacing:.5px;">Solicitudes realizadas</p>
+                            <p class="text-muted text-uppercase mb-1 fw-bold fs-xs ls-1" >Solicitudes realizadas</p>
                             <h3 class="mb-0 fw-bold text-dark"><?php echo number_format($solicitudes, 0, ',', '.'); ?></h3>
                         </div>
                     </div>

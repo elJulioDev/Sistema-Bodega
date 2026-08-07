@@ -268,7 +268,7 @@ require_once __DIR__ . '/../../inc/header.php';
     <!-- PASO 1 -->
     <div class="card shadow-sm border-0 mb-4">
         <div class="card-header bg-white border-0 pt-3 pb-0 d-flex align-items-center">
-            <span class="badge bg-primary rounded-circle me-2" style="width:28px;height:28px;line-height:20px;">1</span>
+            <span class="badge bg-primary rounded-circle me-2 step-badge" >1</span>
             <h5 class="mb-0 fw-bold">¿Desde dónde y hacia dónde?</h5>
         </div>
         <div class="card-body">
@@ -283,7 +283,7 @@ require_once __DIR__ . '/../../inc/header.php';
                     <?php if (is_encargado() && count($misBodegas) === 1): ?>
                         <!-- Un solo origen: bloqueado -->
                         <?php $b = $misBodegas[0]; ?>
-                        <div class="form-control form-control-lg bg-light d-flex align-items-center justify-content-between" style="min-height:58px;">
+                        <div class="form-control form-control-lg bg-light d-flex align-items-center justify-content-between min-h-58" >
                             <div>
                                 <div class="fw-bold text-dark"><?php echo h($b['nombre']); ?></div>
                                 <small class="text-muted"><?php echo h($b['codigo']); ?> · Tu bodega</small>
@@ -355,9 +355,9 @@ require_once __DIR__ . '/../../inc/header.php';
     <!-- PASO 2 - Productos -->
     <div class="card shadow-sm border-0 mb-4" id="cardProductos">
         <div class="card-header bg-white border-0 pt-3 pb-2 d-flex align-items-center flex-wrap gap-2">
-            <span class="badge bg-primary rounded-circle me-2" style="width:28px;height:28px;line-height:20px;">2</span>
+            <span class="badge bg-primary rounded-circle me-2 step-badge" >2</span>
             <h5 class="mb-0 fw-bold me-auto">Seleccionar productos</h5>
-            <div class="input-group" style="max-width: 280px;">
+            <div class="input-group mw-280" >
                 <span class="input-group-text bg-light border-end-0"><i class="bi bi-search text-secondary"></i></span>
                 <input type="text" id="buscadorProductos" class="form-control border-start-0 ps-0" placeholder="Buscar producto...">
             </div>
@@ -369,23 +369,23 @@ require_once __DIR__ . '/../../inc/header.php';
             <div class="fw-bold mb-1">Selecciona primero una bodega origen</div>
         </div>
 
-        <div id="sinProductos" class="card-body text-center text-muted py-5" style="display:none;">
+        <div id="sinProductos" class="card-body text-center text-muted py-5 d-none" >
             <i class="bi bi-inbox fs-1 d-block mb-2"></i>
             <div class="fw-bold mb-1">No hay productos con stock</div>
         </div>
 
-        <div id="contenidoProductos" style="display:none;">
+        <div class="d-none" id="contenidoProductos" >
             <div class="table-responsive">
                 <table class="table table-hover align-middle mb-0">
                     <thead class="table-light">
                         <tr class="small text-uppercase text-secondary">
-                            <th class="px-3" style="width:5%;"><input type="checkbox" id="chkTodos" class="form-check-input"></th>
-                            <th style="width:12%;">Código</th>
+                            <th class="px-3 tw-5" ><input type="checkbox" id="chkTodos" class="form-check-input"></th>
+                            <th class="tw-12" >Código</th>
                             <th>Producto</th>
-                            <th style="width:12%;" class="text-end">Stock Disp.</th>
-                            <th style="width:12%;" class="text-end">Costo</th>
-                            <th style="width:18%;" class="text-center">Cantidad</th>
-                            <th style="width:14%;" class="text-end">Subtotal</th>
+                            <th class="text-end tw-12">Stock Disp.</th>
+                            <th class="text-end tw-12">Costo</th>
+                            <th class="text-center tw-18">Cantidad</th>
+                            <th class="text-end tw-14">Subtotal</th>
                         </tr>
                     </thead>
                     <tbody id="tbodyProductos"></tbody>
@@ -395,7 +395,7 @@ require_once __DIR__ . '/../../inc/header.php';
     </div>
 
     <!-- Footer -->
-    <div class="card shadow-sm border-0 mb-5" style="position:sticky; bottom:0; z-index:5;">
+    <div class="card shadow-sm border-0 mb-5 sticky-bottom">
         <div class="card-body d-flex flex-wrap gap-3 align-items-center justify-content-between">
             <div class="d-flex gap-4 flex-wrap">
                 <div>
@@ -503,11 +503,11 @@ require_once __DIR__ . '/../../inc/header.php';
                   + '<td class="text-end"><span class="fw-bold text-success">' + fmt(d.stock) + '</span></td>'
                   + '<td class="text-end text-muted">$ ' + fmt(d.costo, 0) + '</td>'
                   + '<td class="text-center">'
-                  +   '<div class="input-group input-group-sm" style="max-width: 180px; margin:0 auto;">'
+                  +   '<div class="input-group input-group-sm mw-180-centered" >'
                   +     '<input type="number" class="form-control form-control-sm inp-cantidad text-end" step="0.01" min="0.01" max="' + d.stock + '" value="' + (pre ? d.stock : '') + '" ' + (pre ? '' : 'disabled') + ' placeholder="0">'
                   +     '<button type="button" class="btn btn-outline-secondary btn-sm btn-max" title="Usar stock completo" ' + (pre ? '' : 'disabled') + '>MAX</button>'
                   +   '</div>'
-                  +   '<div class="text-danger small mt-1 mensaje-error" style="display:none;"></div>'
+                  +   '<div class="text-danger small mt-1 mensaje-error d-none" ></div>'
                   + '</td>'
                   + '<td class="text-end fw-medium subtotal-fila">$ 0</td>'
                   + '</tr>';
