@@ -5,6 +5,62 @@ El Sistema de Gestión de Bodegas es una plataforma web modular diseñada para l
 
 ---
 
+## Instalación
+
+### Requisitos
+* PHP 5.5 o superior (probado en 5.6)
+* MySQL 5.7+ o MariaDB 10.4+
+* Servidor Apache/Nginx con soporte para `.htaccess` o equivalente
+* Extensión `pdo_mysql` habilitada
+
+### Pasos
+
+1. **Clonar el repositorio** dentro de tu carpeta pública (`htdocs`, `www`, etc.)
+   ```bash
+   git clone https://github.com/elJulioDev/Sistema-Bodega.git
+   ```
+
+2. **Crear la base de datos** e importar el schema:
+   ```bash
+   mysql -u root -p -e "CREATE DATABASE sistema_bodega CHARACTER SET utf8mb4"
+   mysql -u root -p sistema_bodega < database/schema.sql
+   ```
+   `schema.sql` incluye un seed mínimo (unidad, bodega y tipos de producto de ejemplo) y un usuario `admin` con clave placeholder — ver paso 4.
+
+3. **Configurar variables de entorno**
+   ```bash
+   cp .env.example .env
+   ```
+   Edita `.env` con tus credenciales de BD y la ruta base del proyecto:
+   ```dotenv
+   DB_HOST=127.0.0.1
+   DB_PORT=3306
+   DB_NAME=sistema_bodega
+   DB_USER=root
+   DB_PASS=
+   DB_CHARSET=utf8mb4
+
+   # Vacío si el proyecto vive en la raíz del dominio.
+   # Ej: /Sistema-Bodega si vive en una subcarpeta.
+   BASE_URL=/Sistema-Bodega
+
+   # local | production
+   APP_ENV=local
+   ```
+
+4. **Generar el hash del usuario admin** y actualizarlo en la BD:
+   ```bash
+   php -r "echo password_hash('tu_clave_segura', PASSWORD_DEFAULT);"
+   ```
+   Copia el resultado y reemplázalo en la tabla `usuarios`:
+   ```sql
+   UPDATE usuarios SET clave_hash = 'HASH_GENERADO' WHERE usuario = 'admin';
+   ```
+
+5. **Levantar el proyecto** y acceder a `http://localhost/<BASE_URL>/login.php` con `admin` y la clave que definiste.
+
+---
+
 ## Arquitectura y Seguridad
 El proyecto sigue una estructura modular, separando las lógicas de negocio en directorios específicos (Bodegas, Productos, Movimientos, Facturas, etc.). 
 
@@ -85,3 +141,8 @@ La variable global `current_user()` almacena la sesión actual con todos los cam
 - [ ] **Exportación de Datos:** Añadir botones para exportar tablas (Stock, Movimientos, Facturas) a formatos Excel y PDF.
 - [ ] **Auditoría Avanzada Global:** Extender la bitácora invisible (actualmente operativa en Solicitudes) para guardar qué usuario creó, editó o eliminó registros en todas las tablas del sistema.
 - [ ] **Gestión de Devoluciones:** Implementar un flujo para que los solicitantes devuelvan materiales no utilizados a la bodega y el stock se reintegre.
+
+---
+
+## Licencia
+MIT. Ver [LICENSE](LICENSE).

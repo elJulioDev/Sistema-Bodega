@@ -8,7 +8,6 @@ error_log
 *.log
 
 # 3. Bases de Datos y Respaldos
-*.sql
 *.sqlite
 *.bak
 
