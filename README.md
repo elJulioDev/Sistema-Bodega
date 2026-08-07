@@ -59,6 +59,18 @@ El Sistema de Gestión de Bodegas es una plataforma web modular diseñada para l
 
 5. **Levantar el proyecto** y acceder a `http://localhost/<BASE_URL>/login.php` con `admin` y la clave que definiste.
 
+### Datos de prueba (demo)
+
+Para poblar la base de datos con un set completo de datos de ejemplo (bodegas, productos, proveedores, órdenes de compra, facturas, stock, traslados y solicitudes en todos los estados) listo para tomar capturas y demostrar el sistema:
+
+```bash
+/opt/lampp/bin/mysql -u root < database/seed_demo.sql
+```
+
+> **Advertencia:** el script **vacía todas las tablas** antes de cargar los datos demo. No ejecutarlo sobre datos reales.
+>
+> Usuarios demo: `admin / Admin123` (administrador), `atorres`, `lmorales` y `evera / Demo1234` (encargados de bodega), `msoto`, `crojas` y `vsalazar / Demo1234` (solicitantes).
+
 ---
 
 ## Arquitectura y Seguridad
