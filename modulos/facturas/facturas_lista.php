@@ -107,7 +107,7 @@ ui_page_header('bi-receipt', 'Facturas de Compra', 'Registro de ingresos a bodeg
         <form method="get" class="row g-2 align-items-center">
             <div class="col-md-4">
                 <div class="input-group input-group-sm">
-                    <span class="input-group-text bg-light text-secondary border-end-0"><i class="bi bi-search"></i></span>
+                    <span class="input-group-text bg-body border-end-0"><i class="bi bi-search text-secondary"></i></span>
                     <input type="text" name="buscar" value="<?php echo h($buscar); ?>" class="form-control border-start-0 ps-0" placeholder="N° Factura, Proveedor, RUT u OC...">
                 </div>
             </div>

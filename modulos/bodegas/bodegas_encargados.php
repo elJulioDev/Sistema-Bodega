@@ -195,7 +195,7 @@ require_once __DIR__ . '/../../inc/header.php';
                     <input type="hidden" name="accion" value="asignar">
 
                     <div class="input-group input-group-sm mb-2">
-                        <span class="input-group-text bg-body"><i class="bi bi-search"></i></span>
+                        <span class="input-group-text bg-body"><i class="bi bi-search text-secondary"></i></span>
                         <input type="text" id="filtroUsuario" class="form-control" placeholder="Filtrar por nombre, RUT, unidad...">
                     </div>
 

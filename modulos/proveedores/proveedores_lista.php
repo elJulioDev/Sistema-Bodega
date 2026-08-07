@@ -83,8 +83,8 @@ require_once __DIR__ . '/../../inc/header.php';
         <form method="get" class="row g-2 align-items-center">
             <div class="col">
                 <div class="input-group input-group-sm">
-                    <span class="input-group-text bg-body border-end-0 text-secondary">
-                        <i class="bi bi-search"></i>
+                    <span class="input-group-text bg-body border-end-0">
+                        <i class="bi bi-search text-secondary"></i>
                     </span>
                     <input type="text" name="buscar"
                            value="<?php echo h($buscar); ?>"

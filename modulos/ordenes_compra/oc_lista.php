@@ -43,7 +43,7 @@ ui_page_header('bi-cart3', 'Órdenes de Compra', '', ob_get_clean());
         <form method="get" class="row g-2 align-items-center">
             <div class="col-md-8 col-lg-6">
                 <div class="input-group">
-                    <span class="input-group-text bg-light border-end-0"><i class="bi bi-search"></i></span>
+                    <span class="input-group-text bg-body border-end-0"><i class="bi bi-search text-secondary"></i></span>
                     <input type="text" name="buscar" value="<?php echo h($buscar); ?>" class="form-control border-start-0 ps-0" placeholder="Buscar por N° OC, proveedor o unidad...">
                 </div>
             </div>

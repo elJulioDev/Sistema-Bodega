@@ -144,7 +144,7 @@ require_once __DIR__ . '/../../inc/header.php';
                 <label class="form-label fw-bold text-secondary">Encargado inicial <span class="text-muted fw-normal">(opcional)</span></label>
 
                 <div class="input-group mb-2">
-                    <span class="input-group-text bg-body"><i class="bi bi-search"></i></span>
+                    <span class="input-group-text bg-body"><i class="bi bi-search text-secondary"></i></span>
                     <input type="text" id="buscadorEncargado" class="form-control" placeholder="Filtrar por nombre, RUT o cargo...">
                 </div>
 
