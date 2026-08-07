@@ -258,11 +258,12 @@ CREATE TABLE facturas_detalle (
 -- stock_bodega
 -- ---------------------------------------------------------
 CREATE TABLE stock_bodega (
+    id             INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     id_bodega      INT UNSIGNED NOT NULL,
     id_producto    INT UNSIGNED NOT NULL,
     stock_actual   DECIMAL(12,2) NOT NULL DEFAULT 0,
     costo_promedio DECIMAL(14,2) NOT NULL DEFAULT 0,
-    PRIMARY KEY (id_bodega, id_producto),
+    UNIQUE KEY uq_bodega_producto (id_bodega, id_producto),
     KEY idx_sb_producto (id_producto),
     CONSTRAINT fk_sb_bodega   FOREIGN KEY (id_bodega)   REFERENCES bodegas (id)   ON DELETE CASCADE,
     CONSTRAINT fk_sb_producto FOREIGN KEY (id_producto) REFERENCES productos (id) ON DELETE CASCADE
@@ -400,9 +401,6 @@ SET FOREIGN_KEY_CHECKS = 1;
 
 -- =========================================================
 -- Seed mínimo para arrancar en local
--- Genera tu propio hash antes de importar:
---   php -r "echo password_hash('admin123', PASSWORD_DEFAULT);"
--- Reemplaza REEMPLAZA_CON_TU_HASH abajo con el resultado.
 -- =========================================================
 
 INSERT INTO unidades_organizacionales (codigo, nombre, estado) VALUES
