@@ -90,7 +90,7 @@ require_once __DIR__ . '/../../inc/header.php';
                     <div class="col-md-6">
                         <label class="form-label fw-bold text-secondary">Dominio de correo de la organización</label>
                         <input type="text" name="org_email_dominio" class="form-control"
-                               placeholder="coltauco.cl"
+                               placeholder="mi-organizacion.cl"
                                value="<?php echo h(site_config('org_email_dominio', '')); ?>">
                     </div>
                 </div>
@@ -145,7 +145,7 @@ require_once __DIR__ . '/../../inc/header.php';
                     <div class="col-md-6">
                         <label class="form-label fw-bold text-secondary">Nombre de la organización</label>
                         <input type="text" name="org_nombre" class="form-control"
-                               placeholder="Municipalidad de Coltauco"
+                               placeholder="Mi Organización"
                                value="<?php echo h(site_config('org_nombre', '')); ?>">
                         <div class="form-text">Se muestra en la pantalla de inicio de sesión y en los comprobantes.</div>
                     </div>

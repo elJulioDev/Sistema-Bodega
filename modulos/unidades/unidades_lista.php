@@ -85,7 +85,7 @@ require_once __DIR__ . '/../../inc/header.php';
 <?php ui_page_header(
     'bi-diagram-3',
     'Unidades Organizacionales',
-    'Departamentos y direcciones de la municipalidad.',
+    'Departamentos y áreas de la organización.',
     '<a href="unidades_crear.php" class="btn btn-primary"><i class="bi bi-plus-lg me-1"></i> Nueva Unidad</a>'
 ); ?>
 

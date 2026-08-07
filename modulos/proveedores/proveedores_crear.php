@@ -153,7 +153,7 @@ require_once __DIR__ . '/../../inc/header.php';
                 <div class="field-icon-wrap">
                     <i class="bi bi-pin-map field-icon"></i>
                     <input type="text" name="comuna" value="<?php echo h($comuna); ?>"
-                           class="form-control" placeholder="Ej: Rancagua">
+                           class="form-control" placeholder="Ej: Nombre de la comuna">
                 </div>
             </div>
 
@@ -162,7 +162,7 @@ require_once __DIR__ . '/../../inc/header.php';
                 <div class="field-icon-wrap">
                     <i class="bi bi-buildings field-icon"></i>
                     <input type="text" name="ciudad" value="<?php echo h($ciudad); ?>"
-                           class="form-control" placeholder="Ej: Rancagua">
+                           class="form-control" placeholder="Ej: Nombre de la ciudad">
                 </div>
             </div>
         </div>

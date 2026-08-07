@@ -130,7 +130,7 @@ require_once __DIR__ . '/../../inc/header.php';
                     </div>
                     <div class="col-md-4">
                         <label class="form-label fw-bold text-secondary">Email</label>
-                        <input type="email" name="email" value="<?php echo h($email); ?>" class="form-control" placeholder="correo@coltauco.cl">
+                        <input type="email" name="email" value="<?php echo h($email); ?>" class="form-control" placeholder="correo@mi-organizacion.cl">
                     </div>
                     <div class="col-12">
                         <label class="form-label fw-bold text-secondary">Nombre completo <span class="text-danger">*</span></label>

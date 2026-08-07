@@ -183,7 +183,7 @@ $activo = (int)$proveedor['estado'] === 1;
                 <div class="field-icon-wrap">
                     <i class="bi bi-pin-map field-icon"></i>
                     <input type="text" name="comuna" value="<?php echo h($proveedor['comuna']); ?>"
-                           class="form-control" placeholder="Ej: Rancagua">
+                           class="form-control" placeholder="Ej: Nombre de la comuna">
                 </div>
             </div>
 
@@ -192,7 +192,7 @@ $activo = (int)$proveedor['estado'] === 1;
                 <div class="field-icon-wrap">
                     <i class="bi bi-buildings field-icon"></i>
                     <input type="text" name="ciudad" value="<?php echo h($proveedor['ciudad']); ?>"
-                           class="form-control" placeholder="Ej: Rancagua">
+                           class="form-control" placeholder="Ej: Nombre de la ciudad">
                 </div>
             </div>
         </div>

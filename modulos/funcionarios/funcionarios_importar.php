@@ -16,9 +16,9 @@ if (isset($_GET['plantilla'])) {
 
     fputcsv($output, array('Codigo', 'RUT', 'Nombre', 'Unidad', 'Cargo', 'Programa'), ';');
 
-    fputcsv($output, array('001', '12345678-9', 'Juan Perez Gonzalez', 'Direccion de Transito', 'Conductor', 'Programa Municipal'), ';');
-    fputcsv($output, array('002', '15987654-3', 'Maria Soto Rojas', 'Direccion de Administracion y Finanzas', 'Contadora', 'Gestion'), ';');
-    fputcsv($output, array('003', '18555444-1', 'Pedro Diaz Munoz', 'Direccion de Obras Municipal', 'Inspector', ''), ';');
+    fputcsv($output, array('001', '12345678-9', 'Juan Perez Gonzalez', 'Recursos Humanos', 'Analista', 'Programa A'), ';');
+    fputcsv($output, array('002', '15987654-3', 'Maria Soto Rojas', 'Finanzas', 'Contadora', 'Gestion'), ';');
+    fputcsv($output, array('003', '18555444-1', 'Pedro Diaz Munoz', 'Logistica', 'Inspector', ''), ';');
     fclose($output);
     exit;
 }

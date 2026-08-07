@@ -108,8 +108,8 @@ require_once __DIR__ . '/../../inc/header.php';
                     <i class="bi bi-info-circle me-2"></i>¿Qué es una unidad?
                 </h6>
                 <p class="small text-muted mb-2">
-                    Las unidades organizacionales representan los departamentos y direcciones
-                    de la municipalidad (ej: <code>DIDECO</code>, <code>DAF</code>, <code>DOM</code>).
+                    Las unidades organizacionales representan los departamentos o áreas
+                    internas de la organización (ej: <code>Finanzas</code>, <code>Logística</code>, <code>RRHH</code>).
                 </p>
                 <p class="small text-muted mb-0">
                     Una vez creadas, pueden asignarse a <strong>funcionarios</strong> y a
