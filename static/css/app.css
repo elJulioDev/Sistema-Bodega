@@ -2,6 +2,27 @@
    Extraido de inc/header.php (fase 1 de refactor CSS) */
 
 :root {
+    /* Escala tipografica — reemplaza los rem sueltos por modulo */
+    --fs-2xs: 0.65rem;
+    --fs-xs:  0.7rem;
+    --fs-sm:  0.75rem;
+    --fs-md:  0.85rem;
+    --fs-base: 0.95rem;
+    --fs-lg:  1.35rem;
+    --fs-xl:  2.5rem;
+
+    /* Espaciado */
+    --space-1: 0.25rem;
+    --space-2: 0.5rem;
+    --space-3: 0.75rem;
+    --space-4: 1rem;
+    --space-5: 1.5rem;
+
+    /* Iconos */
+    --icon-sm: 0.9rem;
+    --icon-md: 1.05rem;
+    --icon-lg: 1.5rem;
+
     --sidebar-width: 260px;
     --mobile-topbar-height: 54px;
     --sidebar-bg: #0d1117;
@@ -308,3 +329,17 @@ body {
     .content-scrollable { padding: 1rem 0.75rem; }
     .sidebar { width: 85%; max-width: 300px; }
 }
+
+/* ====== ESCALA TIPOGRAFICA (utilitarias) ====== */
+.fs-2xs  { font-size: var(--fs-2xs) !important; }
+.fs-xs   { font-size: var(--fs-xs) !important; }
+.fs-sm   { font-size: var(--fs-sm) !important; }
+.fs-md   { font-size: var(--fs-md) !important; }
+.fs-base { font-size: var(--fs-base) !important; }
+.fs-lg   { font-size: var(--fs-lg) !important; }
+.fs-xl   { font-size: var(--fs-xl) !important; }
+
+/* ====== ICONOS ====== */
+.icon-sm { font-size: var(--icon-sm) !important; }
+.icon-md { font-size: var(--icon-md) !important; }
+.icon-lg { font-size: var(--icon-lg) !important; }

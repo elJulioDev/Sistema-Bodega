@@ -97,7 +97,7 @@ require_once __DIR__ . '/../../inc/header.php';
         <h1 class="h3 mb-0">
             <i class="bi bi-people-fill text-primary me-2"></i>
             Encargados de <?php echo h($bodega['nombre']); ?>
-            <span class="badge bg-light text-dark border ms-2" style="font-size:.6em;"><?php echo h($bodega['codigo']); ?></span>
+            <span class="badge bg-light text-dark border ms-2 fs-2xs" ><?php echo h($bodega['codigo']); ?></span>
         </h1>
         <p class="text-muted small mt-1 mb-0">
             Una bodega puede tener múltiples encargados. Uno puede marcarse como <strong>principal</strong>.
@@ -224,18 +224,18 @@ require_once __DIR__ . '/../../inc/header.php';
                                         <input type="checkbox" class="form-check-input mt-1" name="ids_usuarios[]" value="<?php echo (int)$d['id']; ?>">
                                         <div class="flex-grow-1">
                                             <div class="fw-semibold small text-dark"><?php echo h($d['nombre']); ?></div>
-                                            <div class="text-muted" style="font-size:.7rem;">
+                                            <div class="text-muted fs-xs" >
                                                 <?php echo h($d['rut'] ? $d['rut'] : $d['usuario']); ?>
                                                 <?php if ($d['cargo']): ?> · <?php echo h($d['cargo']); ?><?php endif; ?>
                                                 <?php if ($d['unidad_nombre']): ?> · <?php echo h($d['unidad_nombre']); ?><?php endif; ?>
                                             </div>
                                             <?php if ((int)$d['total_bodegas'] > 0): ?>
-                                                <span class="badge bg-info bg-opacity-10 text-info border border-info-subtle mt-1" style="font-size:.6rem;">
+                                                <span class="badge bg-info bg-opacity-10 text-info border border-info-subtle mt-1 fs-2xs" >
                                                     Ya encargado de <?php echo (int)$d['total_bodegas']; ?> bodega(s)
                                                 </span>
                                             <?php endif; ?>
                                             <?php if ($d['rol'] === 'solicitante'): ?>
-                                                <span class="badge bg-light text-muted border mt-1" style="font-size:.6rem;">
+                                                <span class="badge bg-light text-muted border mt-1 fs-2xs" >
                                                     Rol actual: Solicitante → será promovido
                                                 </span>
                                             <?php endif; ?>

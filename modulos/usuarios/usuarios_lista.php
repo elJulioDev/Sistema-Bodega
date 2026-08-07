@@ -129,7 +129,7 @@ require_once __DIR__ . '/../../inc/header.php';
     <div class="card-body p-0">
         <div class="table-responsive">
             <table class="table table-hover align-middle mb-0">
-                <thead class="table-light text-secondary" style="font-size: 0.80rem;">
+                <thead class="table-light text-secondary fs-md" >
                     <tr>
                         <th class="px-3 py-2">USUARIO (RUT)</th>
                         <th class="py-2">NOMBRE</th>
@@ -173,22 +173,22 @@ require_once __DIR__ . '/../../inc/header.php';
                         <td class="small">
                             <?php echo h($u['nombre']); ?>
                             <?php if ($u['funcionario_rut']): ?>
-                                <div class="text-muted" style="font-size:.70rem;">
+                                <div class="text-muted fs-xs" >
                                     <i class="bi bi-person-badge"></i> Funcionario vinculado
                                 </div>
                             <?php endif; ?>
                         </td>
                         <td class="text-center">
-                            <span class="badge <?php echo $rolInfo[1]; ?>" style="font-size:.65rem;">
+                            <span class="badge fs-2xs <?php echo $rolInfo[1]; ?>">
                                 <?php echo strtoupper($rolInfo[0]); ?>
                             </span>
                         </td>
                         <td class="small text-muted"><?php echo $asignacion; ?></td>
                         <td class="text-center">
                             <?php if ((int)$u['estado'] === 1): ?>
-                                <span class="badge bg-success bg-opacity-10 text-success" style="font-size:.65rem;">ACTIVO</span>
+                                <span class="badge bg-success bg-opacity-10 text-success fs-2xs" >ACTIVO</span>
                             <?php else: ?>
-                                <span class="badge bg-secondary bg-opacity-10 text-secondary" style="font-size:.65rem;">INACTIVO</span>
+                                <span class="badge bg-secondary bg-opacity-10 text-secondary fs-2xs" >INACTIVO</span>
                             <?php endif; ?>
                         </td>
                         <td class="px-3 text-end">

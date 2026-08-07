@@ -319,7 +319,7 @@ require_once __DIR__ . '/../../inc/header.php';
                 </div>
 
                 <div class="col-md-2 d-flex flex-column align-items-center justify-content-center">
-                    <i class="bi bi-arrow-right-circle-fill text-primary" style="font-size:2.5rem;"></i>
+                    <i class="bi bi-arrow-right-circle-fill text-primary fs-xl" ></i>
                     <span class="small text-muted fw-bold">TRASLADO</span>
                 </div>
 

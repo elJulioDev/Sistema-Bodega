@@ -229,21 +229,21 @@ require_once __DIR__ . '/../../inc/header.php';
                                                     <div class="fw-bold small text-dark">
                                                         <?php echo h($e['nombre']); ?>
                                                         <?php if ($esActual): ?>
-                                                            <span class="badge bg-primary bg-opacity-10 text-primary border border-primary-subtle ms-1" style="font-size:.6rem;">PRINCIPAL ACTUAL</span>
+                                                            <span class="badge bg-primary bg-opacity-10 text-primary border border-primary-subtle ms-1 fs-2xs" >PRINCIPAL ACTUAL</span>
                                                         <?php endif; ?>
                                                     </div>
-                                                    <div class="text-muted" style="font-size:.72rem;">
+                                                    <div class="text-muted fs-xs" >
                                                         <i class="bi bi-person-badge me-1"></i><?php echo h($e['rut'] ? $e['rut'] : $e['usuario']); ?>
                                                         <?php if (!empty($e['cargo'])): ?> · <?php echo h($e['cargo']); ?><?php endif; ?>
                                                         <?php if (!empty($e['unidad_nombre'])): ?> · <?php echo h($e['unidad_nombre']); ?><?php endif; ?>
                                                     </div>
                                                 </div>
                                                 <?php if ($tieneOtras && !$esActual): ?>
-                                                    <span class="badge bg-info bg-opacity-10 text-info border border-info-subtle" style="font-size:.65rem;" title="Gestiona otras bodegas">
+                                                    <span class="badge bg-info bg-opacity-10 text-info border border-info-subtle fs-2xs" title="Gestiona otras bodegas">
                                                         <i class="bi bi-buildings me-1"></i><?php echo (int)$e['total_bodegas']; ?>
                                                     </span>
                                                 <?php elseif (!$tieneOtras): ?>
-                                                    <span class="badge bg-success bg-opacity-10 text-success border border-success-subtle" style="font-size:.65rem;">Disponible</span>
+                                                    <span class="badge bg-success bg-opacity-10 text-success border border-success-subtle fs-2xs" >Disponible</span>
                                                 <?php endif; ?>
                                             </div>
                                         </div>

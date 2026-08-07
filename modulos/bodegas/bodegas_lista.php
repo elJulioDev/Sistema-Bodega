@@ -231,7 +231,7 @@ require_once __DIR__ . '/../../inc/header.php';
     <div class="card-body p-0">
         <div class="table-responsive">
             <table class="table table-hover align-middle mb-0">
-                <thead class="table-light text-secondary" style="font-size: 0.80rem;">
+                <thead class="table-light text-secondary fs-md" >
                     <tr>
                         <th class="px-3 py-2">CÓDIGO</th>
                         <th class="py-2">NOMBRE</th>
@@ -256,13 +256,13 @@ require_once __DIR__ . '/../../inc/header.php';
                             <td class="px-3">
                                 <span class="badge bg-light text-dark border"><?php echo h($b['codigo']); ?></span>
                                 <?php if ((int)$b['es_central'] === 1): ?>
-                                    <span class="badge bg-warning bg-opacity-10 text-warning border border-warning-subtle" style="font-size:.6rem;">CENTRAL</span>
+                                    <span class="badge bg-warning bg-opacity-10 text-warning border border-warning-subtle fs-2xs" >CENTRAL</span>
                                 <?php endif; ?>
                             </td>
                             <td>
                                 <div class="fw-bold text-dark small"><?php echo h($b['nombre']); ?></div>
                                 <?php if (!empty($b['ubicacion_referencial'])): ?>
-                                    <div class="text-muted" style="font-size:.7rem;"><i class="bi bi-geo-alt me-1"></i><?php echo h($b['ubicacion_referencial']); ?></div>
+                                    <div class="text-muted fs-xs" ><i class="bi bi-geo-alt me-1"></i><?php echo h($b['ubicacion_referencial']); ?></div>
                                 <?php endif; ?>
                             </td>
                             <td class="small text-muted d-none d-md-table-cell">
@@ -282,13 +282,13 @@ require_once __DIR__ . '/../../inc/header.php';
                                                 ? 'bg-primary bg-opacity-10 text-primary border border-primary-subtle'
                                                 : 'bg-secondary bg-opacity-10 text-secondary border';
                                         ?>
-                                            <span class="badge <?php echo $cls; ?>" style="font-size:.68rem;">
+                                            <span class="badge fs-2xs <?php echo $cls; ?>">
                                                 <?php if ((int)$e['es_principal'] === 1): ?><i class="bi bi-star-fill me-1"></i><?php endif; ?>
                                                 <?php echo h($e['nombre']); ?>
                                             </span>
                                         <?php endforeach; ?>
                                         <?php if ($totalEnc > $mostrados): ?>
-                                            <span class="badge bg-light text-dark border" style="font-size:.68rem;">
+                                            <span class="badge bg-light text-dark border fs-2xs" >
                                                 +<?php echo ($totalEnc - $mostrados); ?> más
                                             </span>
                                         <?php endif; ?>
@@ -297,7 +297,7 @@ require_once __DIR__ . '/../../inc/header.php';
                             </td>
                             <td class="text-end small d-none d-sm-table-cell">
                                 <span class="fw-bold"><?php echo number_format((float)$b['total_stock'], 2, ',', '.'); ?></span>
-                                <div class="text-muted" style="font-size:.7rem;"><?php echo (int)$b['total_productos']; ?> productos</div>
+                                <div class="text-muted fs-xs" ><?php echo (int)$b['total_productos']; ?> productos</div>
                             </td>
                             <td class="px-3 text-end">
                                 <div class="btn-group" role="group">
@@ -347,7 +347,7 @@ require_once __DIR__ . '/../../inc/header.php';
     <div class="card-body p-0">
         <div class="table-responsive">
             <table class="table table-hover align-middle mb-0">
-                <thead class="table-light text-secondary" style="font-size: 0.80rem;">
+                <thead class="table-light text-secondary fs-md" >
                     <tr>
                         <th class="px-3 py-2">CÓDIGO</th>
                         <th class="py-2">NOMBRE</th>

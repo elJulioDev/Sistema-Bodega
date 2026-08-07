@@ -164,7 +164,7 @@ require_once __DIR__ . '/../../inc/header.php';
                             <?php else: ?>
                                 <div class="d-flex flex-wrap gap-1">
                                     <?php foreach ($misBodegas as $mb): ?>
-                                        <span class="badge <?php echo ((int)$mb['es_principal'] === 1) ? 'bg-primary bg-opacity-10 text-primary border border-primary-subtle' : 'bg-light text-dark border'; ?>" style="font-size:.7rem;">
+                                        <span class="badge fs-xs <?php echo ((int)$mb['es_principal'] === 1) ? 'bg-primary bg-opacity-10 text-primary border border-primary-subtle' : 'bg-light text-dark border'; ?>">
                                             <?php if ((int)$mb['es_principal'] === 1): ?><i class="bi bi-star-fill me-1"></i><?php endif; ?>
                                             <?php echo h($mb['codigo']); ?> — <?php echo h($mb['nombre']); ?>
                                         </span>
@@ -219,13 +219,13 @@ require_once __DIR__ . '/../../inc/header.php';
                 <div class="row g-3">
                     <div class="col-6 col-md-4">
                         <div class="p-3 rounded bg-light border">
-                            <p class="text-muted text-uppercase mb-1 fw-bold" style="font-size:.7rem;letter-spacing:.5px;">Movimientos registrados</p>
+                            <p class="text-muted text-uppercase mb-1 fw-bold fs-xs" style="letter-spacing:.5px;">Movimientos registrados</p>
                             <h3 class="mb-0 fw-bold text-dark"><?php echo number_format($movimientos, 0, ',', '.'); ?></h3>
                         </div>
                     </div>
                     <div class="col-6 col-md-4">
                         <div class="p-3 rounded bg-light border">
-                            <p class="text-muted text-uppercase mb-1 fw-bold" style="font-size:.7rem;letter-spacing:.5px;">Solicitudes realizadas</p>
+                            <p class="text-muted text-uppercase mb-1 fw-bold fs-xs" style="letter-spacing:.5px;">Solicitudes realizadas</p>
                             <h3 class="mb-0 fw-bold text-dark"><?php echo number_format($solicitudes, 0, ',', '.'); ?></h3>
                         </div>
                     </div>

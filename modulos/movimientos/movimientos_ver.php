@@ -340,24 +340,24 @@ function estado_badge_ver($estado) {
     <div class="print-ruta-box">
         <strong>Bodega Origen</strong>
         <span><?php echo h($traspaso['bodega_origen_nombre']); ?></span>
-        <div style="font-size:7pt;color:#555;">Cód: <?php echo h($traspaso['bodega_origen_codigo']); ?></div>
+        <div class="fs-2xs" style="color:#555;">Cód: <?php echo h($traspaso['bodega_origen_codigo']); ?></div>
     </div>
     <div class="print-ruta-arrow">→</div>
     <div class="print-ruta-box">
         <strong>Bodega Destino</strong>
         <span><?php echo h($traspaso['bodega_destino_nombre']); ?></span>
-        <div style="font-size:7pt;color:#555;">Cód: <?php echo h($traspaso['bodega_destino_codigo']); ?></div>
+        <div class="fs-2xs" style="color:#555;">Cód: <?php echo h($traspaso['bodega_destino_codigo']); ?></div>
     </div>
     <div class="print-ruta-box" style="flex:0 0 auto; min-width:120pt;">
         <strong>Ítems trasladados</strong>
         <span><?php echo $totalItems; ?> producto<?php echo $totalItems !== 1 ? 's' : ''; ?></span>
-        <div style="font-size:7pt;color:#555;">Cant. total: <?php echo number_format($totalCantidad, 2, ',', '.'); ?></div>
+        <div class="fs-2xs" style="color:#555;">Cant. total: <?php echo number_format($totalCantidad, 2, ',', '.'); ?></div>
     </div>
     <div class="print-ruta-box" style="flex:0 0 auto; min-width:120pt; border-right:none;">
         <strong>Valor total traslado</strong>
         <span>$ <?php echo number_format($totalTraspaso, 0, ',', '.'); ?></span>
         <?php if (!empty($traspaso['observacion'])): ?>
-            <div style="font-size:7pt;color:#555;">Obs: <?php echo h(mb_substr($traspaso['observacion'], 0, 60)); ?><?php echo mb_strlen($traspaso['observacion']) > 60 ? '…' : ''; ?></div>
+            <div class="fs-2xs" style="color:#555;">Obs: <?php echo h(mb_substr($traspaso['observacion'], 0, 60)); ?><?php echo mb_strlen($traspaso['observacion']) > 60 ? '…' : ''; ?></div>
         <?php endif; ?>
     </div>
 </div>
@@ -367,7 +367,7 @@ function estado_badge_ver($estado) {
     <div class="card-body p-4">
         <div class="row align-items-center text-center g-3">
             <div class="col-md-5">
-                <div class="small text-muted text-uppercase fw-bold mb-2" style="font-size:.7rem;letter-spacing:1px;">
+                <div class="small text-muted text-uppercase fw-bold mb-2 fs-xs" style="letter-spacing:1px;">
                     <i class="bi bi-box-arrow-up-right me-1"></i>Bodega Origen
                 </div>
                 <div class="p-3 rounded-3 bg-danger bg-opacity-10 border border-danger border-opacity-25">
@@ -376,11 +376,11 @@ function estado_badge_ver($estado) {
                 </div>
             </div>
             <div class="col-md-2 d-flex flex-column align-items-center text-primary">
-                <i class="bi bi-arrow-right-circle-fill" style="font-size:2.5rem;"></i>
+                <i class="bi bi-arrow-right-circle-fill fs-xl" ></i>
                 <div class="small fw-bold mt-2"><?php echo $totalItems; ?> ítem<?php echo $totalItems !== 1 ? 's' : ''; ?></div>
             </div>
             <div class="col-md-5">
-                <div class="small text-muted text-uppercase fw-bold mb-2" style="font-size:.7rem;letter-spacing:1px;">
+                <div class="small text-muted text-uppercase fw-bold mb-2 fs-xs" style="letter-spacing:1px;">
                     <i class="bi bi-box-arrow-in-down-left me-1"></i>Bodega Destino
                 </div>
                 <div class="p-3 rounded-3 bg-success bg-opacity-10 border border-success border-opacity-25">
@@ -397,7 +397,7 @@ function estado_badge_ver($estado) {
     <div class="col-6 col-md-3">
         <div class="card border-0 shadow-sm h-100">
             <div class="card-body py-3">
-                <div class="small text-muted text-uppercase fw-bold" style="font-size:.7rem;">Ítems</div>
+                <div class="small text-muted text-uppercase fw-bold fs-xs" >Ítems</div>
                 <div class="h4 mb-0 fw-bold"><?php echo number_format($totalItems, 0, ',', '.'); ?></div>
             </div>
         </div>
@@ -405,7 +405,7 @@ function estado_badge_ver($estado) {
     <div class="col-6 col-md-3">
         <div class="card border-0 shadow-sm h-100">
             <div class="card-body py-3">
-                <div class="small text-muted text-uppercase fw-bold" style="font-size:.7rem;">Cantidad Total</div>
+                <div class="small text-muted text-uppercase fw-bold fs-xs" >Cantidad Total</div>
                 <div class="h4 mb-0 fw-bold text-primary"><?php echo number_format($totalCantidad, 2, ',', '.'); ?></div>
             </div>
         </div>
@@ -413,7 +413,7 @@ function estado_badge_ver($estado) {
     <div class="col-6 col-md-3">
         <div class="card border-0 shadow-sm h-100">
             <div class="card-body py-3">
-                <div class="small text-muted text-uppercase fw-bold" style="font-size:.7rem;">Valor Total</div>
+                <div class="small text-muted text-uppercase fw-bold fs-xs" >Valor Total</div>
                 <div class="h4 mb-0 fw-bold text-success">$<?php echo number_format($totalTraspaso, 0, ',', '.'); ?></div>
             </div>
         </div>
@@ -421,7 +421,7 @@ function estado_badge_ver($estado) {
     <div class="col-6 col-md-3">
         <div class="card border-0 shadow-sm h-100">
             <div class="card-body py-3">
-                <div class="small text-muted text-uppercase fw-bold" style="font-size:.7rem;">Estado</div>
+                <div class="small text-muted text-uppercase fw-bold fs-xs" >Estado</div>
                 <div class="mt-1"><?php echo estado_badge_ver($traspaso['estado']); ?></div>
             </div>
         </div>
@@ -433,7 +433,7 @@ function estado_badge_ver($estado) {
     <div class="col-md-6">
         <div class="card shadow-sm border-0 h-100">
             <div class="card-header bg-white border-0 pt-3 pb-2">
-                <h6 class="mb-0 fw-bold text-secondary text-uppercase" style="font-size:.78rem;letter-spacing:.5px;">
+                <h6 class="mb-0 fw-bold text-secondary text-uppercase fs-sm" style="letter-spacing:.5px;">
                     <i class="bi bi-info-circle me-1"></i>Información del Traslado
                 </h6>
             </div>
@@ -463,7 +463,7 @@ function estado_badge_ver($estado) {
     <div class="col-md-6">
         <div class="card shadow-sm border-0 h-100">
             <div class="card-header bg-white border-0 pt-3 pb-2">
-                <h6 class="mb-0 fw-bold text-secondary text-uppercase" style="font-size:.78rem;letter-spacing:.5px;">
+                <h6 class="mb-0 fw-bold text-secondary text-uppercase fs-sm" style="letter-spacing:.5px;">
                     <i class="bi bi-chat-left-text me-1"></i>Observación
                 </h6>
             </div>
@@ -520,19 +520,19 @@ function estado_badge_ver($estado) {
                         <tr>
                             <td class="px-3 text-center text-muted small"><?php echo $n; ?></td>
                             <td>
-                                <span class="badge bg-light text-dark border" style="font-size:.75rem;">
+                                <span class="badge bg-light text-dark border fs-sm" >
                                     <?php echo h($d['producto_codigo']); ?>
                                 </span>
                             </td>
                             <td>
                                 <div class="fw-medium text-dark"><?php echo h($d['producto_nombre']); ?></div>
                                 <?php if (!empty($d['unidad_nombre'])): ?>
-                                    <div class="text-muted small mt-1" style="font-size:.75rem;">
+                                    <div class="text-muted small mt-1 fs-sm" >
                                         <i class="bi bi-ruler me-1"></i><?php echo h($d['unidad_nombre']); ?>
                                     </div>
                                 <?php endif; ?>
                                 <?php if (!empty($d['descripcion_item'])): ?>
-                                    <div class="text-muted small mt-1" style="font-size:.73rem; font-style:italic;">
+                                    <div class="text-muted small mt-1 fs-xs" style="font-style:italic;">
                                         <?php echo h($d['descripcion_item']); ?>
                                     </div>
                                 <?php endif; ?>
@@ -551,7 +551,7 @@ function estado_badge_ver($estado) {
                                     <span class="fw-medium <?php echo $stockDest > 0 ? 'text-success' : 'text-danger'; ?>">
                                         <?php echo number_format($stockDest, 2, ',', '.'); ?>
                                     </span>
-                                    <div class="text-muted small d-print-none" style="font-size:.72rem;">en destino</div>
+                                    <div class="text-muted small d-print-none fs-xs" >en destino</div>
                                 <?php else: ?>
                                     <span class="text-muted">—</span>
                                 <?php endif; ?>
@@ -563,7 +563,7 @@ function estado_badge_ver($estado) {
                 <?php if ($detalle): ?>
                 <tfoot class="table-light">
                     <tr>
-                        <th colspan="3" class="text-end text-muted small text-uppercase" style="font-size:.78rem;">
+                        <th colspan="3" class="text-end text-muted small text-uppercase fs-sm" >
                             Total
                         </th>
                         <th class="text-end text-primary">

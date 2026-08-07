@@ -145,8 +145,8 @@ require_once __DIR__ . '/../../inc/header.php';
 <div class="card shadow-sm border-0">
     <div class="card-body p-0">
         <div class="table-responsive">
-            <table class="table table-hover align-middle mb-0" style="font-size: 0.9rem;">
-                <thead class="table-light text-secondary" style="font-size: 0.75rem;">
+            <table class="table table-hover align-middle mb-0 fs-md" >
+                <thead class="table-light text-secondary fs-sm" >
                     <tr>
                         <th class="px-3 py-2">N° FACTURA</th>
                         <th class="py-2">FECHA</th>

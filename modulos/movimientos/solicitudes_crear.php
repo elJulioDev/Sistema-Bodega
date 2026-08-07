@@ -340,8 +340,8 @@ require_once __DIR__ . '/../../inc/header.php';
             </h6>
             <div class="d-flex gap-2 align-items-center">
                 <span class="d-none d-md-flex align-items-center gap-1 me-2 small text-muted">
-                    <i class="bi bi-circle-fill text-success" style="font-size:.55rem"></i> libre
-                    <i class="bi bi-circle-fill text-warning ms-2" style="font-size:.55rem"></i> reservado
+                    <i class="bi bi-circle-fill text-success fs-2xs" ></i> libre
+                    <i class="bi bi-circle-fill text-warning ms-2 fs-2xs" ></i> reservado
                 </span>
                 <input type="text" id="buscadorProductos" class="form-control form-control-sm"
                        style="max-width:200px" placeholder="Buscar producto...">
@@ -381,11 +381,11 @@ require_once __DIR__ . '/../../inc/header.php';
         <div class="card-body d-flex justify-content-between align-items-center flex-wrap gap-3 py-3">
             <div class="d-flex gap-4">
                 <div>
-                    <div class="text-muted small text-uppercase fw-bold" style="font-size:.65rem;letter-spacing:.5px;">Productos</div>
+                    <div class="text-muted small text-uppercase fw-bold fs-2xs" style="letter-spacing:.5px;">Productos</div>
                     <div class="h5 mb-0 fw-bold" id="resumenItems">0</div>
                 </div>
                 <div>
-                    <div class="text-muted small text-uppercase fw-bold" style="font-size:.65rem;letter-spacing:.5px;">Cantidad total</div>
+                    <div class="text-muted small text-uppercase fw-bold fs-2xs" style="letter-spacing:.5px;">Cantidad total</div>
                     <div class="h5 mb-0 fw-bold text-primary" id="resumenCantidad">0,00</div>
                 </div>
             </div>

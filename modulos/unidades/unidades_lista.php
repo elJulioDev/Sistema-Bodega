@@ -99,7 +99,7 @@ require_once __DIR__ . '/../../inc/header.php';
     <div class="col-6 col-md-4">
         <div class="card shadow-sm border-0 border-start border-primary border-4 h-100">
             <div class="card-body py-3">
-                <p class="text-muted text-uppercase mb-1 fw-bold" style="font-size:.7rem;letter-spacing:.5px;">Total</p>
+                <p class="text-muted text-uppercase mb-1 fw-bold fs-xs" style="letter-spacing:.5px;">Total</p>
                 <h3 class="mb-0 fw-bold text-dark"><?php echo (int)$kpis['total']; ?></h3>
             </div>
         </div>
@@ -107,7 +107,7 @@ require_once __DIR__ . '/../../inc/header.php';
     <div class="col-6 col-md-4">
         <div class="card shadow-sm border-0 border-start border-success border-4 h-100">
             <div class="card-body py-3">
-                <p class="text-muted text-uppercase mb-1 fw-bold" style="font-size:.7rem;letter-spacing:.5px;">Activas</p>
+                <p class="text-muted text-uppercase mb-1 fw-bold fs-xs" style="letter-spacing:.5px;">Activas</p>
                 <h3 class="mb-0 fw-bold text-success"><?php echo (int)$kpis['activas']; ?></h3>
             </div>
         </div>
@@ -115,7 +115,7 @@ require_once __DIR__ . '/../../inc/header.php';
     <div class="col-6 col-md-4">
         <div class="card shadow-sm border-0 border-start border-secondary border-4 h-100">
             <div class="card-body py-3">
-                <p class="text-muted text-uppercase mb-1 fw-bold" style="font-size:.7rem;letter-spacing:.5px;">Inactivas</p>
+                <p class="text-muted text-uppercase mb-1 fw-bold fs-xs" style="letter-spacing:.5px;">Inactivas</p>
                 <h3 class="mb-0 fw-bold text-secondary"><?php echo (int)$kpis['inactivas']; ?></h3>
             </div>
         </div>
@@ -161,8 +161,8 @@ require_once __DIR__ . '/../../inc/header.php';
 <div class="card shadow-sm border-0">
     <div class="card-body p-0">
         <div class="table-responsive">
-            <table class="table table-hover align-middle mb-0" style="font-size:0.9rem;">
-                <thead class="table-light text-secondary" style="font-size:0.75rem;">
+            <table class="table table-hover align-middle mb-0 fs-md" >
+                <thead class="table-light text-secondary fs-sm" >
                     <tr>
                         <th class="px-3 py-2">CÓDIGO</th>
                         <th class="py-2">NOMBRE</th>
@@ -202,11 +202,11 @@ require_once __DIR__ . '/../../inc/header.php';
                         </td>
                         <td class="text-center">
                             <?php if ($activa): ?>
-                                <span class="badge bg-success bg-opacity-10 text-success border border-success-subtle" style="font-size:.7rem;">
+                                <span class="badge bg-success bg-opacity-10 text-success border border-success-subtle fs-xs" >
                                     ACTIVA
                                 </span>
                             <?php else: ?>
-                                <span class="badge bg-secondary bg-opacity-10 text-secondary border" style="font-size:.7rem;">
+                                <span class="badge bg-secondary bg-opacity-10 text-secondary border fs-xs" >
                                     INACTIVA
                                 </span>
                             <?php endif; ?>

@@ -60,7 +60,7 @@ require_once __DIR__ . '/../../inc/header.php';
     <div class="card-body p-0">
         <div class="table-responsive">
             <table class="table table-hover align-middle mb-0">
-                <thead class="table-light text-secondary text-nowrap" style="font-size: 0.85rem;">
+                <thead class="table-light text-secondary text-nowrap fs-md" >
                     <tr>
                         <th class="px-4 py-3">OC</th>
                         <th class="py-3">FECHA</th>

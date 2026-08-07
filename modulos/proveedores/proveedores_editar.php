@@ -148,7 +148,7 @@ $activo = (int)$proveedor['estado'] === 1;
             <i class="bi bi-pencil-square text-primary me-2"></i>Editar Proveedor
         </h1>
         <small class="text-muted d-block mb-2">Modifica los datos del proveedor seleccionado</small>
-        <div class="d-flex align-items-center gap-2 flex-wrap" style="font-size:.84rem; color:#6c757d;">
+        <div class="d-flex align-items-center gap-2 flex-wrap fs-md" style="color:#6c757d;">
             <span class="badge bg-light text-dark border font-monospace"><?php echo h($proveedor['rut']); ?></span>
             <span><?php echo h($proveedor['razon_social']); ?></span>
             <?php if ($activo): ?>

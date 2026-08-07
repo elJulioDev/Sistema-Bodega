@@ -99,9 +99,9 @@ require_once __DIR__ . '/../../inc/header.php';
         </nav>
         <h1 class="h3 mb-0 text-gray-800">
             <i class="bi bi-buildings text-primary me-2"></i><?php echo h($b['nombre']); ?>
-            <span class="badge bg-light text-dark border ms-2" style="font-size:.6em;"><?php echo h($b['codigo']); ?></span>
+            <span class="badge bg-light text-dark border ms-2 fs-2xs" ><?php echo h($b['codigo']); ?></span>
             <?php if ((int)$b['es_central'] === 1): ?>
-                <span class="badge bg-warning bg-opacity-10 text-warning border border-warning-subtle ms-1" style="font-size:.6em;">CENTRAL</span>
+                <span class="badge bg-warning bg-opacity-10 text-warning border border-warning-subtle ms-1 fs-2xs" >CENTRAL</span>
             <?php endif; ?>
         </h1>
     </div>
@@ -152,7 +152,7 @@ require_once __DIR__ . '/../../inc/header.php';
     <div class="col-6 col-md-3">
         <div class="card shadow-sm border-0 border-start border-primary border-4 h-100">
             <div class="card-body py-3">
-                <p class="text-muted text-uppercase mb-1 fw-bold" style="font-size:.7rem;letter-spacing:.5px;">Productos</p>
+                <p class="text-muted text-uppercase mb-1 fw-bold fs-xs" style="letter-spacing:.5px;">Productos</p>
                 <h3 class="mb-0 fw-bold text-dark"><?php echo number_format((int)$kpi['productos'], 0, ',', '.'); ?></h3>
             </div>
         </div>
@@ -160,7 +160,7 @@ require_once __DIR__ . '/../../inc/header.php';
     <div class="col-6 col-md-3">
         <div class="card shadow-sm border-0 border-start border-info border-4 h-100">
             <div class="card-body py-3">
-                <p class="text-muted text-uppercase mb-1 fw-bold" style="font-size:.7rem;letter-spacing:.5px;">Unidades</p>
+                <p class="text-muted text-uppercase mb-1 fw-bold fs-xs" style="letter-spacing:.5px;">Unidades</p>
                 <h3 class="mb-0 fw-bold text-dark"><?php echo number_format((float)$kpi['unidades'], 2, ',', '.'); ?></h3>
             </div>
         </div>
@@ -168,7 +168,7 @@ require_once __DIR__ . '/../../inc/header.php';
     <div class="col-6 col-md-3">
         <div class="card shadow-sm border-0 border-start border-success border-4 h-100">
             <div class="card-body py-3">
-                <p class="text-muted text-uppercase mb-1 fw-bold" style="font-size:.7rem;letter-spacing:.5px;">Valor total</p>
+                <p class="text-muted text-uppercase mb-1 fw-bold fs-xs" style="letter-spacing:.5px;">Valor total</p>
                 <h3 class="mb-0 fw-bold text-success">$<?php echo number_format((float)$kpi['valor'], 0, ',', '.'); ?></h3>
             </div>
         </div>
@@ -176,7 +176,7 @@ require_once __DIR__ . '/../../inc/header.php';
     <div class="col-6 col-md-3">
         <div class="card shadow-sm border-0 border-start border-warning border-4 h-100">
             <div class="card-body py-3">
-                <p class="text-muted text-uppercase mb-1 fw-bold" style="font-size:.7rem;letter-spacing:.5px;">Stock bajo</p>
+                <p class="text-muted text-uppercase mb-1 fw-bold fs-xs" style="letter-spacing:.5px;">Stock bajo</p>
                 <h3 class="mb-0 fw-bold text-warning"><?php echo (int)$kpi['stock_bajo']; ?></h3>
             </div>
         </div>
@@ -258,7 +258,7 @@ require_once __DIR__ . '/../../inc/header.php';
                                         <?php endif; ?>
                                         <?php echo h($e['nombre']); ?>
                                     </div>
-                                    <div class="text-muted" style="font-size:.72rem;">
+                                    <div class="text-muted fs-xs" >
                                         <?php if (!empty($e['rut'])): ?>
                                             <i class="bi bi-person-badge me-1"></i><?php echo h($e['rut']); ?>
                                         <?php endif; ?>
@@ -268,7 +268,7 @@ require_once __DIR__ . '/../../inc/header.php';
                                     </div>
                                 </div>
                                 <?php if ((int)$e['es_principal'] === 1): ?>
-                                    <span class="badge bg-primary bg-opacity-10 text-primary border border-primary-subtle" style="font-size:.65rem;">PRINCIPAL</span>
+                                    <span class="badge bg-primary bg-opacity-10 text-primary border border-primary-subtle fs-2xs" >PRINCIPAL</span>
                                 <?php endif; ?>
                             </div>
                         <?php endforeach; ?>
@@ -299,7 +299,7 @@ require_once __DIR__ . '/../../inc/header.php';
         <?php else: ?>
             <div class="table-responsive">
                 <table class="table table-hover align-middle mb-0">
-                    <thead class="table-light text-secondary" style="font-size: 0.80rem;">
+                    <thead class="table-light text-secondary fs-md" >
                         <tr>
                             <th class="px-3 py-2">CÓDIGO</th>
                             <th class="py-2">PRODUCTO</th>
@@ -359,7 +359,7 @@ require_once __DIR__ . '/../../inc/header.php';
         <?php else: ?>
             <div class="table-responsive">
                 <table class="table table-hover align-middle mb-0">
-                    <thead class="table-light text-secondary" style="font-size: 0.80rem;">
+                    <thead class="table-light text-secondary fs-md" >
                         <tr>
                             <th class="px-3 py-2">FECHA</th>
                             <th class="py-2">TIPO</th>
@@ -378,7 +378,7 @@ require_once __DIR__ . '/../../inc/header.php';
                             <td><span class="badge <?php echo $ti[1]; ?> border small"><?php echo $ti[0]; ?></span></td>
                             <td class="small">
                                 <div class="fw-medium"><?php echo h($m['producto_nombre']); ?></div>
-                                <div class="text-muted" style="font-size:.7rem;"><?php echo h($m['producto_codigo']); ?></div>
+                                <div class="text-muted fs-xs" ><?php echo h($m['producto_codigo']); ?></div>
                             </td>
                             <td class="text-end small fw-bold"><?php echo number_format((float)$m['cantidad'], 2, ',', '.'); ?></td>
                             <td class="text-end small d-none d-md-table-cell">$<?php echo number_format((float)$m['total'], 0, ',', '.'); ?></td>

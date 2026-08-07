@@ -367,10 +367,10 @@ require_once __DIR__ . '/../../inc/header.php';
                                         <span class="badge bg-light text-dark border me-1"><?php echo h($b['codigo']); ?></span>
                                         <?php echo h($b['nombre']); ?>
                                         <?php if ((int)$b['es_central'] === 1): ?>
-                                            <span class="badge bg-warning bg-opacity-10 text-warning border border-warning-subtle ms-1" style="font-size:.6rem;">CENTRAL</span>
+                                            <span class="badge bg-warning bg-opacity-10 text-warning border border-warning-subtle ms-1 fs-2xs" >CENTRAL</span>
                                         <?php endif; ?>
                                         <?php if ((int)$b['total_encargados'] > 0): ?>
-                                            <span class="text-muted ms-2" style="font-size:.7rem;">
+                                            <span class="text-muted ms-2 fs-xs" >
                                                 <i class="bi bi-people me-1"></i><?php echo (int)$b['total_encargados']; ?> encargado(s)
                                             </span>
                                         <?php endif; ?>

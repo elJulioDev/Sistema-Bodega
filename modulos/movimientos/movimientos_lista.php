@@ -255,7 +255,7 @@ require_once __DIR__ . '/../../inc/header.php';
 <div class="card shadow-sm border-0">
     <div class="card-body p-0">
         <div class="table-responsive">
-            <table class="table table-hover align-middle mb-0" style="font-size: 0.875rem;">
+            <table class="table table-hover align-middle mb-0 fs-md" >
                 <thead class="table-light text-secondary">
                     <tr>
                         <th class="px-3 py-3">FECHA</th>
@@ -282,7 +282,7 @@ require_once __DIR__ . '/../../inc/header.php';
                     <tr>
                         <td class="px-3 text-nowrap small text-secondary">
                             <?php echo date('d/m/Y', strtotime($m['fecha_movimiento'])); ?>
-                            <div style="font-size:.72rem;"><?php echo date('H:i', strtotime($m['fecha_movimiento'])); ?></div>
+                            <div class="fs-xs" ><?php echo date('H:i', strtotime($m['fecha_movimiento'])); ?></div>
                         </td>
                         <td>
                             <span class="badge bg-light text-dark border"><?php echo h($m['bodega_codigo']); ?></span>

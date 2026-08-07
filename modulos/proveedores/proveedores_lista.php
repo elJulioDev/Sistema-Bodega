@@ -191,7 +191,7 @@ require_once __DIR__ . '/../../inc/header.php';
     <div class="card-body p-0">
         <div class="table-responsive">
             <table class="table table-hover align-middle mb-0">
-                <thead class="table-light text-secondary" style="font-size:.78rem; letter-spacing:.03em;">
+                <thead class="table-light text-secondary fs-sm" style="letter-spacing:.03em;">
                     <tr>
                         <th class="px-4 py-3">RUT</th>
                         <th class="py-3">RAZÓN SOCIAL</th>
@@ -337,7 +337,7 @@ require_once __DIR__ . '/../../inc/header.php';
     </div>
 
     <div class="prov-card-foot">
-        <span class="text-muted" style="font-size:.71rem;">ID #<?php echo (int)$p['id']; ?></span>
+        <span class="text-muted fs-xs" >ID #<?php echo (int)$p['id']; ?></span>
         <div class="d-flex gap-2">
             <a href="proveedores_editar.php?id=<?php echo (int)$p['id']; ?>"
                class="btn btn-sm btn-outline-primary d-flex align-items-center gap-1">
