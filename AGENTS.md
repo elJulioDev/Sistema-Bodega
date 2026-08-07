@@ -41,3 +41,18 @@ Sistema de Bodega: inventario en **PHP puro procedural** (sin framework, sin com
 ## Estilo de código
 - PHP estilo clásico: `array()` (nunca `[]`), indentación 4 espacios, funciones snake_case, `<?php echo h(...) ?>`.
 - Commits cortos en imperativo y español, ej.: "Añadida protección CSRF...", "Correccion bug al importar funcionarios". Rama por defecto: `main`, remoto `origin` (github.com/elJulioDev/Sistema-Bodega.git).
+
+## Issues abiertos y referencia en commits
+- Hay 5 issues abiertos en GitHub que representan features pendientes:
+  - `#1` — Módulo de reportes
+  - `#2` — Alertas de stock crítico
+  - `#3` — Exportación de datos
+  - `#4` — Auditoría avanzada global
+  - `#5` — Gestión de devoluciones
+- Convención de commits: si un commit cierra (o atiende) un issue, escribir el mensaje, dejar una línea en blanco y añadir `Closes #N` (con el número del issue), ej.:
+  ```
+  Añadido módulo de reportes con dashboard de consumo
+
+  Closes #1
+  ```
+- Cuando se trabaje una de estas features, además de cerrar el issue en el commit, conviene mantener el README y/o AGENTS.md al día con lo implementado.
