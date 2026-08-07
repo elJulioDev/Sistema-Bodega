@@ -60,6 +60,7 @@
     /* Tablas */
     --app-table-header-bg: #eef2f9;
     --app-table-stripe-bg: #f6f8fc;
+    --app-table-hover-bg: rgba(16, 24, 40, 0.05);
 
     /* Radios y sombras */
     --radius-sm: 6px;
@@ -82,7 +83,7 @@
     --bs-tertiary-bg: var(--app-bg);
     --bs-table-bg: var(--app-surface);
     --bs-table-striped-bg: var(--app-table-stripe-bg);
-    --bs-table-hover-bg: transparent;
+    --bs-table-hover-bg: var(--app-table-hover-bg);
     --bs-table-border-color: var(--app-border);
 }
 
@@ -135,6 +136,7 @@
 
     --app-table-header-bg: #1c2434;
     --app-table-stripe-bg: rgba(255, 255, 255, 0.025);
+    --app-table-hover-bg: rgba(255, 255, 255, 0.06);
 
     --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.45);
     --shadow-md: 0 6px 18px rgba(0, 0, 0, 0.55);
@@ -151,7 +153,7 @@
     --bs-tertiary-bg: var(--app-bg);
     --bs-table-bg: var(--app-surface);
     --bs-table-striped-bg: var(--app-table-stripe-bg);
-    --bs-table-hover-bg: transparent;
+    --bs-table-hover-bg: var(--app-table-hover-bg);
     --bs-table-border-color: var(--app-border);
 }
 
@@ -625,7 +627,7 @@ a { color: var(--app-brand); }
     background-color: var(--app-surface);
     --bs-table-bg: var(--app-surface);
     --bs-table-striped-bg: var(--app-table-stripe-bg);
-    --bs-table-hover-bg: transparent;
+    --bs-table-hover-bg: var(--app-table-hover-bg);
     --bs-table-border-color: var(--app-border);
 }
 .table thead th {
@@ -641,8 +643,12 @@ a { color: var(--app-brand); }
 .table-striped tbody tr:nth-of-type(odd) { background-color: var(--app-table-stripe-bg); }
 .table tbody tr.table-active,
 .table tbody tr.table-active td { background-color: var(--app-table-stripe-bg); }
-/* Sin cambio de color al pasar el mouse: filas sólidas */
-.table-hover > tbody > tr:hover > * { background-color: transparent; }
+/* Hover de fila: resalta toda la tabla con un tono suave acorde al tema.
+   Se apoya en el acento de Bootstrap (box-shadow inset) para no tapar los estados */
+.table-hover > tbody > tr:hover > * {
+    --bs-table-bg-state: var(--app-table-hover-bg);
+    --bs-table-color-state: var(--bs-table-color);
+}
 
 /* Estados de fila (sin stock / bajo stock): usan los tonos suaves del tema,
    así en oscuro el amarillo/rojo no quedan intensos */
