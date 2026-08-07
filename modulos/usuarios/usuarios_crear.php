@@ -120,14 +120,12 @@ $pageTitle = 'Nuevo Usuario';
 require_once __DIR__ . '/../../inc/header.php';
 ?>
 
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h1 class="h3 mb-0 text-gray-800">
-        <i class="bi bi-person-plus text-primary me-2"></i>Nuevo Usuario
-    </h1>
-    <a href="usuarios_lista.php" class="btn btn-outline-secondary">
-        <i class="bi bi-arrow-left me-1"></i> Volver al listado
-    </a>
-</div>
+<?php ui_page_header(
+    'bi-person-plus',
+    'Nuevo Usuario',
+    '',
+    '<a href="usuarios_lista.php" class="btn btn-outline-secondary"><i class="bi bi-arrow-left me-1"></i> Volver al listado</a>'
+); ?>
 
 <div class="row">
     <div class="col-lg-8">
@@ -247,9 +245,9 @@ require_once __DIR__ . '/../../inc/header.php';
 
     <!-- Panel lateral: explicación de roles -->
     <div class="col-lg-4">
-        <div class="card shadow-sm border-0 bg-light">
+        <div class="card shadow-sm border-0 bg-body">
             <div class="card-body p-4">
-                <h6 class="fw-bold text-dark mb-3">
+                <h6 class="fw-bold text-body mb-3">
                     <i class="bi bi-info-circle me-2"></i>Roles del sistema
                 </h6>
 
@@ -304,8 +302,8 @@ require_once __DIR__ . '/../../inc/header.php';
 
     function actualizarCampos() {
         var rol = selRol.value;
-        grupoBod.style.display = (rol === 'bodega') ? '' : 'none';
-        grupoUni.style.display = (rol === 'solicitante') ? '' : 'none';
+        grupoBod.classList.toggle('d-none', rol !== 'bodega');
+        grupoUni.classList.toggle('d-none', rol !== 'solicitante');
 
         selBodega.required = (rol === 'bodega');
         selUnidad.required = (rol === 'solicitante');

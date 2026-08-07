@@ -77,14 +77,12 @@ $pageTitle = 'Editar Usuario';
 require_once __DIR__ . '/../../inc/header.php';
 ?>
 
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h1 class="h3 mb-0 text-gray-800">
-        <i class="bi bi-pencil-square text-primary me-2"></i>Editar Usuario
-    </h1>
-    <a href="usuarios_lista.php" class="btn btn-outline-secondary">
-        <i class="bi bi-arrow-left me-1"></i> Volver al listado
-    </a>
-</div>
+<?php ui_page_header(
+    'bi-pencil-square',
+    'Editar Usuario',
+    '',
+    '<a href="usuarios_lista.php" class="btn btn-outline-secondary"><i class="bi bi-arrow-left me-1"></i> Volver al listado</a>'
+); ?>
 
 <div class="row">
     <div class="col-lg-8">
@@ -100,7 +98,7 @@ require_once __DIR__ . '/../../inc/header.php';
                 <div class="alert alert-light border mb-4">
                     <div class="row g-2 small">
                         <div class="col-12 mb-1">
-                            <strong class="text-dark"><i class="bi bi-person-badge me-1"></i><?php echo h($usuario_db['nombre']); ?></strong>
+                            <strong class="text-body"><i class="bi bi-person-badge me-1"></i><?php echo h($usuario_db['nombre']); ?></strong>
                         </div>
                         <div class="col-md-4"><strong>RUT:</strong> <?php echo h($usuario_db['usuario']); ?></div>
                         <div class="col-md-4"><strong>Email:</strong> <?php echo h($usuario_db['email'] ? $usuario_db['email'] : '—'); ?></div>
@@ -179,9 +177,9 @@ require_once __DIR__ . '/../../inc/header.php';
     </div>
 
     <div class="col-lg-4">
-        <div class="card shadow-sm border-0 bg-light">
+        <div class="card shadow-sm border-0 bg-body">
             <div class="card-body p-4">
-                <h6 class="fw-bold text-dark mb-3">
+                <h6 class="fw-bold text-body mb-3">
                     <i class="bi bi-info-circle me-2"></i>Notas
                 </h6>
                 <ul class="small text-muted ps-3 mb-0">
@@ -204,8 +202,8 @@ require_once __DIR__ . '/../../inc/header.php';
 
     function actualizarCampos() {
         var rol = selRol.value;
-        grupoBod.style.display = (rol === 'bodega') ? '' : 'none';
-        grupoUni.style.display = (rol === 'solicitante') ? '' : 'none';
+        grupoBod.classList.toggle('d-none', rol !== 'bodega');
+        grupoUni.classList.toggle('d-none', rol !== 'solicitante');
         selBodega.required = (rol === 'bodega');
         selUnidad.required = (rol === 'solicitante');
     }

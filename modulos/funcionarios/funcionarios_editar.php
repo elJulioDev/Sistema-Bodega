@@ -232,19 +232,13 @@ $pageTitle = 'Editar Funcionario';
 require_once __DIR__ . '/../../inc/header.php';
 ?>
 
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h1 class="h3 mb-0 text-gray-800">
-        <i class="bi bi-pencil-square text-primary me-2"></i>Editar Funcionario
-    </h1>
-    <div class="d-flex gap-2">
-        <a href="funcionarios_ver.php?id=<?php echo (int)$id; ?>" class="btn btn-outline-secondary">
-            <i class="bi bi-eye me-1"></i> Ver detalle
-        </a>
-        <a href="funcionarios_lista.php" class="btn btn-outline-secondary">
-            <i class="bi bi-arrow-left me-1"></i> Volver
-        </a>
-    </div>
-</div>
+<?php ui_page_header(
+    'bi-pencil-square',
+    'Editar Funcionario',
+    '',
+    '<a href="funcionarios_ver.php?id=' . (int)$id . '" class="btn btn-outline-secondary"><i class="bi bi-eye me-1"></i> Ver detalle</a>'
+    . '<a href="funcionarios_lista.php" class="btn btn-outline-secondary"><i class="bi bi-arrow-left me-1"></i> Volver</a>'
+); ?>
 
 <?php if ($error !== ''): ?>
     <div class="alert alert-danger">
@@ -260,8 +254,8 @@ require_once __DIR__ . '/../../inc/header.php';
 
         <!-- Datos funcionario -->
         <div class="card shadow-sm border-0 mb-3">
-            <div class="card-header bg-white border-bottom">
-                <h5 class="mb-0 fw-bold text-dark">
+            <div class="card-header bg-body border-bottom">
+                <h5 class="mb-0 fw-bold text-body">
                     <i class="bi bi-person-vcard text-primary me-2"></i>Datos del funcionario
                 </h5>
             </div>
@@ -308,8 +302,8 @@ require_once __DIR__ . '/../../inc/header.php';
 
         <!-- Acceso al sistema -->
         <div class="card shadow-sm border-0">
-            <div class="card-header bg-white border-bottom d-flex justify-content-between align-items-center">
-                <h5 class="mb-0 fw-bold text-dark">
+            <div class="card-header bg-body border-bottom d-flex justify-content-between align-items-center">
+                <h5 class="mb-0 fw-bold text-body">
                     <i class="bi bi-shield-lock text-success me-2"></i>Acceso al sistema
                 </h5>
                 <div class="form-check form-switch mb-0">
@@ -365,7 +359,7 @@ require_once __DIR__ . '/../../inc/header.php';
                                            data-principal="<?php echo $esPrincipal ? '1' : '0'; ?>"
                                            <?php echo $checked ? 'checked' : ''; ?>>
                                     <label class="form-check-label flex-grow-1 small" for="bod_<?php echo (int)$b['id']; ?>">
-                                        <span class="badge bg-light text-dark border me-1"><?php echo h($b['codigo']); ?></span>
+                                        <span class="badge bg-body text-body border me-1"><?php echo h($b['codigo']); ?></span>
                                         <?php echo h($b['nombre']); ?>
                                         <?php if ((int)$b['es_central'] === 1): ?>
                                             <span class="badge bg-warning bg-opacity-10 text-warning border border-warning-subtle ms-1 fs-2xs" >CENTRAL</span>
@@ -408,9 +402,9 @@ require_once __DIR__ . '/../../inc/header.php';
     </div>
 
     <div class="col-lg-4">
-        <div class="card shadow-sm border-0 bg-light mb-3">
+        <div class="card shadow-sm border-0 bg-body mb-3">
             <div class="card-body p-4">
-                <h6 class="fw-bold text-dark mb-3">
+                <h6 class="fw-bold text-body mb-3">
                     <i class="bi bi-info-circle me-2"></i>Notas
                 </h6>
                 <ul class="small text-muted ps-3 mb-0">
@@ -447,22 +441,22 @@ require_once __DIR__ . '/../../inc/header.php';
 
     function toggleAcceso() {
         var on = chkAcceso.checked;
-        seccion.style.display = on ? 'block' : 'none';
+        seccion.classList.toggle('d-none', !on);
         inpClave.required = on && !yaTiene;
         actualizarCampos();
     }
 
     function actualizarCampos() {
         if (!chkAcceso.checked) {
-            grupoBods.style.display = 'none';
-            grupoUni.style.display  = 'none';
-            selUnidadU.required     = false;
+            grupoBods.classList.add('d-none');
+            grupoUni.classList.add('d-none');
+            selUnidadU.required = false;
             return;
         }
         var rol = selRol.value;
-        grupoBods.style.display = (rol === 'bodega')      ? '' : 'none';
-        grupoUni.style.display  = (rol === 'solicitante') ? '' : 'none';
-        selUnidadU.required     = (rol === 'solicitante');
+        grupoBods.classList.toggle('d-none', rol !== 'bodega');
+        grupoUni.classList.toggle('d-none', rol !== 'solicitante');
+        selUnidadU.required = (rol === 'solicitante');
 
         if (rol === 'solicitante' && !selUnidadU.value && selUniFunc.value) {
             selUnidadU.value = selUniFunc.value;
