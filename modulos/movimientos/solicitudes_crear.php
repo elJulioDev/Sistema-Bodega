@@ -416,6 +416,12 @@ ui_page_header('bi-clipboard-plus', 'Nueva Solicitud de Traslado', $subtitulo);
                 .replace(/"/g,'&quot;').replace(/'/g,'&#039;');
     }
 
+    function setVisible(el, show) {
+        if (!el) return;
+        if (show) el.classList.remove('d-none');
+        else el.classList.add('d-none');
+    }
+
     function getDestinoActual() {
         if (selDestino) return parseInt(selDestino.value, 10) || 0;
         var hid = document.querySelector('input[name="id_bodega_destino"]');
@@ -427,15 +433,15 @@ ui_page_header('bi-clipboard-plus', 'Nueva Solicitud de Traslado', $subtitulo);
         tbody.innerHTML = '';
 
         if (!idOrigen) {
-            mensajeOrigen.style.display = '';
-            sinProductos.style.display  = 'none';
-            contenidoProd.style.display = 'none';
+            setVisible(mensajeOrigen, true);
+            setVisible(sinProductos, false);
+            setVisible(contenidoProd, false);
             badgeDisp.textContent = '—';
-            alertaReservado.style.display = 'none';
+            setVisible(alertaReservado, false);
             return;
         }
 
-        mensajeOrigen.style.display = 'none';
+        setVisible(mensajeOrigen, false);
         var stockBodega    = stockMap[idOrigen]     || {};
         var reservadoBodega = reservadoMap[idOrigen] || {};
         var hayReservas    = false;
@@ -458,17 +464,17 @@ ui_page_header('bi-clipboard-plus', 'Nueva Solicitud de Traslado', $subtitulo);
             }
         }
 
-        alertaReservado.style.display = hayReservas ? '' : 'none';
+        setVisible(alertaReservado, hayReservas);
 
         if (!disponibles.length) {
-            sinProductos.style.display  = '';
-            contenidoProd.style.display = 'none';
+            setVisible(sinProductos, true);
+            setVisible(contenidoProd, false);
             badgeDisp.textContent = '0 disponibles';
             return;
         }
 
-        sinProductos.style.display  = 'none';
-        contenidoProd.style.display = '';
+        setVisible(sinProductos, false);
+        setVisible(contenidoProd, true);
         var libres = disponibles.filter(function(d){ return d.libre > 0; }).length;
         badgeDisp.textContent = libres + ' con stock libre';
 

@@ -407,6 +407,12 @@ ui_page_header('bi-arrow-left-right', 'Nuevo Traslado entre Bodegas', $subtitulo
         return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;');
     }
 
+    function setVisible(el, show) {
+        if (!el) return;
+        if (show) el.classList.remove('d-none');
+        else el.classList.add('d-none');
+    }
+
     function getOrigenVal() {
         if (!selOrigen) return 0;
         return (selOrigen.tagName === 'SELECT') ? (parseInt(selOrigen.value, 10) || 0) : (parseInt(selOrigen.value, 10) || 0);
@@ -416,13 +422,13 @@ ui_page_header('bi-arrow-left-right', 'Nuevo Traslado entre Bodegas', $subtitulo
         var idOrigen = getOrigenVal();
         tbody.innerHTML = '';
         if (!idOrigen) {
-            mensajeOrigen.style.display = '';
-            sinProductos.style.display  = 'none';
-            contenidoProd.style.display = 'none';
+            setVisible(mensajeOrigen, true);
+            setVisible(sinProductos, false);
+            setVisible(contenidoProd, false);
             badgeDisp.textContent = '0 disponibles';
             return;
         }
-        mensajeOrigen.style.display = 'none';
+        setVisible(mensajeOrigen, false);
         var stockBodega = stockMap[idOrigen] || {};
         var disponibles = [];
         for (var i = 0; i < productos.length; i++) {
@@ -437,13 +443,13 @@ ui_page_header('bi-arrow-left-right', 'Nuevo Traslado entre Bodegas', $subtitulo
             }
         }
         if (!disponibles.length) {
-            sinProductos.style.display  = '';
-            contenidoProd.style.display = 'none';
+            setVisible(sinProductos, true);
+            setVisible(contenidoProd, false);
             badgeDisp.textContent = '0 disponibles';
             return;
         }
-        sinProductos.style.display  = 'none';
-        contenidoProd.style.display = '';
+        setVisible(sinProductos, false);
+        setVisible(contenidoProd, true);
         badgeDisp.textContent = disponibles.length + ' disponible' + (disponibles.length === 1 ? '' : 's');
 
         var html = '';
@@ -488,7 +494,7 @@ ui_page_header('bi-arrow-left-right', 'Nuevo Traslado entre Bodegas', $subtitulo
                     inp.disabled = !chk.checked;
                     btn.disabled = !chk.checked;
                     if (chk.checked && (!inp.value || parseFloat(inp.value) <= 0)) inp.value = stock;
-                    if (!chk.checked) { inp.value = ''; tr.querySelector('.mensaje-error').style.display = 'none'; }
+                    if (!chk.checked) { inp.value = ''; tr.querySelector('.mensaje-error').classList.add('d-none'); }
                     validarFila(tr); recalcular();
                 });
                 inp.addEventListener('input', function () { validarFila(tr); recalcular(); });
@@ -502,11 +508,11 @@ ui_page_header('bi-arrow-left-right', 'Nuevo Traslado entre Bodegas', $subtitulo
         var inp   = tr.querySelector('.inp-cantidad');
         var stock = parseFloat(tr.getAttribute('data-stock'));
         var msg   = tr.querySelector('.mensaje-error');
-        if (!chk.checked) { inp.classList.remove('is-invalid'); msg.style.display = 'none'; return true; }
+        if (!chk.checked) { inp.classList.remove('is-invalid'); msg.classList.add('d-none'); return true; }
         var val = parseFloat(inp.value);
-        if (isNaN(val) || val <= 0) { inp.classList.add('is-invalid'); msg.textContent='Cantidad inválida'; msg.style.display=''; return false; }
-        if (val > stock) { inp.classList.add('is-invalid'); msg.textContent='Máximo: ' + fmt(stock); msg.style.display=''; return false; }
-        inp.classList.remove('is-invalid'); msg.style.display = 'none'; return true;
+        if (isNaN(val) || val <= 0) { inp.classList.add('is-invalid'); msg.textContent='Cantidad inválida'; msg.classList.remove('d-none'); return false; }
+        if (val > stock) { inp.classList.add('is-invalid'); msg.textContent='Máximo: ' + fmt(stock); msg.classList.remove('d-none'); return false; }
+        inp.classList.remove('is-invalid'); msg.classList.add('d-none'); return true;
     }
 
     function recalcular() {

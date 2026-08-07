@@ -285,14 +285,14 @@ require_once __DIR__ . '/../../inc/header.php';
     function actualizarPreview() {
         var id = selFunc.value;
         if (!id || !funcionarios[id]) {
-            preview.style.display = 'none';
+            preview.classList.add('d-none');
             return;
         }
         var f = funcionarios[id];
         document.getElementById('pvRut').textContent   = f.rut || '—';
         document.getElementById('pvEmail').textContent = f.email || '—';
         document.getElementById('pvCargo').textContent = f.cargo || '—';
-        preview.style.display = '';
+        preview.classList.remove('d-none');
 
         // Pre-seleccionar unidad si el rol es solicitante
         if (selRol.value === 'solicitante' && f.id_unidad && !selUnidad.value) {
