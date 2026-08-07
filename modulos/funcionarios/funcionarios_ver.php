@@ -60,34 +60,20 @@ $pageTitle = 'Detalle Funcionario';
 require_once __DIR__ . '/../../inc/header.php';
 ?>
 
-<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
-    <div>
-        <nav aria-label="breadcrumb" class="small mb-1">
-            <ol class="breadcrumb mb-0">
-                <li class="breadcrumb-item"><a href="funcionarios_lista.php" class="text-decoration-none">Funcionarios</a></li>
-                <li class="breadcrumb-item active"><?php echo h($f['nombre']); ?></li>
-            </ol>
-        </nav>
-        <h1 class="h3 mb-0 text-gray-800">
-            <i class="bi bi-person-vcard text-primary me-2"></i><?php echo h($f['nombre']); ?>
-        </h1>
-    </div>
-    <div class="d-flex gap-2">
-        <a href="funcionarios_editar.php?id=<?php echo (int)$f['id']; ?>" class="btn btn-primary">
-            <i class="bi bi-pencil me-1"></i> Editar
-        </a>
-        <a href="funcionarios_lista.php" class="btn btn-outline-secondary">
-            <i class="bi bi-arrow-left me-1"></i> Volver
-        </a>
-    </div>
-</div>
+<?php ui_page_header(
+    'bi-person-vcard',
+    $f['nombre'],
+    '',
+    '<a href="funcionarios_editar.php?id=' . (int)$f['id'] . '" class="btn btn-primary"><i class="bi bi-pencil me-1"></i> Editar</a>'
+    . '<a href="funcionarios_lista.php" class="btn btn-outline-secondary"><i class="bi bi-arrow-left me-1"></i> Volver</a>'
+); ?>
 
 <div class="row g-3">
     <!-- Datos personales -->
     <div class="col-lg-6">
         <div class="card shadow-sm border-0 h-100">
-            <div class="card-header bg-white border-bottom">
-                <h5 class="mb-0 fw-bold text-dark">
+            <div class="card-header bg-body border-bottom">
+                <h5 class="mb-0 fw-bold text-body">
                     <i class="bi bi-person-badge text-primary me-2"></i>Datos del funcionario
                 </h5>
             </div>
@@ -130,8 +116,8 @@ require_once __DIR__ . '/../../inc/header.php';
     <!-- Acceso al sistema -->
     <div class="col-lg-6">
         <div class="card shadow-sm border-0 h-100">
-            <div class="card-header bg-white border-bottom">
-                <h5 class="mb-0 fw-bold text-dark">
+            <div class="card-header bg-body border-bottom">
+                <h5 class="mb-0 fw-bold text-body">
                     <i class="bi bi-shield-lock text-success me-2"></i>Acceso al sistema
                 </h5>
             </div>
@@ -164,7 +150,7 @@ require_once __DIR__ . '/../../inc/header.php';
                             <?php else: ?>
                                 <div class="d-flex flex-wrap gap-1">
                                     <?php foreach ($misBodegas as $mb): ?>
-                                        <span class="badge fs-xs <?php echo ((int)$mb['es_principal'] === 1) ? 'bg-primary bg-opacity-10 text-primary border border-primary-subtle' : 'bg-light text-dark border'; ?>">
+                                        <span class="badge fs-xs <?php echo ((int)$mb['es_principal'] === 1) ? 'bg-primary bg-opacity-10 text-primary border border-primary-subtle' : 'bg-body text-body border'; ?>">
                                             <?php if ((int)$mb['es_principal'] === 1): ?><i class="bi bi-star-fill me-1"></i><?php endif; ?>
                                             <?php echo h($mb['codigo']); ?> — <?php echo h($mb['nombre']); ?>
                                         </span>
@@ -197,7 +183,7 @@ require_once __DIR__ . '/../../inc/header.php';
                             <i class="bi bi-key me-1"></i> Cambiar rol / bodegas / contraseña
                         </a>
                         <form method="post" action="funcionarios_lista.php" class="d-inline"
-                              onsubmit="return confirm('¿Revocar el acceso al sistema? El funcionario se mantiene.');">
+                              data-confirm="¿Revocar el acceso al sistema? El funcionario se mantiene, pero ya no podrá ingresar.">
                             <?php echo csrf_field(); ?>
                             <input type="hidden" name="revocar_acceso" value="<?php echo (int)$f['id']; ?>">
                             <button type="submit" class="btn btn-sm btn-outline-warning">
@@ -213,23 +199,23 @@ require_once __DIR__ . '/../../inc/header.php';
     <?php if ($tieneUsuario): ?>
     <div class="col-12">
         <div class="card shadow-sm border-0">
-            <div class="card-header bg-white border-bottom">
-                <h5 class="mb-0 fw-bold text-dark">
+            <div class="card-header bg-body border-bottom">
+                <h5 class="mb-0 fw-bold text-body">
                     <i class="bi bi-activity text-info me-2"></i>Actividad en el sistema
                 </h5>
             </div>
             <div class="card-body">
                 <div class="row g-3">
                     <div class="col-6 col-md-4">
-                        <div class="p-3 rounded bg-light border">
+                        <div class="p-3 rounded bg-body border">
                             <p class="text-muted text-uppercase mb-1 fw-bold fs-xs ls-1" >Movimientos registrados</p>
-                            <h3 class="mb-0 fw-bold text-dark"><?php echo number_format($movimientos, 0, ',', '.'); ?></h3>
+                            <h3 class="mb-0 fw-bold text-body"><?php echo number_format($movimientos, 0, ',', '.'); ?></h3>
                         </div>
                     </div>
                     <div class="col-6 col-md-4">
-                        <div class="p-3 rounded bg-light border">
+                        <div class="p-3 rounded bg-body border">
                             <p class="text-muted text-uppercase mb-1 fw-bold fs-xs ls-1" >Solicitudes realizadas</p>
-                            <h3 class="mb-0 fw-bold text-dark"><?php echo number_format($solicitudes, 0, ',', '.'); ?></h3>
+                            <h3 class="mb-0 fw-bold text-body"><?php echo number_format($solicitudes, 0, ',', '.'); ?></h3>
                         </div>
                     </div>
                 </div>

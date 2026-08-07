@@ -59,13 +59,11 @@ $pageTitle = 'Facturas';
 require_once __DIR__ . '/../../inc/header.php';
 ?>
 
-<div class="d-flex justify-content-between align-items-center mb-3">
-    <div>
-        <h1 class="h4 mb-0 text-dark fw-bold"><i class="bi bi-receipt text-primary me-2"></i>Facturas de Compra</h1>
-        <small class="text-muted">Registro de ingresos a bodega central</small>
-    </div>
-    <a href="facturas_crear.php" class="btn btn-sm btn-primary"><i class="bi bi-plus-lg me-1"></i> Ingresar Factura</a>
-</div>
+<?php
+ob_start();
+ui_btn_link('Ingresar Factura', 'facturas_crear.php', 'primary', 'bi-plus-lg');
+ui_page_header('bi-receipt', 'Facturas de Compra', 'Registro de ingresos a bodega central', ob_get_clean());
+?>
 
 <!-- ESTADÍSTICAS -->
 <div class="row g-2 mb-3">
@@ -146,7 +144,7 @@ require_once __DIR__ . '/../../inc/header.php';
     <div class="card-body p-0">
         <div class="table-responsive">
             <table class="table table-hover align-middle mb-0 fs-md" >
-                <thead class="table-light text-secondary fs-sm" >
+                <thead class="text-secondary fs-sm" >
                     <tr>
                         <th class="px-3 py-2">N° FACTURA</th>
                         <th class="py-2">FECHA</th>
@@ -190,17 +188,17 @@ require_once __DIR__ . '/../../inc/header.php';
                                 <?php endif; ?>
                             </td>
                             <td>
-                                <div class="fw-semibold text-dark text-truncate mw-220" title="<?php echo h($f['razon_social']); ?>">
+                                <div class="fw-semibold text-body text-truncate mw-220" title="<?php echo h($f['razon_social']); ?>">
                                     <?php echo h($f['razon_social']); ?>
                                 </div>
                             </td>
                             <td class="text-center">
-                                <span class="badge bg-light text-dark border"><?php echo (int)$f['total_items']; ?></span>
+                                <span class="badge bg-body text-body border"><?php echo (int)$f['total_items']; ?></span>
                             </td>
                             <td>
                                 <span class="small text-primary"><i class="bi bi-geo-alt-fill me-1"></i><?php echo h($f['bodega_nombre']); ?></span>
                             </td>
-                            <td class="text-end fw-bold text-dark">
+                            <td class="text-end fw-bold text-body">
                                 $<?php echo number_format((float)$f['monto_total'], 0, ',', '.'); ?>
                             </td>
                             <td class="text-center">
@@ -216,7 +214,7 @@ require_once __DIR__ . '/../../inc/header.php';
                                             <i class="bi bi-pencil"></i>
                                         </a>
                                         <form method="post" action="facturas_anular.php" class="d-inline"
-                                              onsubmit="return confirm('¿Anular esta factura?\n\nSe revertirá el stock ingresado a bodega. Esta acción puede deshacerse reactivando manualmente.');">
+                                              data-confirm="¿Anular la factura N° <?php echo h($f['numero_factura']); ?>? Se revertirá el stock ingresado a bodega. Esta acción puede deshacerse reactivando manualmente.">
                                             <?php echo csrf_field(); ?>
                                             <input type="hidden" name="id" value="<?php echo (int)$f['id']; ?>">
                                             <button type="submit" class="btn btn-outline-danger" title="Anular">
@@ -225,7 +223,7 @@ require_once __DIR__ . '/../../inc/header.php';
                                         </form>
                                     <?php else: ?>
                                         <form method="post" action="facturas_anular.php" class="d-inline"
-                                              onsubmit="return confirm('¿Reactivar esta factura?\n\nSe volverá a ingresar el stock a bodega.');">
+                                              data-confirm="¿Reactivar la factura N° <?php echo h($f['numero_factura']); ?>? Se volverá a ingresar el stock a bodega.">
                                             <?php echo csrf_field(); ?>
                                             <input type="hidden" name="id" value="<?php echo (int)$f['id']; ?>">
                                             <input type="hidden" name="reactivar" value="1">
@@ -243,7 +241,7 @@ require_once __DIR__ . '/../../inc/header.php';
             </table>
         </div>
         <?php if ($facturas): ?>
-            <div class="card-footer bg-white py-2 px-3 border-top">
+            <div class="card-footer bg-body py-2 px-3 border-top">
                 <small class="text-muted">
                     Mostrando <strong><?php echo count($facturas); ?></strong> factura(s).
                     Las facturas anuladas aparecen tachadas y no afectan el stock.

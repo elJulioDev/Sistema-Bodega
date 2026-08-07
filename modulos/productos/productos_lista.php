@@ -63,23 +63,7 @@ $pageTitle = 'Catálogo de Productos';
 require_once __DIR__ . '/../../inc/header.php';
 ?>
 
-<div class="d-flex justify-content-between align-items-center mb-3">
-    <div>
-        <h1 class="h4 mb-0 text-dark fw-bold"><i class="bi bi-boxes text-primary me-2"></i>Catálogo de Productos</h1>
-        <small class="text-muted">Gestiona todos los productos del sistema</small>
-    </div>
-    <div class="d-flex gap-2">
-        <a href="unidades_lista.php" class="btn btn-sm btn-outline-primary">
-            <i class="bi bi-ruler me-1"></i> Unidades
-        </a>
-        <a href="productos_importar.php" class="btn btn-sm btn-success">
-            <i class="bi bi-file-earmark-arrow-up me-1"></i> Importar CSV
-        </a>
-        <a href="productos_crear.php" class="btn btn-sm btn-primary">
-            <i class="bi bi-plus-lg me-1"></i> Nuevo Producto
-        </a>
-    </div>
-</div>
+<?php ui_page_header('bi-boxes', 'Catálogo de Productos', 'Gestiona todos los productos del sistema', '<a href="unidades_lista.php" class="btn btn-sm btn-outline-primary"><i class="bi bi-ruler me-1"></i> Unidades</a><a href="productos_importar.php" class="btn btn-sm btn-success"><i class="bi bi-file-earmark-arrow-up me-1"></i> Importar CSV</a><a href="productos_crear.php" class="btn btn-sm btn-primary"><i class="bi bi-plus-lg me-1"></i> Nuevo Producto</a>'); ?>
 
 <!-- TARJETAS DE ESTADÍSTICAS -->
 <div class="row g-2 mb-3">
@@ -123,7 +107,7 @@ require_once __DIR__ . '/../../inc/header.php';
         <form method="get" class="row g-2 align-items-center">
             <div class="col-md-5">
                 <div class="input-group input-group-sm">
-                    <span class="input-group-text bg-light text-secondary border-end-0"><i class="bi bi-search"></i></span>
+                    <span class="input-group-text bg-body text-secondary border-end-0"><i class="bi bi-search"></i></span>
                     <input type="text" name="buscar" value="<?php echo h($buscar); ?>" class="form-control border-start-0 ps-0" placeholder="Buscar por código, nombre o descripción...">
                 </div>
             </div>
@@ -156,7 +140,7 @@ require_once __DIR__ . '/../../inc/header.php';
     <div class="card-body p-0">
         <div class="table-responsive">
             <table class="table table-hover align-middle mb-0 fs-md" >
-                <thead class="table-light text-secondary fs-sm" >
+                <thead class="text-secondary fs-sm" >
                     <tr>
                         <th class="px-3 py-2">CÓDIGO</th>
                         <th class="py-2">PRODUCTO</th>
@@ -184,17 +168,17 @@ require_once __DIR__ . '/../../inc/header.php';
                     ?>
                         <tr<?php echo $bajoStock ? ' class="table-warning"' : ''; ?>>
                             <td class="px-3">
-                                <span class="badge bg-light text-dark border font-monospace"><?php echo h($p['codigo']); ?></span>
+                                <span class="badge bg-body text-secondary border font-monospace"><?php echo h($p['codigo']); ?></span>
                             </td>
                             <td>
-                                <div class="fw-semibold text-dark"><?php echo h($p['nombre']); ?></div>
+                                <div class="fw-semibold"><?php echo h($p['nombre']); ?></div>
                                 <?php if (!empty($p['descripcion'])): ?>
                                     <small class="text-muted d-block text-truncate mw-280" ><?php echo h($p['descripcion']); ?></small>
                                 <?php endif; ?>
                             </td>
                             <td class="text-center">
                                 <?php if ($p['unidad_nombre']): ?>
-                                    <span class="small text-dark"><?php echo h($p['unidad_nombre']); ?></span>
+                                    <span class="small"><?php echo h($p['unidad_nombre']); ?></span>
                                     <br><small class="text-muted">(<?php echo h($p['unidad_codigo']); ?>)</small>
                                 <?php else: ?>
                                     <span class="text-muted small">—</span>
@@ -214,7 +198,7 @@ require_once __DIR__ . '/../../inc/header.php';
                                         <?php echo number_format($stock, 2, ',', '.'); ?>
                                     </span>
                                 <?php else: ?>
-                                    <span class="text-dark"><?php echo number_format($stock, 2, ',', '.'); ?></span>
+                                    <span><?php echo number_format($stock, 2, ',', '.'); ?></span>
                                 <?php endif; ?>
                             </td>
                             <td class="text-end text-muted">
@@ -233,7 +217,7 @@ require_once __DIR__ . '/../../inc/header.php';
                                         <i class="bi bi-pencil"></i>
                                     </a>
                                     <form method="post" class="d-inline"
-                                          onsubmit="return confirm('¿Deseas cambiar el estado de este producto?');">
+                                          data-confirm="<?php echo $p['estado'] ? '¿Desactivar el producto ' . h($p['nombre']) . '?' : '¿Activar el producto ' . h($p['nombre']) . '?'; ?>">
                                         <?php echo csrf_field(); ?>
                                         <input type="hidden" name="toggle" value="<?php echo (int)$p['id']; ?>">
                                         <button type="submit" class="btn btn-outline-<?php echo $p['estado'] ? 'warning' : 'success'; ?>"
@@ -250,7 +234,7 @@ require_once __DIR__ . '/../../inc/header.php';
             </table>
         </div>
         <?php if ($productos): ?>
-            <div class="card-footer bg-white py-2 px-3 border-top">
+            <div class="card-footer bg-body py-2 px-3 border-top">
                 <small class="text-muted">
                     Mostrando <strong><?php echo count($productos); ?></strong> producto(s)
                     <?php if ($buscar !== '' || $filtro_tipo !== '' || $filtro_estado !== ''): ?>

@@ -235,13 +235,11 @@ $pageTitle = 'Editar Factura';
 require_once __DIR__ . '/../../inc/header.php';
 ?>
 
-<div class="d-flex justify-content-between align-items-center mb-3">
-    <div>
-        <h1 class="h4 mb-0 text-dark fw-bold"><i class="bi bi-pencil-square text-primary me-2"></i>Editar Factura N° <?php echo h($factura['numero_factura']); ?></h1>
-        <small class="text-muted">Al guardar se revertirá el stock y se recalculará con los nuevos datos</small>
-    </div>
-    <a href="facturas_ver.php?id=<?php echo $id; ?>" class="btn btn-sm btn-outline-secondary"><i class="bi bi-arrow-left me-1"></i> Cancelar</a>
-</div>
+<?php
+ob_start();
+ui_btn_link('Cancelar', 'facturas_ver.php?id=' . $id, 'outline-secondary', 'bi-arrow-left');
+ui_page_header('bi-pencil-square', 'Editar Factura N° ' . $factura['numero_factura'], 'Al guardar se revertirá el stock y se recalculará con los nuevos datos', ob_get_clean());
+?>
 
 <div class="alert alert-warning py-2 small">
     <i class="bi bi-exclamation-triangle-fill me-2"></i>
@@ -252,11 +250,12 @@ require_once __DIR__ . '/../../inc/header.php';
     <div class="alert alert-danger py-2 small"><i class="bi bi-exclamation-triangle-fill me-2"></i><?php echo h($error); ?></div>
 <?php endif; ?>
 
-<form method="post" id="formFactura">
+<form method="post" id="formFactura"
+      data-confirm="¿Guardar cambios? Se revertirá el stock anterior y se recalculará.">
 <?php echo csrf_field(); ?>
 
 <div class="card shadow-sm border-0 mb-3">
-    <div class="card-header bg-white py-2 border-0">
+    <div class="card-header bg-body py-2 border-0">
         <h6 class="mb-0 fw-bold text-primary"><i class="bi bi-file-earmark-text me-1"></i> Datos de la Factura</h6>
     </div>
     <div class="card-body p-3">
@@ -312,7 +311,7 @@ require_once __DIR__ . '/../../inc/header.php';
 <div class="row g-3 mb-3">
     <div class="col-lg-5">
         <div class="card shadow-sm border-0 h-100">
-            <div class="card-header bg-white py-2 border-0">
+            <div class="card-header bg-body py-2 border-0">
                 <h6 class="mb-0 fw-bold text-primary"><i class="bi bi-search me-1"></i> Buscar y agregar productos</h6>
             </div>
             <div class="card-body p-2">
@@ -337,14 +336,14 @@ require_once __DIR__ . '/../../inc/header.php';
 
     <div class="col-lg-7">
         <div class="card shadow-sm border-0 h-100">
-            <div class="card-header bg-white py-2 border-0 d-flex justify-content-between align-items-center">
+            <div class="card-header bg-body py-2 border-0 d-flex justify-content-between align-items-center">
                 <h6 class="mb-0 fw-bold text-primary"><i class="bi bi-cart-check me-1"></i> Detalle de la Factura</h6>
                 <span class="badge bg-primary" id="badgeItems">0 ítems</span>
             </div>
             <div class="card-body p-0">
                 <div class="table-responsive">
                     <table class="table table-sm align-middle mb-0">
-                        <thead class="table-light">
+                        <thead>
                             <tr class="small text-secondary text-uppercase">
                                 <th class="px-2 tw-40" >Producto</th>
                                 <th class="text-end tw-18" >Cantidad</th>
@@ -382,11 +381,10 @@ require_once __DIR__ . '/../../inc/header.php';
                 </div>
                 <hr class="my-2">
                 <div class="d-flex justify-content-between fs-5">
-                    <span class="fw-bold text-dark">Total:</span>
+                    <span class="fw-bold text-body">Total:</span>
                     <span class="fw-bold text-primary">$ <span id="resumenTotal">0</span></span>
                 </div>
-                <button type="submit" class="btn btn-primary w-100 mt-3 py-2 fw-semibold"
-                    onclick="return confirm('¿Guardar cambios?\n\nSe revertirá el stock anterior y se recalculará.');">
+                <button type="submit" class="btn btn-primary w-100 mt-3 py-2 fw-semibold">
                     <i class="bi bi-check-circle me-2"></i>Guardar cambios
                 </button>
             </div>
@@ -572,7 +570,7 @@ require_once __DIR__ . '/../../inc/header.php';
     document.getElementById('formFactura').onsubmit = function(e) {
         if (Object.keys(agregados).length === 0) {
             e.preventDefault();
-            alert('Debes agregar al menos un producto a la factura.');
+            uiAlert('Debes agregar al menos un producto a la factura.', 'Error', 'warning');
             buscador.focus();
             return false;
         }

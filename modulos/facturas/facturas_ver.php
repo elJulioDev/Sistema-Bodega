@@ -45,37 +45,33 @@ $pageTitle = 'Factura N° ' . $factura['numero_factura'];
 require_once __DIR__ . '/../../inc/header.php';
 ?>
 
-<div class="d-flex justify-content-between align-items-center mb-3">
-    <div>
-        <h1 class="h4 mb-0 text-dark fw-bold">
-            <i class="bi bi-file-earmark-text text-primary me-2"></i>Factura N° <?php echo h($factura['numero_factura']); ?>
-            <?php if ($anulada): ?>
-                <span class="badge bg-danger ms-2">ANULADA</span>
-            <?php endif; ?>
-        </h1>
-        <small class="text-muted">Detalle de recepción e ingreso a bodega</small>
-    </div>
-    <div class="d-flex gap-2">
-        <a href="facturas_lista.php" class="btn btn-sm btn-outline-secondary"><i class="bi bi-arrow-left me-1"></i> Volver</a>
-        <?php if (!$anulada): ?>
-            <a href="facturas_editar.php?id=<?php echo $id; ?>" class="btn btn-sm btn-outline-primary"><i class="bi bi-pencil me-1"></i> Editar</a>
-            <form method="post" action="facturas_anular.php" class="d-inline"
-                  onsubmit="return confirm('¿Anular esta factura?\n\nSe revertirá el stock ingresado.');">
-                <?php echo csrf_field(); ?>
-                <input type="hidden" name="id" value="<?php echo (int)$id; ?>">
-                <button type="submit" class="btn btn-sm btn-outline-danger"><i class="bi bi-x-circle me-1"></i> Anular</button>
-            </form>
-        <?php else: ?>
-            <form method="post" action="facturas_anular.php" class="d-inline"
-                  onsubmit="return confirm('¿Reactivar esta factura?\n\nSe reingresará el stock.');">
-                <?php echo csrf_field(); ?>
-                <input type="hidden" name="id" value="<?php echo (int)$id; ?>">
-                <input type="hidden" name="reactivar" value="1">
-                <button type="submit" class="btn btn-sm btn-success"><i class="bi bi-arrow-counterclockwise me-1"></i> Reactivar</button>
-            </form>
-        <?php endif; ?>
-    </div>
-</div>
+<?php
+ob_start();
+if ($anulada): ?>
+    <span class="badge bg-danger text-uppercase align-self-center">ANULADA</span>
+<?php
+endif;
+ui_btn_link('Volver', 'facturas_lista.php', 'outline-secondary', 'bi-arrow-left');
+if (!$anulada): ?>
+    <?php ui_btn_link('Editar', 'facturas_editar.php?id=' . $id, 'outline-primary', 'bi-pencil'); ?>
+    <form method="post" action="facturas_anular.php" class="d-inline"
+          data-confirm="¿Anular la factura N° <?php echo h($factura['numero_factura']); ?>? Se revertirá el stock ingresado.">
+        <?php echo csrf_field(); ?>
+        <input type="hidden" name="id" value="<?php echo (int)$id; ?>">
+        <button type="submit" class="btn btn-sm btn-outline-danger"><i class="bi bi-x-circle me-1"></i> Anular</button>
+    </form>
+<?php else: ?>
+    <form method="post" action="facturas_anular.php" class="d-inline"
+          data-confirm="¿Reactivar la factura N° <?php echo h($factura['numero_factura']); ?>? Se reingresará el stock.">
+        <?php echo csrf_field(); ?>
+        <input type="hidden" name="id" value="<?php echo (int)$id; ?>">
+        <input type="hidden" name="reactivar" value="1">
+        <button type="submit" class="btn btn-sm btn-success"><i class="bi bi-arrow-counterclockwise me-1"></i> Reactivar</button>
+    </form>
+<?php endif; ?>
+<?php
+ui_page_header('bi-file-earmark-text', 'Factura N° ' . $factura['numero_factura'], 'Detalle de recepción e ingreso a bodega', ob_get_clean());
+?>
 
 <?php if ($anulada): ?>
     <div class="alert alert-danger py-2 small">
@@ -89,14 +85,14 @@ require_once __DIR__ . '/../../inc/header.php';
     <!-- INFO RECEPCIÓN -->
     <div class="col-lg-8">
         <div class="card shadow-sm border-0 h-100">
-            <div class="card-header bg-white py-2 border-0">
+            <div class="card-header bg-body py-2 border-0">
                 <h6 class="mb-0 fw-bold text-primary"><i class="bi bi-info-circle me-1"></i> Información de Recepción</h6>
             </div>
             <div class="card-body p-3">
                 <div class="row g-3">
                     <div class="col-md-6">
                         <div class="small text-muted text-uppercase fw-semibold">Proveedor</div>
-                        <div class="fw-semibold text-dark"><?php echo h($factura['razon_social']); ?></div>
+                        <div class="fw-semibold text-body"><?php echo h($factura['razon_social']); ?></div>
                         <small class="text-muted">RUT: <?php echo h($factura['rut']); ?></small>
                     </div>
                     <div class="col-md-6">
@@ -108,31 +104,31 @@ require_once __DIR__ . '/../../inc/header.php';
                     </div>
                     <div class="col-md-3">
                         <div class="small text-muted text-uppercase fw-semibold">Fecha Emisión</div>
-                        <div class="text-dark"><?php echo date('d/m/Y', strtotime($factura['fecha_factura'])); ?></div>
+                        <div class="text-body"><?php echo date('d/m/Y', strtotime($factura['fecha_factura'])); ?></div>
                     </div>
                     <div class="col-md-3">
                         <div class="small text-muted text-uppercase fw-semibold">Fecha Recepción</div>
-                        <div class="text-dark"><?php echo $factura['fecha_recepcion'] ? date('d/m/Y', strtotime($factura['fecha_recepcion'])) : '—'; ?></div>
+                        <div class="text-body"><?php echo $factura['fecha_recepcion'] ? date('d/m/Y', strtotime($factura['fecha_recepcion'])) : '—'; ?></div>
                     </div>
                     <div class="col-md-3">
                         <div class="small text-muted text-uppercase fw-semibold">OC Referencia</div>
-                        <div class="text-dark"><?php echo $factura['numero_oc'] ? h($factura['numero_oc']) : '—'; ?></div>
+                        <div class="text-body"><?php echo $factura['numero_oc'] ? h($factura['numero_oc']) : '—'; ?></div>
                     </div>
                     <div class="col-md-3">
                         <div class="small text-muted text-uppercase fw-semibold">Estado</div>
                         <?php 
-                            $badge = 'bg-secondary';
+                            $badge = 'bg-secondary bg-opacity-10 text-secondary';
                             $est = strtolower($factura['estado']);
-                            if ($est === 'ingresada') $badge = 'bg-success';
-                            if ($est === 'anulada') $badge = 'bg-danger';
-                            if ($est === 'borrador') $badge = 'bg-warning text-dark';
+                            if ($est === 'ingresada') $badge = 'bg-success bg-opacity-10 text-success';
+                            if ($est === 'anulada') $badge = 'bg-danger bg-opacity-10 text-danger';
+                            if ($est === 'borrador') $badge = 'bg-warning bg-opacity-10 text-warning';
                         ?>
                         <span class="badge <?php echo $badge; ?> text-uppercase"><?php echo h($factura['estado']); ?></span>
                     </div>
                     <?php if ($factura['observacion']): ?>
                         <div class="col-12 border-top pt-2 mt-1">
                             <div class="small text-muted text-uppercase fw-semibold">Observación</div>
-                            <p class="mb-0 small text-dark"><?php echo nl2br(h($factura['observacion'])); ?></p>
+                            <p class="mb-0 small text-body"><?php echo nl2br(h($factura['observacion'])); ?></p>
                         </div>
                     <?php endif; ?>
                 </div>
@@ -142,9 +138,9 @@ require_once __DIR__ . '/../../inc/header.php';
 
     <!-- TOTALES -->
     <div class="col-lg-4">
-        <div class="card shadow-sm border-0 bg-light h-100">
+        <div class="card shadow-sm border-0 bg-body h-100">
             <div class="card-body p-3">
-                <h6 class="fw-bold text-dark mb-3"><i class="bi bi-calculator me-1"></i> Totales</h6>
+                <h6 class="fw-bold text-body mb-3"><i class="bi bi-calculator me-1"></i> Totales</h6>
                 <div class="d-flex justify-content-between mb-2">
                     <span class="text-muted">Neto:</span>
                     <strong>$<?php echo number_format((float)$factura['monto_neto'], 0, ',', '.'); ?></strong>
@@ -170,14 +166,14 @@ require_once __DIR__ . '/../../inc/header.php';
 
 <!-- DETALLE -->
 <div class="card shadow-sm border-0">
-    <div class="card-header bg-white py-2 border-0 d-flex justify-content-between align-items-center">
+    <div class="card-header bg-body py-2 border-0 d-flex justify-content-between align-items-center">
         <h6 class="mb-0 fw-bold text-primary"><i class="bi bi-list-ul me-1"></i> Detalle de Productos Ingresados</h6>
-        <span class="badge bg-light text-dark border"><?php echo count($detalle); ?> ítem(s)</span>
+        <span class="badge bg-body text-body border"><?php echo count($detalle); ?> ítem(s)</span>
     </div>
     <div class="card-body p-0">
         <div class="table-responsive">
             <table class="table table-hover align-middle mb-0 fs-md" >
-                <thead class="table-light text-secondary fs-sm" >
+                <thead class="text-secondary fs-sm" >
                     <tr>
                         <th class="px-3 py-2">PRODUCTO</th>
                         <th class="py-2">DESCRIPCIÓN</th>
@@ -195,8 +191,8 @@ require_once __DIR__ . '/../../inc/header.php';
                     <tr>
                         <td class="px-3">
                             <?php if ($d['codigo']): ?>
-                                <span class="badge bg-light text-dark border font-monospace small"><?php echo h($d['codigo']); ?></span>
-                                <div class="fw-semibold text-dark small mt-1"><?php echo h($d['producto_nombre']); ?></div>
+                                <span class="badge bg-body text-body border font-monospace small"><?php echo h($d['codigo']); ?></span>
+                                <div class="fw-semibold text-body small mt-1"><?php echo h($d['producto_nombre']); ?></div>
                             <?php else: ?>
                                 <span class="text-muted small">Sin producto vinculado</span>
                             <?php endif; ?>
@@ -205,7 +201,7 @@ require_once __DIR__ . '/../../inc/header.php';
                         <td class="text-center small text-muted"><?php echo h($d['unidad'] ?: '—'); ?></td>
                         <td class="text-end fw-semibold"><?php echo number_format((float)$d['cantidad'], 2, ',', '.'); ?></td>
                         <td class="text-end">$<?php echo number_format((float)$d['precio_unitario'], 0, ',', '.'); ?></td>
-                        <td class="text-end fw-bold text-dark">$<?php echo number_format((float)$d['subtotal'], 0, ',', '.'); ?></td>
+                        <td class="text-end fw-bold text-body">$<?php echo number_format((float)$d['subtotal'], 0, ',', '.'); ?></td>
                         <?php if (!$anulada): ?>
                             <td class="px-3 text-end">
                                 <span class="badge bg-info bg-opacity-10 text-info border border-info border-opacity-25">
@@ -216,7 +212,7 @@ require_once __DIR__ . '/../../inc/header.php';
                     </tr>
                 <?php endforeach; ?>
                 </tbody>
-                <tfoot class="table-light">
+                <tfoot>
                     <tr>
                         <td colspan="<?php echo $anulada ? 5 : 6; ?>" class="text-end text-muted fw-bold py-2">Neto</td>
                         <td class="<?php echo $anulada ? 'text-end' : 'text-end'; ?> fw-bold">$<?php echo number_format((float)$factura['monto_neto'], 0, ',', '.'); ?></td>

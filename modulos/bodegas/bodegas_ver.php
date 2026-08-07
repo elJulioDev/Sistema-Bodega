@@ -89,71 +89,69 @@ $pageTitle = 'Detalle Bodega';
 require_once __DIR__ . '/../../inc/header.php';
 ?>
 
-<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
-    <div>
-        <nav aria-label="breadcrumb" class="small mb-1">
-            <ol class="breadcrumb mb-0">
-                <li class="breadcrumb-item"><a href="bodegas_lista.php" class="text-decoration-none">Bodegas</a></li>
-                <li class="breadcrumb-item active"><?php echo h($b['nombre']); ?></li>
-            </ol>
-        </nav>
-        <h1 class="h3 mb-0 text-gray-800">
-            <i class="bi bi-buildings text-primary me-2"></i><?php echo h($b['nombre']); ?>
-            <span class="badge bg-light text-dark border ms-2 fs-2xs" ><?php echo h($b['codigo']); ?></span>
-            <?php if ((int)$b['es_central'] === 1): ?>
-                <span class="badge bg-warning bg-opacity-10 text-warning border border-warning-subtle ms-1 fs-2xs" >CENTRAL</span>
-            <?php endif; ?>
-        </h1>
-    </div>
-    <div class="d-flex gap-2 flex-wrap">
-        <a href="bodegas_encargados.php?id=<?php echo (int)$b['id']; ?>" class="btn btn-success">
-            <i class="bi bi-people-fill me-1"></i> Gestionar encargados
-        </a>
-        <a href="bodegas_editar.php?id=<?php echo (int)$b['id']; ?>" class="btn btn-primary">
-            <i class="bi bi-pencil me-1"></i> Editar
-        </a>
+<?php
+ob_start();
+?>
+<div class="d-flex gap-2 flex-wrap">
+    <a href="bodegas_encargados.php?id=<?php echo (int)$b['id']; ?>" class="btn btn-success">
+        <i class="bi bi-people-fill me-1"></i> Gestionar encargados
+    </a>
+    <a href="bodegas_editar.php?id=<?php echo (int)$b['id']; ?>" class="btn btn-primary">
+        <i class="bi bi-pencil me-1"></i> Editar
+    </a>
 
-        <?php if ((int)$b['estado'] === 1): ?>
-            <?php if ($puedeDesactivar): ?>
-                <form method="post" action="bodegas_lista.php" class="d-inline"
-                      onsubmit="return confirm('¿Desactivar esta bodega?');">
-                    <?php echo csrf_field(); ?>
-                    <input type="hidden" name="toggle" value="<?php echo (int)$b['id']; ?>">
-                    <button type="submit" class="btn btn-outline-danger">
-                        <i class="bi bi-power me-1"></i> Desactivar
-                    </button>
-                </form>
-            <?php else: ?>
-                <button type="button" class="btn btn-outline-danger" disabled title="No se puede desactivar con stock en existencia">
-                    <i class="bi bi-power me-1"></i> Desactivar
-                </button>
-            <?php endif; ?>
-        <?php else: ?>
+    <?php if ((int)$b['estado'] === 1): ?>
+        <?php if ($puedeDesactivar): ?>
             <form method="post" action="bodegas_lista.php" class="d-inline"
-                  onsubmit="return confirm('¿Activar esta bodega?');">
+                  data-confirm="¿Desactivar la bodega <?php echo h($b['nombre']); ?>?">
                 <?php echo csrf_field(); ?>
                 <input type="hidden" name="toggle" value="<?php echo (int)$b['id']; ?>">
-                <button type="submit" class="btn btn-outline-success">
-                    <i class="bi bi-check-circle me-1"></i> Activar
+                <button type="submit" class="btn btn-outline-danger">
+                    <i class="bi bi-power me-1"></i> Desactivar
                 </button>
             </form>
-
-            <?php if ($puedeEliminar): ?>
-                <form method="post" action="bodegas_lista.php" class="d-inline"
-                      onsubmit="return confirm('¿Eliminar definitivamente esta bodega? Esta acción no se puede deshacer.');">
-                    <?php echo csrf_field(); ?>
-                    <input type="hidden" name="delete" value="<?php echo (int)$b['id']; ?>">
-                    <button type="submit" class="btn btn-outline-danger">
-                        <i class="bi bi-trash me-1"></i> Eliminar
-                    </button>
-                </form>
-            <?php endif; ?>
+        <?php else: ?>
+            <button type="button" class="btn btn-outline-danger" disabled title="No se puede desactivar con stock en existencia">
+                <i class="bi bi-power me-1"></i> Desactivar
+            </button>
         <?php endif; ?>
+    <?php else: ?>
+        <form method="post" action="bodegas_lista.php" class="d-inline"
+              data-confirm="¿Activar la bodega <?php echo h($b['nombre']); ?>?">
+            <?php echo csrf_field(); ?>
+            <input type="hidden" name="toggle" value="<?php echo (int)$b['id']; ?>">
+            <button type="submit" class="btn btn-outline-success">
+                <i class="bi bi-check-circle me-1"></i> Activar
+            </button>
+        </form>
 
-        <a href="bodegas_lista.php" class="btn btn-outline-secondary">
-            <i class="bi bi-arrow-left me-1"></i> Volver
-        </a>
-    </div>
+        <?php if ($puedeEliminar): ?>
+            <form method="post" action="bodegas_lista.php" class="d-inline"
+                  data-confirm="¿Eliminar definitivamente la bodega <?php echo h($b['nombre']); ?>? Esta acción no se puede deshacer.">
+                <?php echo csrf_field(); ?>
+                <input type="hidden" name="delete" value="<?php echo (int)$b['id']; ?>">
+                <button type="submit" class="btn btn-outline-danger">
+                    <i class="bi bi-trash me-1"></i> Eliminar
+                </button>
+            </form>
+        <?php endif; ?>
+    <?php endif; ?>
+
+    <a href="bodegas_lista.php" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left me-1"></i> Volver
+    </a>
+</div>
+<?php
+$pageHeaderActions = ob_get_clean();
+?>
+
+<?php ui_page_header('bi-buildings', $b['nombre'], '', $pageHeaderActions); ?>
+
+<div class="d-flex flex-wrap gap-1 mb-3">
+    <span class="badge bg-body text-body border fs-2xs"><?php echo h($b['codigo']); ?></span>
+    <?php if ((int)$b['es_central'] === 1): ?>
+        <span class="badge bg-warning bg-opacity-10 text-warning border border-warning-subtle fs-2xs">CENTRAL</span>
+    <?php endif; ?>
 </div>
 
 <!-- KPIs -->
@@ -162,7 +160,7 @@ require_once __DIR__ . '/../../inc/header.php';
         <div class="card shadow-sm border-0 border-start border-primary border-4 h-100">
             <div class="card-body py-3">
                 <p class="text-muted text-uppercase mb-1 fw-bold fs-xs ls-1" >Productos</p>
-                <h3 class="mb-0 fw-bold text-dark"><?php echo number_format((int)$kpi['productos'], 0, ',', '.'); ?></h3>
+                <h3 class="mb-0 fw-bold text-body"><?php echo number_format((int)$kpi['productos'], 0, ',', '.'); ?></h3>
             </div>
         </div>
     </div>
@@ -170,7 +168,7 @@ require_once __DIR__ . '/../../inc/header.php';
         <div class="card shadow-sm border-0 border-start border-info border-4 h-100">
             <div class="card-body py-3">
                 <p class="text-muted text-uppercase mb-1 fw-bold fs-xs ls-1" >Unidades</p>
-                <h3 class="mb-0 fw-bold text-dark"><?php echo number_format((float)$kpi['unidades'], 2, ',', '.'); ?></h3>
+                <h3 class="mb-0 fw-bold text-body"><?php echo number_format((float)$kpi['unidades'], 2, ',', '.'); ?></h3>
             </div>
         </div>
     </div>
@@ -196,8 +194,8 @@ require_once __DIR__ . '/../../inc/header.php';
 <div class="row g-3 mb-3">
     <div class="col-lg-6">
         <div class="card shadow-sm border-0 h-100">
-            <div class="card-header bg-white border-bottom">
-                <h5 class="mb-0 fw-bold text-dark">
+            <div class="card-header bg-body border-bottom">
+                <h5 class="mb-0 fw-bold text-body">
                     <i class="bi bi-info-circle text-primary me-2"></i>Información
                 </h5>
             </div>
@@ -236,8 +234,8 @@ require_once __DIR__ . '/../../inc/header.php';
 
     <div class="col-lg-6">
         <div class="card shadow-sm border-0 h-100">
-            <div class="card-header bg-white border-bottom d-flex justify-content-between align-items-center">
-                <h5 class="mb-0 fw-bold text-dark">
+            <div class="card-header bg-body border-bottom d-flex justify-content-between align-items-center">
+                <h5 class="mb-0 fw-bold text-body">
                     <i class="bi bi-people-fill text-success me-2"></i>Encargados
                     <span class="badge bg-secondary bg-opacity-10 text-secondary ms-2"><?php echo count($encargados); ?></span>
                 </h5>
@@ -259,7 +257,7 @@ require_once __DIR__ . '/../../inc/header.php';
                         <?php foreach ($encargados as $e): ?>
                             <div class="list-group-item px-0 py-2 d-flex justify-content-between align-items-center">
                                 <div>
-                                    <div class="fw-medium text-dark small">
+                                    <div class="fw-medium text-body small">
                                         <?php if ((int)$e['es_principal'] === 1): ?>
                                             <i class="bi bi-star-fill text-warning me-1" title="Principal"></i>
                                         <?php else: ?>
@@ -290,8 +288,8 @@ require_once __DIR__ . '/../../inc/header.php';
 
 <!-- Stock actual -->
 <div class="card shadow-sm border-0 mb-3">
-    <div class="card-header bg-white border-bottom d-flex justify-content-between align-items-center">
-        <h5 class="mb-0 fw-bold text-dark">
+    <div class="card-header bg-body border-bottom d-flex justify-content-between align-items-center">
+        <h5 class="mb-0 fw-bold text-body">
             <i class="bi bi-boxes text-info me-2"></i>Stock actual
             <span class="badge bg-secondary bg-opacity-10 text-secondary ms-2"><?php echo count($stock); ?></span>
         </h5>
@@ -308,7 +306,7 @@ require_once __DIR__ . '/../../inc/header.php';
         <?php else: ?>
             <div class="table-responsive">
                 <table class="table table-hover align-middle mb-0">
-                    <thead class="table-light text-secondary fs-md" >
+                    <thead class="text-secondary fs-md" >
                         <tr>
                             <th class="px-3 py-2">CÓDIGO</th>
                             <th class="py-2">PRODUCTO</th>
@@ -332,7 +330,7 @@ require_once __DIR__ . '/../../inc/header.php';
                         $valor = (float)$s['stock_actual'] * (float)$s['costo_promedio'];
                     ?>
                         <tr>
-                            <td class="px-3 small"><span class="badge bg-light text-dark border"><?php echo h($s['codigo']); ?></span></td>
+                            <td class="px-3 small"><span class="badge bg-body text-body border"><?php echo h($s['codigo']); ?></span></td>
                             <td class="small fw-medium"><?php echo h($s['nombre']); ?></td>
                             <td class="text-center small text-muted"><?php echo h($s['um_codigo']); ?></td>
                             <td class="text-end small fw-bold"><?php echo number_format((float)$s['stock_actual'], 2, ',', '.'); ?></td>
@@ -350,8 +348,8 @@ require_once __DIR__ . '/../../inc/header.php';
 
 <!-- Movimientos recientes -->
 <div class="card shadow-sm border-0">
-    <div class="card-header bg-white border-bottom d-flex justify-content-between align-items-center">
-        <h5 class="mb-0 fw-bold text-dark">
+    <div class="card-header bg-body border-bottom d-flex justify-content-between align-items-center">
+        <h5 class="mb-0 fw-bold text-body">
             <i class="bi bi-clock-history text-primary me-2"></i>Últimos movimientos
             <span class="badge bg-secondary bg-opacity-10 text-secondary ms-2"><?php echo $totalMov; ?> totales</span>
         </h5>
@@ -368,7 +366,7 @@ require_once __DIR__ . '/../../inc/header.php';
         <?php else: ?>
             <div class="table-responsive">
                 <table class="table table-hover align-middle mb-0">
-                    <thead class="table-light text-secondary fs-md" >
+                    <thead class="text-secondary fs-md" >
                         <tr>
                             <th class="px-3 py-2">FECHA</th>
                             <th class="py-2">TIPO</th>

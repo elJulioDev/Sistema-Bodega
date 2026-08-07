@@ -181,22 +181,13 @@ $pageTitle = 'Funcionarios';
 require_once __DIR__ . '/../../inc/header.php';
 ?>
 
-<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
-    <div>
-        <h1 class="h3 mb-0 text-gray-800">
-            <i class="bi bi-person-badge text-primary me-2"></i>Funcionarios
-        </h1>
-        <p class="text-muted small mb-0 mt-1">Registro único de funcionarios y sus accesos al sistema.</p>
-    </div>
-    <div class="d-flex gap-2">
-        <a href="funcionarios_importar.php" class="btn btn-success">
-            <i class="bi bi-file-earmark-arrow-up me-1"></i> Importar CSV
-        </a>
-        <a href="funcionarios_crear.php" class="btn btn-primary">
-            <i class="bi bi-person-plus me-1"></i> Nuevo Funcionario
-        </a>
-    </div>
-</div>
+<?php ui_page_header(
+    'bi-person-badge',
+    'Funcionarios',
+    'Registro único de funcionarios y sus accesos al sistema.',
+    '<a href="funcionarios_importar.php" class="btn btn-success"><i class="bi bi-file-earmark-arrow-up me-1"></i> Importar CSV</a>'
+    . '<a href="funcionarios_crear.php" class="btn btn-primary"><i class="bi bi-person-plus me-1"></i> Nuevo Funcionario</a>'
+); ?>
 
 <!-- KPIs -->
 <div class="row g-3 mb-3">
@@ -204,7 +195,7 @@ require_once __DIR__ . '/../../inc/header.php';
         <div class="card shadow-sm border-0 border-start border-primary border-4 h-100">
             <div class="card-body py-3">
                 <p class="text-muted text-uppercase mb-1 fw-bold fs-xs ls-1" >Funcionarios</p>
-                <h3 class="mb-0 fw-bold text-dark"><?php echo (int)$kpis['total']; ?></h3>
+                <h3 class="mb-0 fw-bold text-body"><?php echo (int)$kpis['total']; ?></h3>
             </div>
         </div>
     </div>
@@ -287,7 +278,7 @@ require_once __DIR__ . '/../../inc/header.php';
     <div class="card-body p-0">
         <div class="table-responsive">
             <table class="table table-hover align-middle mb-0">
-                <thead class="table-light text-secondary fs-md" >
+                <thead class="text-secondary fs-md" >
                     <tr>
                         <th class="px-3 py-2">RUT</th>
                         <th class="py-2">NOMBRE</th>
@@ -325,7 +316,7 @@ require_once __DIR__ . '/../../inc/header.php';
                     <tr>
                         <td class="px-3 small fw-medium"><?php echo h($f['rut']); ?></td>
                         <td>
-                            <div class="small fw-medium text-dark"><?php echo h($f['nombre']); ?></div>
+                            <div class="small fw-medium text-body"><?php echo h($f['nombre']); ?></div>
                             <?php if (!empty($f['email'])): ?>
                                 <div class="text-muted fs-xs" ><?php echo h($f['email']); ?></div>
                             <?php endif; ?>
@@ -342,7 +333,7 @@ require_once __DIR__ . '/../../inc/header.php';
                                     <div class="text-muted mt-1 fs-2xs" ><?php echo h($asignacion); ?></div>
                                 <?php endif; ?>
                             <?php else: ?>
-                                <span class="badge bg-light text-muted border">Sin acceso</span>
+                                <span class="badge bg-body text-muted border">Sin acceso</span>
                             <?php endif; ?>
                         </td>
                         <td class="text-center d-none d-sm-table-cell">
@@ -364,7 +355,7 @@ require_once __DIR__ . '/../../inc/header.php';
                                 </a>
                                 <?php if ($tieneUsuario): ?>
                                     <form method="post" class="d-inline"
-                                          onsubmit="return confirm('¿Revocar el acceso al sistema de <?php echo h(addslashes($f['nombre'])); ?>? El funcionario se mantiene, pero ya no podrá ingresar.');">
+                                          data-confirm="¿Revocar el acceso al sistema de <?php echo h($f['nombre']); ?>? El funcionario se mantiene, pero ya no podrá ingresar.">
                                         <?php echo csrf_field(); ?>
                                         <input type="hidden" name="revocar_acceso" value="<?php echo (int)$f['id']; ?>">
                                         <button type="submit" class="btn btn-sm btn-outline-warning" title="Revocar acceso al sistema">
@@ -373,7 +364,7 @@ require_once __DIR__ . '/../../inc/header.php';
                                     </form>
                                 <?php endif; ?>
                                 <form method="post" class="d-inline"
-                                      onsubmit="return confirm('¿Cambiar estado de este funcionario?');">
+                                      data-confirm="<?php echo ((int)$f['estado'] === 1) ? '¿Desactivar a ' . h($f['nombre']) . ' del sistema?' : '¿Activar a ' . h($f['nombre']) . ' del sistema?'; ?>">
                                     <?php echo csrf_field(); ?>
                                     <input type="hidden" name="toggle" value="<?php echo (int)$f['id']; ?>">
                                     <button type="submit" class="btn btn-sm btn-outline-<?php echo ((int)$f['estado'] === 1) ? 'danger' : 'success'; ?>"
@@ -383,7 +374,7 @@ require_once __DIR__ . '/../../inc/header.php';
                                 </form>
                                 <?php if (!$tieneUsuario): ?>
                                     <form method="post" class="d-inline"
-                                          onsubmit="return confirm('¿Eliminar definitivamente este funcionario?');">
+                                          data-confirm="¿Eliminar definitivamente este funcionario? Esta acción no se puede deshacer.">
                                         <?php echo csrf_field(); ?>
                                         <input type="hidden" name="eliminar" value="<?php echo (int)$f['id']; ?>">
                                         <button type="submit" class="btn btn-sm btn-outline-danger" title="Eliminar">

@@ -170,13 +170,11 @@ $pageTitle = 'Nueva Factura';
 require_once __DIR__ . '/../../inc/header.php';
 ?>
 
-<div class="d-flex justify-content-between align-items-center mb-3">
-    <div>
-        <h1 class="h4 mb-0 text-dark fw-bold"><i class="bi bi-receipt text-primary me-2"></i>Ingresar Nueva Factura</h1>
-        <small class="text-muted">Los productos ingresan al stock de la bodega central automáticamente</small>
-    </div>
-    <a href="facturas_lista.php" class="btn btn-sm btn-outline-secondary"><i class="bi bi-arrow-left me-1"></i> Volver</a>
-</div>
+<?php
+ob_start();
+ui_btn_link('Volver', 'facturas_lista.php', 'outline-secondary', 'bi-arrow-left');
+ui_page_header('bi-receipt', 'Ingresar Nueva Factura', 'Los productos ingresan al stock de la bodega central automáticamente', ob_get_clean());
+?>
 
 <?php if ($error): ?>
     <div class="alert alert-danger py-2 small"><i class="bi bi-exclamation-triangle-fill me-2"></i><?php echo h($error); ?></div>
@@ -186,7 +184,7 @@ require_once __DIR__ . '/../../inc/header.php';
 <?php echo csrf_field(); ?>
 
 <div class="card shadow-sm border-0 mb-3">
-    <div class="card-header bg-white py-2 border-0">
+    <div class="card-header bg-body py-2 border-0">
         <h6 class="mb-0 fw-bold text-primary"><i class="bi bi-file-earmark-text me-1"></i> Datos de la Factura</h6>
     </div>
     <div class="card-body p-3">
@@ -244,7 +242,7 @@ require_once __DIR__ . '/../../inc/header.php';
 <div class="row g-3 mb-3">
     <div class="col-lg-5">
         <div class="card shadow-sm border-0 h-100">
-            <div class="card-header bg-white py-2 border-0">
+            <div class="card-header bg-body py-2 border-0">
                 <h6 class="mb-0 fw-bold text-primary"><i class="bi bi-search me-1"></i> Buscar y agregar productos</h6>
             </div>
             <div class="card-body p-2">
@@ -269,14 +267,14 @@ require_once __DIR__ . '/../../inc/header.php';
 
     <div class="col-lg-7">
         <div class="card shadow-sm border-0 h-100">
-            <div class="card-header bg-white py-2 border-0 d-flex justify-content-between align-items-center">
+            <div class="card-header bg-body py-2 border-0 d-flex justify-content-between align-items-center">
                 <h6 class="mb-0 fw-bold text-primary"><i class="bi bi-cart-check me-1"></i> Detalle de la Factura</h6>
                 <span class="badge bg-primary" id="badgeItems">0 ítems</span>
             </div>
             <div class="card-body p-0">
                 <div class="table-responsive">
                     <table class="table table-sm align-middle mb-0" id="tablaDetalle">
-                        <thead class="table-light">
+                        <thead>
                             <tr class="small text-secondary text-uppercase">
                                 <th class="px-2 tw-40" >Producto</th>
                                 <th class="text-end tw-18" >Cantidad</th>
@@ -314,7 +312,7 @@ require_once __DIR__ . '/../../inc/header.php';
                 </div>
                 <hr class="my-2">
                 <div class="d-flex justify-content-between fs-5">
-                    <span class="fw-bold text-dark">Total:</span>
+                    <span class="fw-bold text-body">Total:</span>
                     <span class="fw-bold text-primary">$ <span id="resumenTotal">0</span></span>
                 </div>
                 <button type="submit" class="btn btn-primary w-100 mt-3 py-2 fw-semibold" id="btnGuardar">
@@ -499,7 +497,7 @@ require_once __DIR__ . '/../../inc/header.php';
     document.getElementById('formFactura').onsubmit = function(e) {
         if (Object.keys(agregados).length === 0) {
             e.preventDefault();
-            alert('Debes agregar al menos un producto a la factura.');
+            uiAlert('Debes agregar al menos un producto a la factura.', 'Error', 'warning');
             buscador.focus();
             return false;
         }

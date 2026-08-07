@@ -203,28 +203,14 @@ $pageTitle = 'Nuevo Traslado entre Bodegas';
 require_once __DIR__ . '/../../inc/header.php';
 ?>
 
-<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
-    <div>
-        <div class="text-muted small mb-1">
-            <a href="movimientos_lista.php" class="text-decoration-none text-muted">
-                <i class="bi bi-chevron-left"></i> Movimientos
-            </a>
-        </div>
-        <h1 class="h3 mb-0 text-gray-800">
-            <i class="bi bi-arrow-left-right text-primary me-2"></i>Nuevo Traslado entre Bodegas
-        </h1>
-        <p class="text-muted mb-0 small mt-1">
-            <?php if (is_encargado()): ?>
-                Saca stock de <strong><?php echo count($misBodegas); ?> bodega<?php echo count($misBodegas) > 1 ? 's' : ''; ?></strong> bajo tu gestión.
-            <?php else: ?>
-                Selecciona bodega origen, bodega destino y marca los productos a trasladar.
-            <?php endif; ?>
-        </p>
-    </div>
-    <a href="movimientos_lista.php" class="btn btn-outline-secondary">
-        <i class="bi bi-arrow-left me-1"></i> Cancelar
-    </a>
-</div>
+<?php
+$subtitulo = is_encargado()
+    ? 'Saca stock de ' . count($misBodegas) . ' bodega' . (count($misBodegas) > 1 ? 's' : '') . ' bajo tu gestión.'
+    : 'Selecciona bodega origen, bodega destino y marca los productos a trasladar.';
+ob_start();
+ui_btn_link('Cancelar', 'movimientos_lista.php', 'outline-secondary', 'bi-arrow-left');
+ui_page_header('bi-arrow-left-right', 'Nuevo Traslado entre Bodegas', $subtitulo, ob_get_clean());
+?>
 
 <?php if ($error !== ''): ?>
     <div class="alert alert-danger d-flex align-items-start">
@@ -238,7 +224,7 @@ require_once __DIR__ . '/../../inc/header.php';
 
     <!-- PASO 1 -->
     <div class="card shadow-sm border-0 mb-4">
-        <div class="card-header bg-white border-0 pt-3 pb-0 d-flex align-items-center">
+        <div class="card-header bg-body border-0 pt-3 pb-0 d-flex align-items-center">
             <span class="badge bg-primary rounded-circle me-2 step-badge" >1</span>
             <h5 class="mb-0 fw-bold">¿Desde dónde y hacia dónde?</h5>
         </div>
@@ -254,9 +240,9 @@ require_once __DIR__ . '/../../inc/header.php';
                     <?php if (is_encargado() && count($misBodegas) === 1): ?>
                         <!-- Un solo origen: bloqueado -->
                         <?php $b = $misBodegas[0]; ?>
-                        <div class="form-control form-control-lg bg-light d-flex align-items-center justify-content-between min-h-58" >
+                        <div class="form-control form-control-lg bg-body d-flex align-items-center justify-content-between min-h-58" >
                             <div>
-                                <div class="fw-bold text-dark"><?php echo h($b['nombre']); ?></div>
+                                <div class="fw-bold text-body"><?php echo h($b['nombre']); ?></div>
                                 <small class="text-muted"><?php echo h($b['codigo']); ?> · Tu bodega</small>
                             </div>
                             <i class="bi bi-lock-fill text-muted"></i>
@@ -325,14 +311,14 @@ require_once __DIR__ . '/../../inc/header.php';
 
     <!-- PASO 2 - Productos -->
     <div class="card shadow-sm border-0 mb-4" id="cardProductos">
-        <div class="card-header bg-white border-0 pt-3 pb-2 d-flex align-items-center flex-wrap gap-2">
+        <div class="card-header bg-body border-0 pt-3 pb-2 d-flex align-items-center flex-wrap gap-2">
             <span class="badge bg-primary rounded-circle me-2 step-badge" >2</span>
             <h5 class="mb-0 fw-bold me-auto">Seleccionar productos</h5>
             <div class="input-group mw-280" >
-                <span class="input-group-text bg-light border-end-0"><i class="bi bi-search text-secondary"></i></span>
+                <span class="input-group-text bg-body border-end-0"><i class="bi bi-search text-secondary"></i></span>
                 <input type="text" id="buscadorProductos" class="form-control border-start-0 ps-0" placeholder="Buscar producto...">
             </div>
-            <span class="badge bg-light text-dark border" id="badgeDisponibles">0 disponibles</span>
+            <span class="badge bg-body text-body border" id="badgeDisponibles">0 disponibles</span>
         </div>
 
         <div id="mensajeOrigen" class="card-body text-center text-muted py-5">
@@ -348,7 +334,7 @@ require_once __DIR__ . '/../../inc/header.php';
         <div class="d-none" id="contenidoProductos" >
             <div class="table-responsive">
                 <table class="table table-hover align-middle mb-0">
-                    <thead class="table-light">
+                    <thead class="text-secondary">
                         <tr class="small text-uppercase text-secondary">
                             <th class="px-3 tw-5" ><input type="checkbox" id="chkTodos" class="form-check-input"></th>
                             <th class="tw-12" >Código</th>
@@ -468,8 +454,8 @@ require_once __DIR__ . '/../../inc/header.php';
                   + '" data-nombre="' + escapeHtml(d.nombre.toLowerCase())
                   + '" data-codigo="' + escapeHtml(d.codigo.toLowerCase()) + '">'
                   + '<td class="px-3"><input type="checkbox" class="form-check-input chk-item"' + pre + '></td>'
-                  + '<td><span class="badge bg-light text-dark border">' + escapeHtml(d.codigo) + '</span></td>'
-                  + '<td><div class="fw-bold text-dark">' + escapeHtml(d.nombre) + '</div>'
+                  + '<td><span class="badge bg-body text-body border">' + escapeHtml(d.codigo) + '</span></td>'
+                  + '<td><div class="fw-bold text-body">' + escapeHtml(d.nombre) + '</div>'
                   + '<div class="text-muted small">' + (d.unidad ? escapeHtml(d.unidad) : '') + '</div></td>'
                   + '<td class="text-end"><span class="fw-bold text-success">' + fmt(d.stock) + '</span></td>'
                   + '<td class="text-end text-muted">$ ' + fmt(d.costo, 0) + '</td>'
@@ -604,7 +590,7 @@ require_once __DIR__ . '/../../inc/header.php';
                 count++;
             }
         }
-        if (count === 0) { e.preventDefault(); alert('Debes seleccionar al menos un producto válido.'); return false; }
+        if (count === 0) { e.preventDefault(); uiAlert('Debes seleccionar al menos un producto válido.', 'Error', 'warning'); return false; }
     });
 
     renderProductos();

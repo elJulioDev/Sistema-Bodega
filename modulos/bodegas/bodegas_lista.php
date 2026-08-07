@@ -190,17 +190,12 @@ $pageTitle = 'Bodegas';
 require_once __DIR__ . '/../../inc/header.php';
 ?>
 
-<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
-    <div>
-        <h1 class="h3 mb-0 text-gray-800">
-            <i class="bi bi-buildings text-primary me-2"></i>Gestión de Bodegas
-        </h1>
-        <p class="text-muted small mb-0 mt-1">Cada bodega puede tener uno o más encargados. Un encargado puede gestionar varias bodegas.</p>
-    </div>
-    <a href="bodegas_crear.php" class="btn btn-primary">
-        <i class="bi bi-building-add me-1"></i> Nueva Bodega
-    </a>
-</div>
+<?php ui_page_header(
+    'bi-buildings',
+    'Gestión de Bodegas',
+    'Cada bodega puede tener uno o más encargados. Un encargado puede gestionar varias bodegas.',
+    '<a href="bodegas_crear.php" class="btn btn-primary"><i class="bi bi-building-add me-1"></i> Nueva Bodega</a>'
+); ?>
 
 <div class="card shadow-sm border-0 mb-3">
     <div class="card-body py-2">
@@ -222,7 +217,7 @@ require_once __DIR__ . '/../../inc/header.php';
 
 <!-- Bodegas activas -->
 <div class="card shadow-sm border-0 mb-4">
-    <div class="card-header bg-white border-0 py-3">
+    <div class="card-header bg-body border-0 py-3">
         <h2 class="h5 mb-0 text-success">
             <i class="bi bi-check-circle me-2"></i>Bodegas Activas
             <span class="badge bg-success bg-opacity-10 text-success ms-2"><?php echo count($bodegasActivas); ?></span>
@@ -231,7 +226,7 @@ require_once __DIR__ . '/../../inc/header.php';
     <div class="card-body p-0">
         <div class="table-responsive">
             <table class="table table-hover align-middle mb-0">
-                <thead class="table-light text-secondary fs-md" >
+                <thead class="text-secondary fs-md" >
                     <tr>
                         <th class="px-3 py-2">CÓDIGO</th>
                         <th class="py-2">NOMBRE</th>
@@ -254,13 +249,13 @@ require_once __DIR__ . '/../../inc/header.php';
                     ?>
                         <tr>
                             <td class="px-3">
-                                <span class="badge bg-light text-dark border"><?php echo h($b['codigo']); ?></span>
+                                <span class="badge bg-body text-body border"><?php echo h($b['codigo']); ?></span>
                                 <?php if ((int)$b['es_central'] === 1): ?>
                                     <span class="badge bg-warning bg-opacity-10 text-warning border border-warning-subtle fs-2xs" >CENTRAL</span>
                                 <?php endif; ?>
                             </td>
                             <td>
-                                <div class="fw-bold text-dark small"><?php echo h($b['nombre']); ?></div>
+                                <div class="fw-bold text-body small"><?php echo h($b['nombre']); ?></div>
                                 <?php if (!empty($b['ubicacion_referencial'])): ?>
                                     <div class="text-muted fs-xs" ><i class="bi bi-geo-alt me-1"></i><?php echo h($b['ubicacion_referencial']); ?></div>
                                 <?php endif; ?>
@@ -288,7 +283,7 @@ require_once __DIR__ . '/../../inc/header.php';
                                             </span>
                                         <?php endforeach; ?>
                                         <?php if ($totalEnc > $mostrados): ?>
-                                            <span class="badge bg-light text-dark border fs-2xs" >
+                                            <span class="badge bg-body text-body border fs-2xs" >
                                                 +<?php echo ($totalEnc - $mostrados); ?> más
                                             </span>
                                         <?php endif; ?>
@@ -315,7 +310,7 @@ require_once __DIR__ . '/../../inc/header.php';
                                     </a>
                                     <?php if ($puedeDesactivar): ?>
                                         <form method="post" class="d-inline"
-                                              onsubmit="return confirm('¿Desactivar esta bodega?');">
+                                              data-confirm="¿Desactivar la bodega <?php echo h($b['nombre']); ?>?">
                                             <?php echo csrf_field(); ?>
                                             <input type="hidden" name="toggle" value="<?php echo (int)$b['id']; ?>">
                                             <button type="submit" class="btn btn-sm btn-outline-danger" title="Desactivar">
@@ -341,7 +336,7 @@ require_once __DIR__ . '/../../inc/header.php';
 
 <!-- Bodegas inactivas -->
 <div class="card shadow-sm border-0">
-    <div class="card-header bg-white border-0 py-3">
+    <div class="card-header bg-body border-0 py-3">
         <h2 class="h5 mb-0 text-danger">
             <i class="bi bi-x-circle me-2"></i>Bodegas Inactivas
             <span class="badge bg-danger bg-opacity-10 text-danger ms-2"><?php echo count($bodegasInactivas); ?></span>
@@ -350,7 +345,7 @@ require_once __DIR__ . '/../../inc/header.php';
     <div class="card-body p-0">
         <div class="table-responsive">
             <table class="table table-hover align-middle mb-0">
-                <thead class="table-light text-secondary fs-md" >
+                <thead class="text-secondary fs-md" >
                     <tr>
                         <th class="px-3 py-2">CÓDIGO</th>
                         <th class="py-2">NOMBRE</th>
@@ -376,9 +371,9 @@ require_once __DIR__ . '/../../inc/header.php';
                         $totalEnc = (int)$b['total_encargados'];
                     ?>
                         <tr>
-                            <td class="px-3"><span class="badge bg-light text-dark border"><?php echo h($b['codigo']); ?></span></td>
+                            <td class="px-3"><span class="badge bg-body text-body border"><?php echo h($b['codigo']); ?></span></td>
                             <td>
-                                <div class="fw-bold text-dark small"><?php echo h($b['nombre']); ?></div>
+                                <div class="fw-bold text-body small"><?php echo h($b['nombre']); ?></div>
                             </td>
                             <td class="small">
                                 <?php if ($totalEnc > 0): ?>
@@ -403,7 +398,7 @@ require_once __DIR__ . '/../../inc/header.php';
                                         <i class="bi bi-pencil"></i>
                                     </a>
                                     <form method="post" class="d-inline"
-                                          onsubmit="return confirm('¿Activar esta bodega?');">
+                                          data-confirm="¿Activar la bodega <?php echo h($b['nombre']); ?>?">
                                         <?php echo csrf_field(); ?>
                                         <input type="hidden" name="toggle" value="<?php echo (int)$b['id']; ?>">
                                         <button type="submit" class="btn btn-sm btn-outline-success" title="Activar">
@@ -412,7 +407,7 @@ require_once __DIR__ . '/../../inc/header.php';
                                     </form>
                                     <?php if ($puedeEliminar): ?>
                                         <form method="post" class="d-inline"
-                                              onsubmit="return confirm('¿Eliminar definitivamente esta bodega? Esta acción no se puede deshacer.');">
+                                              data-confirm="¿Eliminar definitivamente la bodega <?php echo h($b['nombre']); ?>? Esta acción no se puede deshacer.">
                                             <?php echo csrf_field(); ?>
                                             <input type="hidden" name="delete" value="<?php echo (int)$b['id']; ?>">
                                             <button type="submit" class="btn btn-sm btn-outline-danger" title="Eliminar definitivamente">

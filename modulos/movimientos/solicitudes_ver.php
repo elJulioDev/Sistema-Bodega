@@ -381,35 +381,20 @@ function badge_item($est) {
 }
 ?>
 
-<div class="d-flex justify-content-between align-items-start mb-4 flex-wrap gap-2">
-    <div>
-        <div class="text-muted small mb-1">
-            <a href="solicitudes_lista.php" class="text-decoration-none text-muted">
-                <i class="bi bi-chevron-left"></i> Solicitudes
-            </a>
-        </div>
-        <h1 class="h3 mb-0">
-            <i class="bi bi-clipboard-check text-primary me-2"></i>
-            <?php echo h($sol['numero_solicitud']); ?>
-            &nbsp;<?php echo badge_sol($sol['estado']); ?>
-        </h1>
-        <p class="text-muted small mt-1 mb-0">
-            Solicitado por <strong><?php echo h($sol['usuario_nombre']); ?></strong>
-            el <?php echo date('d/m/Y H:i', strtotime($sol['created_at'])); ?>
-        </p>
-    </div>
-    <div class="d-flex gap-2">
-        <?php if ($puedeGestionar && $esPendiente): ?>
-            <button type="button" class="btn btn-outline-danger btn-sm"
-                    data-bs-toggle="modal" data-bs-target="#modalRechazar">
-                <i class="bi bi-x-circle me-1"></i> Rechazar Todo
-            </button>
-        <?php endif; ?>
-        <a href="solicitudes_lista.php" class="btn btn-outline-secondary btn-sm">
-            <i class="bi bi-arrow-left me-1"></i> Volver
-        </a>
-    </div>
-</div>
+<?php
+$subtitulo = 'Solicitado por ' . $sol['usuario_nombre'] . ' el ' . date('d/m/Y H:i', strtotime($sol['created_at']));
+ob_start();
+echo badge_sol($sol['estado']);
+if ($puedeGestionar && $esPendiente): ?>
+    <button type="button" class="btn btn-outline-danger btn-sm"
+            data-bs-toggle="modal" data-bs-target="#modalRechazar">
+        <i class="bi bi-x-circle me-1"></i> Rechazar Todo
+    </button>
+<?php
+endif;
+ui_btn_link('Volver', 'solicitudes_lista.php', 'outline-secondary', 'bi-arrow-left');
+ui_page_header('bi-clipboard-check', $sol['numero_solicitud'], $subtitulo, ob_get_clean());
+?>
 
 <div class="row g-3 mb-4">
     <div class="col-md">
@@ -494,7 +479,7 @@ function badge_item($est) {
 <?php echo csrf_field(); ?>
 
     <div class="card border-0 shadow-sm mb-4">
-        <div class="card-header bg-white d-flex justify-content-between align-items-center py-3">
+        <div class="card-header bg-body d-flex justify-content-between align-items-center py-3">
             <h6 class="mb-0 fw-bold">
                 <i class="bi bi-list-check text-primary me-2"></i>
                 Ítems solicitados
@@ -511,7 +496,7 @@ function badge_item($est) {
         </div>
         <div class="table-responsive">
             <table class="table table-hover align-middle mb-0" id="tablaItems">
-                <thead class="table-light small text-uppercase text-muted">
+                <thead class="small text-uppercase text-muted">
                     <tr>
                         <th class="input-w-30" >#</th>
                         <th>Producto</th>
@@ -591,7 +576,7 @@ function badge_item($est) {
                 </tbody>
             </table>
         </div>
-        <div class="card-footer bg-white border-top-0 pt-0">
+        <div class="card-footer bg-body border-top-0 pt-0">
             <div class="row g-2 mt-1">
                 <div class="col-auto">
                     <span class="badge bg-success-subtle text-success border border-success-subtle p-2" id="kpiAprob">
@@ -628,14 +613,14 @@ function badge_item($est) {
 <?php else: /* Solicitud ya procesada / rechazada — solo lectura */ ?>
 
 <div class="card border-0 shadow-sm mb-4">
-    <div class="card-header bg-white py-3">
+    <div class="card-header bg-body py-3">
         <h6 class="mb-0 fw-bold">
             <i class="bi bi-list-check text-primary me-2"></i> Ítems de la solicitud
         </h6>
     </div>
     <div class="table-responsive">
         <table class="table table-hover align-middle mb-0">
-            <thead class="table-light small text-uppercase text-muted">
+            <thead class="small text-uppercase text-muted">
                 <tr>
                     <th>#</th>
                     <th>Producto</th>
@@ -672,7 +657,7 @@ function badge_item($est) {
 
 <?php if ($logs): ?>
 <div class="card border-0 shadow-sm mb-4">
-    <div class="card-header bg-white py-3">
+    <div class="card-header bg-body py-3">
         <h6 class="mb-0 fw-bold text-secondary">
             <i class="bi bi-journal-text me-2"></i> Historial de acciones
         </h6>
@@ -823,17 +808,29 @@ function badge_item($est) {
         // Verificar campos inválidos
         var invalidos = document.querySelectorAll('.item-cant-ap.is-invalid');
         if (invalidos.length > 0) {
-            alert('Hay cantidades aprobadas que superan el stock disponible. Corrígelas antes de ejecutar.');
+            uiAlert('Hay cantidades aprobadas que superan el stock disponible. Corrígelas antes de ejecutar.', 'Error', 'warning');
             return false;
         }
         if (nAprob === 0) {
-            alert('No hay ítems aprobados. Usa "Rechazar Todo" si deseas rechazar la solicitud completa.');
+            uiAlert('No hay ítems aprobados. Usa "Rechazar Todo" si deseas rechazar la solicitud completa.', 'Aviso', 'info');
             return false;
         }
-        if (nRec > 0) {
-            return confirm(nRec + ' ítem(s) serán rechazados. ¿Ejecutar traslado con ' + nAprob + ' ítem(s) aprobado(s)?');
-        }
-        return confirm('¿Ejecutar traslado con todos los ítems aprobados?');
+        var msg = (nRec > 0)
+            ? (nRec + ' ítem(s) serán rechazados. ¿Ejecutar traslado con ' + nAprob + ' ítem(s) aprobado(s)?')
+            : '¿Ejecutar traslado con todos los ítems aprobados?';
+        uiConfirm(msg, function () {
+            var form = document.getElementById('formRevision');
+            var h = document.getElementById('hfActionEjecutar');
+            if (!h) {
+                h = document.createElement('input');
+                h.type = 'hidden';
+                h.name = 'action';
+                h.value = 'ejecutar';
+                form.appendChild(h);
+            }
+            form.submit();
+        }, 'Ejecutar traslado');
+        return false;
     };
 
     // Inicializar KPIs y validaciones

@@ -82,17 +82,12 @@ $pageTitle = 'Unidades Organizacionales';
 require_once __DIR__ . '/../../inc/header.php';
 ?>
 
-<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
-    <div>
-        <h1 class="h3 mb-0">
-            <i class="bi bi-diagram-3 text-primary me-2"></i>Unidades Organizacionales
-        </h1>
-        <p class="text-muted small mb-0 mt-1">Departamentos y direcciones de la municipalidad.</p>
-    </div>
-    <a href="unidades_crear.php" class="btn btn-primary">
-        <i class="bi bi-plus-lg me-1"></i> Nueva Unidad
-    </a>
-</div>
+<?php ui_page_header(
+    'bi-diagram-3',
+    'Unidades Organizacionales',
+    'Departamentos y direcciones de la municipalidad.',
+    '<a href="unidades_crear.php" class="btn btn-primary"><i class="bi bi-plus-lg me-1"></i> Nueva Unidad</a>'
+); ?>
 
 <!-- KPIs -->
 <div class="row g-3 mb-4">
@@ -100,7 +95,7 @@ require_once __DIR__ . '/../../inc/header.php';
         <div class="card shadow-sm border-0 border-start border-primary border-4 h-100">
             <div class="card-body py-3">
                 <p class="text-muted text-uppercase mb-1 fw-bold fs-xs ls-1" >Total</p>
-                <h3 class="mb-0 fw-bold text-dark"><?php echo (int)$kpis['total']; ?></h3>
+                <h3 class="mb-0 fw-bold text-body"><?php echo (int)$kpis['total']; ?></h3>
             </div>
         </div>
     </div>
@@ -128,7 +123,7 @@ require_once __DIR__ . '/../../inc/header.php';
         <form method="get" class="row g-2 align-items-center">
             <div class="col-md-6">
                 <div class="input-group input-group-sm">
-                    <span class="input-group-text bg-light text-secondary border-end-0">
+                    <span class="input-group-text bg-body text-secondary border-end-0">
                         <i class="bi bi-search"></i>
                     </span>
                     <input type="text" name="buscar" value="<?php echo h($buscar); ?>"
@@ -162,7 +157,7 @@ require_once __DIR__ . '/../../inc/header.php';
     <div class="card-body p-0">
         <div class="table-responsive">
             <table class="table table-hover align-middle mb-0 fs-md" >
-                <thead class="table-light text-secondary fs-sm" >
+                <thead class="text-secondary fs-sm" >
                     <tr>
                         <th class="px-3 py-2">CÓDIGO</th>
                         <th class="py-2">NOMBRE</th>
@@ -186,11 +181,11 @@ require_once __DIR__ . '/../../inc/header.php';
                     ?>
                     <tr>
                         <td class="px-3">
-                            <span class="badge bg-light text-dark border font-monospace">
+                            <span class="badge bg-body text-body border font-monospace">
                                 <?php echo h($u['codigo']); ?>
                             </span>
                         </td>
-                        <td class="fw-semibold text-dark"><?php echo h($u['nombre']); ?></td>
+                        <td class="fw-semibold text-body"><?php echo h($u['nombre']); ?></td>
                         <td class="text-center">
                             <?php if ((int)$u['total_funcionarios'] > 0): ?>
                                 <span class="badge bg-info bg-opacity-10 text-info border border-info-subtle">
@@ -221,7 +216,7 @@ require_once __DIR__ . '/../../inc/header.php';
                                     <i class="bi bi-pencil"></i>
                                 </a>
                                 <form method="post" class="d-inline"
-                                      onsubmit="return confirm('<?php echo $activa ? '¿Desactivar esta unidad?' : '¿Activar esta unidad?'; ?>')">
+                                      data-confirm="<?php echo $activa ? '¿Desactivar la unidad ' . h($u['nombre']) . '?' : '¿Activar la unidad ' . h($u['nombre']) . '?'; ?>">
                                     <?php echo csrf_field(); ?>
                                     <input type="hidden" name="toggle" value="<?php echo (int)$u['id']; ?>">
                                     <button type="submit" class="btn btn-outline-<?php echo $activa ? 'warning' : 'success'; ?>"

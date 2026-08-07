@@ -85,34 +85,22 @@ $pageTitle = 'Encargados — ' . $bodega['nombre'];
 require_once __DIR__ . '/../../inc/header.php';
 ?>
 
-<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
-    <div>
-        <nav aria-label="breadcrumb" class="small mb-1">
-            <ol class="breadcrumb mb-0">
-                <li class="breadcrumb-item"><a href="bodegas_lista.php" class="text-decoration-none">Bodegas</a></li>
-                <li class="breadcrumb-item"><a href="bodegas_ver.php?id=<?php echo (int)$bodega['id']; ?>" class="text-decoration-none"><?php echo h($bodega['nombre']); ?></a></li>
-                <li class="breadcrumb-item active">Encargados</li>
-            </ol>
-        </nav>
-        <h1 class="h3 mb-0">
-            <i class="bi bi-people-fill text-primary me-2"></i>
-            Encargados de <?php echo h($bodega['nombre']); ?>
-            <span class="badge bg-light text-dark border ms-2 fs-2xs" ><?php echo h($bodega['codigo']); ?></span>
-        </h1>
-        <p class="text-muted small mt-1 mb-0">
-            Una bodega puede tener múltiples encargados. Uno puede marcarse como <strong>principal</strong>.
-        </p>
-    </div>
-    <a href="bodegas_ver.php?id=<?php echo (int)$bodega['id']; ?>" class="btn btn-outline-secondary">
-        <i class="bi bi-arrow-left me-1"></i> Volver
-    </a>
+<?php ui_page_header(
+    'bi-people-fill',
+    'Encargados de ' . $bodega['nombre'],
+    'Una bodega puede tener múltiples encargados. Uno puede marcarse como principal.',
+    '<a href="bodegas_ver.php?id=' . (int)$bodega['id'] . '" class="btn btn-outline-secondary"><i class="bi bi-arrow-left me-1"></i> Volver</a>'
+); ?>
+
+<div class="d-flex flex-wrap gap-1 mb-3">
+    <span class="badge bg-body text-body border fs-2xs"><?php echo h($bodega['codigo']); ?></span>
 </div>
 
 <div class="row g-3">
     <!-- Encargados actuales -->
     <div class="col-lg-7">
         <div class="card shadow-sm border-0 h-100">
-            <div class="card-header bg-white border-bottom d-flex justify-content-between align-items-center">
+            <div class="card-header bg-body border-bottom d-flex justify-content-between align-items-center">
                 <h5 class="mb-0 fw-bold">
                     <i class="bi bi-person-check text-success me-2"></i>Encargados asignados
                 </h5>
@@ -127,7 +115,7 @@ require_once __DIR__ . '/../../inc/header.php';
                 <?php else: ?>
                     <div class="table-responsive">
                         <table class="table table-hover align-middle mb-0">
-                            <thead class="table-light small text-uppercase text-secondary">
+                            <thead class="small text-uppercase text-secondary">
                                 <tr>
                                     <th class="px-3">Nombre</th>
                                     <th>RUT / Cargo</th>
@@ -168,7 +156,7 @@ require_once __DIR__ . '/../../inc/header.php';
                                     </td>
                                     <td class="px-3 text-end">
                                         <form method="post" class="d-inline"
-                                              onsubmit="return confirm('¿Quitar a <?php echo h(addslashes($e['nombre'])); ?> como encargado de esta bodega?');">
+                                              data-confirm="¿Quitar a <?php echo h($e['nombre']); ?> como encargado de esta bodega?">
                                             <?php echo csrf_field(); ?>
                                             <input type="hidden" name="accion" value="quitar">
                                             <input type="hidden" name="id_usuario" value="<?php echo (int)$e['id']; ?>">
@@ -190,7 +178,7 @@ require_once __DIR__ . '/../../inc/header.php';
     <!-- Asignar nuevos -->
     <div class="col-lg-5">
         <div class="card shadow-sm border-0 h-100">
-            <div class="card-header bg-white border-bottom">
+            <div class="card-header bg-body border-bottom">
                 <h5 class="mb-0 fw-bold">
                     <i class="bi bi-person-plus text-primary me-2"></i>Asignar encargados
                 </h5>
@@ -207,7 +195,7 @@ require_once __DIR__ . '/../../inc/header.php';
                     <input type="hidden" name="accion" value="asignar">
 
                     <div class="input-group input-group-sm mb-2">
-                        <span class="input-group-text bg-white"><i class="bi bi-search"></i></span>
+                        <span class="input-group-text bg-body"><i class="bi bi-search"></i></span>
                         <input type="text" id="filtroUsuario" class="form-control" placeholder="Filtrar por nombre, RUT, unidad...">
                     </div>
 
@@ -226,7 +214,7 @@ require_once __DIR__ . '/../../inc/header.php';
                                     <div class="d-flex align-items-start gap-2">
                                         <input type="checkbox" class="form-check-input mt-1" name="ids_usuarios[]" value="<?php echo (int)$d['id']; ?>">
                                         <div class="flex-grow-1">
-                                            <div class="fw-semibold small text-dark"><?php echo h($d['nombre']); ?></div>
+                                            <div class="fw-semibold small text-body"><?php echo h($d['nombre']); ?></div>
                                             <div class="text-muted fs-xs" >
                                                 <?php echo h($d['rut'] ? $d['rut'] : $d['usuario']); ?>
                                                 <?php if ($d['cargo']): ?> · <?php echo h($d['cargo']); ?><?php endif; ?>
@@ -238,7 +226,7 @@ require_once __DIR__ . '/../../inc/header.php';
                                                 </span>
                                             <?php endif; ?>
                                             <?php if ($d['rol'] === 'solicitante'): ?>
-                                                <span class="badge bg-light text-muted border mt-1 fs-2xs" >
+                                                <span class="badge bg-body text-muted border mt-1 fs-2xs" >
                                                     Rol actual: Solicitante → será promovido
                                                 </span>
                                             <?php endif; ?>

@@ -61,15 +61,12 @@ $pageTitle = 'Unidades de Medida';
 require_once __DIR__ . '/../../inc/header.php';
 ?>
 
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h1 class="h3 mb-0 text-gray-800"><i class="bi bi-ruler text-primary me-2"></i>Unidades de Medida</h1>
-    <a href="productos_lista.php" class="btn btn-outline-secondary"><i class="bi bi-arrow-left me-1"></i> Volver a Productos</a>
-</div>
+<?php ui_page_header('bi-ruler', 'Unidades de Medida', '', '<a href="productos_lista.php" class="btn btn-outline-secondary"><i class="bi bi-arrow-left me-1"></i> Volver a Productos</a>'); ?>
 
 <div class="row g-4">
     <div class="col-lg-4">
         <div class="card shadow-sm border-0">
-            <div class="card-header bg-white pt-3 border-0">
+            <div class="card-header bg-body pt-3 border-0">
                 <h5 class="fw-bold mb-0"><?php echo $editando ? 'Editar Unidad' : 'Nueva Unidad'; ?></h5>
             </div>
             <div class="card-body">
@@ -113,7 +110,7 @@ require_once __DIR__ . '/../../inc/header.php';
             <div class="card-body p-0">
                 <div class="table-responsive">
                     <table class="table table-hover align-middle mb-0">
-                        <thead class="table-light text-secondary small">
+                        <thead class="text-secondary small">
                             <tr>
                                 <th class="px-4 py-3">CÓDIGO</th>
                                 <th class="py-3">NOMBRE</th>
@@ -127,8 +124,8 @@ require_once __DIR__ . '/../../inc/header.php';
                             <?php else: ?>
                                 <?php foreach ($unidades as $u): ?>
                                 <tr>
-                                    <td class="px-4"><span class="badge bg-light text-dark border"><?php echo h($u['codigo']); ?></span></td>
-                                    <td class="fw-bold text-dark"><?php echo h($u['nombre']); ?></td>
+                                    <td class="px-4"><span class="badge bg-body text-secondary border"><?php echo h($u['codigo']); ?></span></td>
+                                    <td class="fw-bold"><?php echo h($u['nombre']); ?></td>
                                     <td class="text-center">
                                         <span class="badge <?php echo $u['estado'] ? 'bg-success' : 'bg-danger'; ?> bg-opacity-10 <?php echo $u['estado'] ? 'text-success' : 'text-danger'; ?> border-0">
                                             <?php echo $u['estado'] ? 'Activo' : 'Inactivo'; ?>
@@ -140,7 +137,7 @@ require_once __DIR__ . '/../../inc/header.php';
                                                 <i class="bi bi-pencil"></i>
                                             </a>
                                             <form method="post" class="d-inline"
-                                                  onsubmit="return confirm('¿Deseas cambiar el estado de esta unidad?');">
+                                                  data-confirm="<?php echo $u['estado'] ? '¿Desactivar la unidad de medida ' . h($u['nombre']) . '?' : '¿Activar la unidad de medida ' . h($u['nombre']) . '?'; ?>">
                                                 <?php echo csrf_field(); ?>
                                                 <input type="hidden" name="toggle" value="<?php echo (int)$u['id']; ?>">
                                                 <button type="submit" class="btn btn-sm btn-outline-<?php echo $u['estado'] ? 'danger' : 'success'; ?>"

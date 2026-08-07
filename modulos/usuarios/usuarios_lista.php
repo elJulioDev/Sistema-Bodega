@@ -78,14 +78,12 @@ $pageTitle = 'Usuarios';
 require_once __DIR__ . '/../../inc/header.php';
 ?>
 
-<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
-    <h1 class="h3 mb-0 text-gray-800">
-        <i class="bi bi-people text-primary me-2"></i>Gestión de Usuarios
-    </h1>
-    <a href="usuarios_crear.php" class="btn btn-primary">
-        <i class="bi bi-person-plus me-1"></i> Nuevo Usuario
-    </a>
-</div>
+<?php ui_page_header(
+    'bi-people',
+    'Gestión de Usuarios',
+    '',
+    '<a href="usuarios_crear.php" class="btn btn-primary"><i class="bi bi-person-plus me-1"></i> Nuevo Usuario</a>'
+); ?>
 
 <!-- Filtros -->
 <div class="card shadow-sm border-0 mb-3">
@@ -129,7 +127,7 @@ require_once __DIR__ . '/../../inc/header.php';
     <div class="card-body p-0">
         <div class="table-responsive">
             <table class="table table-hover align-middle mb-0">
-                <thead class="table-light text-secondary fs-md" >
+                <thead class="text-secondary fs-md" >
                     <tr>
                         <th class="px-3 py-2">USUARIO (RUT)</th>
                         <th class="py-2">NOMBRE</th>
@@ -196,7 +194,7 @@ require_once __DIR__ . '/../../inc/header.php';
                                     <i class="bi bi-pencil"></i>
                                 </a>
                                 <form method="post" class="d-inline"
-                                      onsubmit="return confirm('¿Cambiar estado de este usuario?');">
+                                      data-confirm="<?php echo ((int)$u['estado'] === 1) ? '¿Desactivar al usuario ' . h($u['usuario']) . '?' : '¿Activar al usuario ' . h($u['usuario']) . '?'; ?>">
                                     <?php echo csrf_field(); ?>
                                     <input type="hidden" name="toggle" value="<?php echo (int)$u['id']; ?>">
                                     <button type="submit" class="btn btn-outline-<?php echo ((int)$u['estado'] === 1) ? 'warning' : 'success'; ?>"
@@ -205,7 +203,7 @@ require_once __DIR__ . '/../../inc/header.php';
                                     </button>
                                 </form>
                                 <form method="post" class="d-inline"
-                                      onsubmit="return confirm('¿Eliminar definitivamente? Esta acción no se puede deshacer.');">
+                                      data-confirm="¿Eliminar definitivamente el usuario <?php echo h($u['usuario']); ?>? Esta acción no se puede deshacer.">
                                     <?php echo csrf_field(); ?>
                                     <input type="hidden" name="eliminar" value="<?php echo (int)$u['id']; ?>">
                                     <button type="submit" class="btn btn-outline-danger" title="Eliminar">
