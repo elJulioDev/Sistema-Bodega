@@ -73,41 +73,6 @@ $pageTitle = 'Nuevo Proveedor';
 require_once __DIR__ . '/../../inc/header.php';
 ?>
 
-<style>
-/* ── Sección del formulario ── */
-.form-section { padding: 1.4rem 1.5rem; }
-.form-section + .form-section { border-top: 1px solid #f0f2f5; }
-.section-title {
-    font-size: .78rem; font-weight: 700; letter-spacing: .7px;
-    text-transform: uppercase; color: #9ca3af;
-    display: flex; align-items: center; gap: .5rem; margin-bottom: 1.1rem;
-}
-.section-title::after { content: ''; flex: 1; height: 1px; background: #f0f2f5; }
-
-/* ── Campos con icono ── */
-.field-icon-wrap { position: relative; }
-.field-icon-wrap .field-icon {
-    position: absolute; left: .85rem; top: 50%;
-    transform: translateY(-50%); color: #9ca3af;
-    font-size: .95rem; pointer-events: none; z-index: 5;
-}
-.field-icon-wrap .form-control { padding-left: 2.5rem; }
-.field-icon-wrap .form-control:focus {
-    border-color: #0d6efd;
-    box-shadow: 0 0 0 .2rem rgba(13,110,253,.15);
-}
-
-/* ── Labels ── */
-.form-label { font-size: .83rem; font-weight: 600; color: #374151; margin-bottom: .35rem; }
-.req { color: #ef4444; }
-.required-note { font-size: .75rem; color: #9ca3af; margin-bottom: 1.25rem; }
-
-/* ── Responsive ── */
-@media (max-width: 575.98px) {
-    .form-section { padding: 1.1rem 1rem; }
-}
-</style>
-
 <!-- Cabecera -->
 <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
     <div>

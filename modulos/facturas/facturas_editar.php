@@ -395,15 +395,6 @@ require_once __DIR__ . '/../../inc/header.php';
 
 </form>
 
-<style>
-.producto-item { cursor: pointer; transition: background .15s; padding: 6px 10px; border-bottom: 1px solid #e9ecef; }
-.producto-item:hover { background: #e7f1ff; }
-.producto-item.ya-agregado { background: #d1e7dd; }
-.producto-item .btn-add { opacity: 0.7; transition: all .15s; font-size: 1.35rem; }
-.producto-item:hover .btn-add { opacity: 1; transform: scale(1.15); }
-kbd { background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 3px; padding: 1px 5px; font-size: 0.75em; }
-</style>
-
 <script>
 (function() {
     var PRODUCTOS = <?php echo json_encode($productosJS); ?>;

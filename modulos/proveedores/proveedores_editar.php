@@ -93,54 +93,6 @@ require_once __DIR__ . '/../../inc/header.php';
 $activo = (int)$proveedor['estado'] === 1;
 ?>
 
-<style>
-/* ── Sección del formulario ── */
-.form-section { padding: 1.4rem 1.5rem; }
-.form-section + .form-section { border-top: 1px solid #f0f2f5; }
-.section-title {
-    font-size: .78rem; font-weight: 700; letter-spacing: .7px;
-    text-transform: uppercase; color: #9ca3af;
-    display: flex; align-items: center; gap: .5rem; margin-bottom: 1.1rem;
-}
-.section-title::after { content: ''; flex: 1; height: 1px; background: #f0f2f5; }
-
-/* ── Campos con icono ── */
-.field-icon-wrap { position: relative; }
-.field-icon-wrap .field-icon {
-    position: absolute; left: .85rem; top: 50%;
-    transform: translateY(-50%); color: #9ca3af;
-    font-size: .95rem; pointer-events: none; z-index: 5;
-}
-.field-icon-wrap .form-control { padding-left: 2.5rem; }
-.field-icon-wrap .form-control:focus {
-    border-color: #0d6efd;
-    box-shadow: 0 0 0 .2rem rgba(13,110,253,.15);
-}
-
-/* ── Labels ── */
-.form-label { font-size: .83rem; font-weight: 600; color: #374151; margin-bottom: .35rem; }
-.req { color: #ef4444; }
-.required-note { font-size: .75rem; color: #9ca3af; margin-bottom: 1.25rem; }
-
-/* ── Zona peligrosa ── */
-.danger-zone {
-    background: #fff8f8; border: 1px solid #fecaca; border-radius: 12px;
-    padding: 1.1rem 1.4rem; display: flex; align-items: center;
-    justify-content: space-between; flex-wrap: wrap; gap: .75rem; margin-bottom: 1.25rem;
-}
-.danger-zone-info p  { margin: 0; font-size: .85rem; color: #991b1b; font-weight: 600; }
-.danger-zone-info span { font-size: .78rem; color: #b91c1c; }
-.danger-zone-info.activar p    { color: #065f46; }
-.danger-zone-info.activar span { color: #047857; }
-.danger-zone.activar { background: #f0fdf4; border-color: #a7f3d0; }
-
-@media (max-width: 575.98px) {
-    .form-section { padding: 1.1rem 1rem; }
-    .danger-zone  { flex-direction: column; align-items: flex-start; }
-    .danger-zone .btn { width: 100%; justify-content: center; }
-}
-</style>
-
 <!-- Cabecera -->
 <div class="d-flex justify-content-between align-items-start mb-4 flex-wrap gap-2">
     <div>

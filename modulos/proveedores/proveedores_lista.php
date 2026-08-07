@@ -45,55 +45,6 @@ $pageTitle = 'Proveedores';
 require_once __DIR__ . '/../../inc/header.php';
 ?>
 
-<style>
-/* ══ CARDS — móvil ════════════════════════════════════════ */
-.prov-cards { display:none; flex-direction:column; gap:.7rem; }
-
-.prov-card {
-    background:#fff; border:1px solid #e9ecef; border-radius:12px;
-    overflow:hidden; box-shadow:0 1px 3px rgba(0,0,0,.05);
-}
-.prov-card-head {
-    display:flex; align-items:center; justify-content:space-between;
-    padding:.7rem 1rem; background:#f8f9ff;
-    border-bottom:1px solid #e9ecef; gap:.5rem;
-}
-.prov-card-head-l { display:flex; align-items:center; gap:.5rem; min-width:0; flex:1; }
-.prov-card-razon {
-    font-size:.88rem; font-weight:700; color:#1a1f36;
-    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
-}
-.prov-card-body {
-    padding:.7rem 1rem; display:grid;
-    grid-template-columns:1fr 1fr; gap:.45rem .75rem;
-}
-.prov-cf { display:flex; flex-direction:column; gap:2px; }
-.prov-cf-l {
-    font-size:.67rem; font-weight:700; text-transform:uppercase;
-    letter-spacing:.5px; color:#9ca3af;
-}
-.prov-cf-v { font-size:.82rem; color:#374151; }
-.prov-card-foot {
-    display:flex; align-items:center; justify-content:space-between;
-    padding:.55rem 1rem; border-top:1px solid #f0f2f5;
-}
-.prov-av {
-    width:34px; height:34px; border-radius:8px; flex-shrink:0;
-    background:linear-gradient(135deg,#e7f0ff,#c8dcff);
-    color:#0d6efd; font-weight:700; font-size:.75rem;
-    display:inline-flex; align-items:center; justify-content:center;
-}
-
-/* ══ RESPONSIVE ════════════════════════════════════════════ */
-@media (max-width: 767.98px) {
-    .prov-tbl-wrap { display:none; }
-    .prov-cards    { display:flex; }
-}
-@media (max-width: 479.98px) {
-    .prov-card-body { grid-template-columns:1fr; }
-}
-</style>
-
 <!-- Cabecera -->
 <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
     <div>
