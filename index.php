@@ -719,7 +719,7 @@ ui_page_header('bi-speedometer2', 'Panel principal', $dashSub, ob_get_clean());
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script>
 (function(){
-    var raw = <?php echo json_encode($data['chartMov']); ?>;
+    var raw = <?php echo js_json($data['chartMov']); ?>;
     var mapE = {}, mapS = {};
     for (var i = 0; i < raw.length; i++) {
         mapE[raw[i].fecha] = parseInt(raw[i].entradas, 10) || 0;

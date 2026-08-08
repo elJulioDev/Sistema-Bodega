@@ -272,7 +272,7 @@ require_once __DIR__ . '/../../inc/header.php';
 
 <script>
 (function() {
-    var funcionarios = <?php echo json_encode($funcionariosJs); ?>;
+    var funcionarios = <?php echo js_json($funcionariosJs); ?>;
 
     var selFunc   = document.getElementById('selFuncionario');
     var selRol    = document.getElementById('selRol');

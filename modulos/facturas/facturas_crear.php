@@ -328,7 +328,7 @@ ui_page_header('bi-receipt', 'Ingresar Nueva Factura', 'Los productos ingresan a
 
 <script>
 (function() {
-    var PRODUCTOS = <?php echo json_encode($productosJS); ?>;
+    var PRODUCTOS = <?php echo js_json($productosJS); ?>;
     var buscador = document.getElementById('buscadorProducto');
     var btnLimpiar = document.getElementById('btnLimpiarBuscador');
     var listaDiv = document.getElementById('listaProductos');

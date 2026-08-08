@@ -380,8 +380,8 @@ ui_page_header('bi-arrow-left-right', 'Nuevo Traslado entre Bodegas', $subtitulo
 
 <script>
 (function () {
-    var stockMap    = <?php echo json_encode($stockMap); ?>;
-    var productos   = <?php echo json_encode($productos); ?>;
+    var stockMap    = <?php echo js_json($stockMap); ?>;
+    var productos   = <?php echo js_json($productos); ?>;
     var productoPre = <?php echo (int)$productoPre; ?>;
 
     var selOrigen      = document.getElementById('selOrigen');

@@ -387,9 +387,9 @@ ui_page_header('bi-clipboard-plus', 'Nueva Solicitud de Traslado', $subtitulo);
 
 <script>
 (function () {
-    var stockMap     = <?php echo json_encode($stockMap); ?>;
-    var reservadoMap = <?php echo json_encode($reservadoMap); ?>;
-    var productos    = <?php echo json_encode(array_values($productos)); ?>;
+    var stockMap     = <?php echo js_json($stockMap); ?>;
+    var reservadoMap = <?php echo js_json($reservadoMap); ?>;
+    var productos    = <?php echo js_json(array_values($productos)); ?>;
 
     var selOrigen     = document.getElementById('selOrigen');
     var selDestino    = document.getElementById('selDestino'); // puede ser null si fijo

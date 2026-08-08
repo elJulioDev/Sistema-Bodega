@@ -1,0 +1,32 @@
+# ─────────────────────────────────────────────────────────────
+# Sistema de Bodega — seguridad de acceso
+# Bloquea archivos y carpetas sensibles que no deben ser
+# accesibles directamente desde el navegador.
+# ─────────────────────────────────────────────────────────────
+
+Options -Indexes
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # .env con credenciales de BD
+    RewriteRule ^.*\.env$ - [F,L]
+
+    # Archivos de configuración/logs/respaldos
+    RewriteRule ^.*\.(sql|log|bak|ini|json)$ - [F,L]
+
+    # Carpetas internas (código, esquema de BD, historial git)
+    RewriteRule ^(inc|database|\.git)(/|$) - [F,L]
+
+    # Archivos ocultos (Mac/editor)
+    RewriteRule ^\. - [F,L]
+</IfModule>
+
+# Red de seguridad si no hay mod_rewrite (Apache 2.4+)
+<FilesMatch "^\.env$">
+    Require all denied
+</FilesMatch>
+
+<FilesMatch "\.(sql|log|bak|ini)$">
+    Require all denied
+</FilesMatch>

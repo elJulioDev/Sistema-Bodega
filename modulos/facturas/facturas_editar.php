@@ -397,8 +397,8 @@ ui_page_header('bi-pencil-square', 'Editar Factura N° ' . $factura['numero_fact
 
 <script>
 (function() {
-    var PRODUCTOS = <?php echo json_encode($productosJS); ?>;
-    var DETALLE_INICIAL = <?php echo json_encode($detalleJS); ?>;
+    var PRODUCTOS = <?php echo js_json($productosJS); ?>;
+    var DETALLE_INICIAL = <?php echo js_json($detalleJS); ?>;
     var buscador = document.getElementById('buscadorProducto');
     var btnLimpiar = document.getElementById('btnLimpiarBuscador');
     var listaDiv = document.getElementById('listaProductos');

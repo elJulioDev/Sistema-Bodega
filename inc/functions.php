@@ -9,6 +9,15 @@ function h($text)
     return htmlspecialchars((string)$text, ENT_QUOTES, 'UTF-8');
 }
 
+/**
+ * Codifica datos a JSON seguro para incrustar en un <script> inline.
+ * Escapa <, >, & y comillas para impedir salirse del bloque (XSS).
+ */
+function js_json($data)
+{
+    return json_encode($data, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT);
+}
+
 function redirect($url)
 {
     header('Location: ' . $url);

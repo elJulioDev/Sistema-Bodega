@@ -2,6 +2,7 @@
 require_once __DIR__ . '/../../inc/db.php';
 require_once __DIR__ . '/../../inc/auth.php';
 require_once __DIR__ . '/../../inc/functions.php';
+require_once __DIR__ . '/../../inc/bodegas_helpers.php';
 
 require_login();
 require_role(array('admin', 'bodega'));
@@ -32,6 +33,17 @@ $traspaso = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$traspaso) {
     die('Traspaso no encontrado.');
+}
+
+// Anti-IDOR: el encargado solo puede ver traslados que involucren sus bodegas
+// (origen o destino). Admin ve todo.
+if (is_encargado()) {
+    $puedeVer = user_puede_operar_bodega((int)$traspaso['id_bodega_origen'])
+             || user_puede_operar_bodega((int)$traspaso['id_bodega_destino']);
+    if (!$puedeVer) {
+        set_flash('error', 'Traslado no encontrado.');
+        redirect('movimientos_lista.php');
+    }
 }
 
 // --- Usuario creador ---
