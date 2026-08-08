@@ -55,6 +55,7 @@ $userInitial = function_exists('mb_substr') ? mb_strtoupper(mb_substr($userNombr
     <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no">
     <meta name="theme-color" content="#0d1117">
     <title><?php echo h($pageTitle); ?> | <?php echo h($siteNombre); ?></title>
+    <link rel="icon" type="image/svg+xml" href="<?php echo site_favicon(); ?>">
 
     <!-- Aplica tema y estado del sidebar ANTES de renderizar (evita parpadeo) -->
     <script>

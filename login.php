@@ -67,6 +67,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Iniciar Sesión | <?php echo h($siteNombre); ?></title>
+    <link rel="icon" type="image/svg+xml" href="<?php echo site_favicon(); ?>">
     <script>
         (function () {
             var s = '<?php echo $temaDefault === 'dark' ? 'dark' : 'light'; ?>';
