@@ -32,6 +32,7 @@ Sistema de Bodega: inventario en **PHP puro procedural** (sin framework, sin com
 - Íconos de búsqueda de filtros/buscadores: `input-group-text bg-body` + `<i class="bi bi-search text-secondary">`. Sin `text-secondary` el ícono hereda el color del cuerpo (gris en claro, blanco en oscuro); `bg-light` además rompe el tema.
 - El flash de `set_flash()` se renderiza como modal `#flashModal` (en `inc/header.php`). No usar `confirm()`/`alert()` nativos: `data-confirm` en un form/botón/enlace abre el modal de confirmación, y hay APIs globales `uiConfirm(msg, cb, title)` / `uiAlert(msg, title, type)` definidas en `inc/footer.php` (que además carga el bundle de Bootstrap 5.3 por CDN al inicio).
 - Personalización del sitio (nombre, ícono, **dos colores**: `site_color` principal y `site_color_secundario` usado en la línea de acento de la topbar y el indicador del menú activo, tema por defecto, org) se guarda en la tabla `configuraciones` y se lee con `site_config()` de `inc/settings.php`; el panel admin está en `modulos/configuraciones/editar.php`.
+- El favicon de la pestaña es SVG inline (data URI) generado por `site_favicon()` de `inc/settings.php` a partir de los colores de la marca y el ícono `bi-box-seam`; `inc/header.php` lo renderiza con `<link rel="icon">`. No usar favicons externos.
 
 ## Seguridad — invariantes a respetar
 - `inc/functions.php` incluye `inc/csrf.php`, que **valida automáticamente todo POST** al cargarse (una vez por request, vía guard global).
