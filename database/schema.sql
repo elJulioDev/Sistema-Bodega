@@ -233,6 +233,7 @@ CREATE TABLE facturas (
     KEY idx_facturas_proveedor (id_proveedor),
     KEY idx_facturas_oc (id_orden_compra),
     KEY idx_facturas_created_by (created_by),
+    KEY idx_facturas_fecha (fecha_factura),
     CONSTRAINT fk_facturas_bodega     FOREIGN KEY (id_bodega)       REFERENCES bodegas (id)         ON DELETE CASCADE,
     CONSTRAINT fk_facturas_proveedor  FOREIGN KEY (id_proveedor)    REFERENCES proveedores (id)     ON DELETE SET NULL,
     CONSTRAINT fk_facturas_oc         FOREIGN KEY (id_orden_compra) REFERENCES ordenes_compra (id)  ON DELETE SET NULL,
@@ -299,6 +300,8 @@ CREATE TABLE movimientos_bodega (
     KEY idx_mb_producto (id_producto),
     KEY idx_mb_usuario (id_usuario),
     KEY idx_mb_referencia (referencia_tipo, referencia_id),
+    KEY idx_mb_fecha (fecha_movimiento),
+    KEY idx_mb_bodega_fecha (id_bodega, fecha_movimiento),
     CONSTRAINT fk_mb_bodega   FOREIGN KEY (id_bodega)   REFERENCES bodegas (id)   ON DELETE CASCADE,
     CONSTRAINT fk_mb_producto FOREIGN KEY (id_producto) REFERENCES productos (id) ON DELETE CASCADE,
     CONSTRAINT fk_mb_usuario  FOREIGN KEY (id_usuario)  REFERENCES usuarios (id)  ON DELETE SET NULL

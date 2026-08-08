@@ -21,7 +21,7 @@ $stats = $pdo->query("
 ")->fetch();
 
 // Facturas del mes actual
-$stmtMes = $pdo->query("SELECT COALESCE(SUM(monto_total),0) AS total_mes FROM facturas WHERE estado='ingresada' AND YEAR(fecha_factura)=YEAR(CURDATE()) AND MONTH(fecha_factura)=MONTH(CURDATE())");
+$stmtMes = $pdo->query("SELECT COALESCE(SUM(monto_total),0) AS total_mes FROM facturas WHERE estado='ingresada' AND fecha_factura >= DATE_FORMAT(CURDATE(), '%Y-%m-01') AND fecha_factura < DATE_FORMAT(CURDATE(), '%Y-%m-01') + INTERVAL 1 MONTH");
 $mesActual = $stmtMes->fetch();
 
 // Proveedores para filtro

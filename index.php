@@ -66,8 +66,8 @@ if (is_admin()) {
     $data['totalProveedores'] = (int)$pdo->query("SELECT COUNT(id) FROM proveedores WHERE estado = 1")->fetchColumn();
     $data['totalUsuarios']    = (int)$pdo->query("SELECT COUNT(id) FROM usuarios WHERE estado = 1")->fetchColumn();
 
-    $data['movHoy']  = (int)$pdo->query("SELECT COUNT(*) FROM movimientos_bodega WHERE DATE(fecha_movimiento) = CURDATE()")->fetchColumn();
-    $data['movMes']  = (int)$pdo->query("SELECT COUNT(*) FROM movimientos_bodega WHERE YEAR(fecha_movimiento)=YEAR(CURDATE()) AND MONTH(fecha_movimiento)=MONTH(CURDATE())")->fetchColumn();
+    $data['movHoy']  = (int)$pdo->query("SELECT COUNT(*) FROM movimientos_bodega WHERE fecha_movimiento >= CURDATE() AND fecha_movimiento < CURDATE() + INTERVAL 1 DAY")->fetchColumn();
+    $data['movMes']  = (int)$pdo->query("SELECT COUNT(*) FROM movimientos_bodega WHERE fecha_movimiento >= DATE_FORMAT(CURDATE(), '%Y-%m-01') AND fecha_movimiento < DATE_FORMAT(CURDATE(), '%Y-%m-01') + INTERVAL 1 MONTH")->fetchColumn();
     $data['solPend'] = (int)$pdo->query("SELECT COUNT(id) FROM solicitudes WHERE estado = 'pendiente'")->fetchColumn();
     $data['valorStock'] = (float)$pdo->query("SELECT COALESCE(SUM(stock_actual * costo_promedio),0) FROM stock_bodega")->fetchColumn();
 
@@ -105,6 +105,7 @@ if (is_admin()) {
                SUM(CASE WHEN tipo_movimiento IN ('salida_consumo','ajuste_salida','traslado_salida') THEN 1 ELSE 0 END) AS salidas
         FROM movimientos_bodega
         WHERE fecha_movimiento >= DATE_SUB(CURDATE(), INTERVAL 6 DAY)
+          AND fecha_movimiento <  CURDATE() + INTERVAL 1 DAY
         GROUP BY DATE(fecha_movimiento)
         ORDER BY fecha ASC
     ");

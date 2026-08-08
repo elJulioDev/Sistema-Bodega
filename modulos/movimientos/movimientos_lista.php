@@ -79,11 +79,11 @@ if ($tipo_movimiento !== '') {
     $params[':tipo_movimiento'] = $tipo_movimiento;
 }
 if ($fecha_desde !== '') {
-    $where .= " AND DATE(m.fecha_movimiento) >= :fecha_desde";
+    $where .= " AND m.fecha_movimiento >= :fecha_desde";
     $params[':fecha_desde'] = $fecha_desde;
 }
 if ($fecha_hasta !== '') {
-    $where .= " AND DATE(m.fecha_movimiento) <= :fecha_hasta";
+    $where .= " AND m.fecha_movimiento < :fecha_hasta + INTERVAL 1 DAY";
     $params[':fecha_hasta'] = $fecha_hasta;
 }
 
