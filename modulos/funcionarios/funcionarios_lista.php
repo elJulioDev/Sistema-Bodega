@@ -192,26 +192,26 @@ require_once __DIR__ . '/../../inc/header.php';
 <!-- KPIs -->
 <div class="row g-3 mb-3">
     <div class="col-6 col-md-4">
-        <div class="card shadow-sm border-0 border-start border-primary border-4 h-100">
-            <div class="card-body py-3">
-                <p class="text-muted text-uppercase mb-1 fw-bold fs-xs ls-1" >Funcionarios</p>
-                <h3 class="mb-0 fw-bold text-body"><?php echo (int)$kpis['total']; ?></h3>
+        <div class="card stat-card border-primary">
+            <div class="card-body">
+                <div class="stat-label">Funcionarios</div>
+                <div class="stat-value"><?php echo (int)$kpis['total']; ?></div>
             </div>
         </div>
     </div>
     <div class="col-6 col-md-4">
-        <div class="card shadow-sm border-0 border-start border-success border-4 h-100">
-            <div class="card-body py-3">
-                <p class="text-muted text-uppercase mb-1 fw-bold fs-xs ls-1" >Activos</p>
-                <h3 class="mb-0 fw-bold text-success"><?php echo (int)$kpis['activos']; ?></h3>
+        <div class="card stat-card border-success">
+            <div class="card-body">
+                <div class="stat-label">Activos</div>
+                <div class="stat-value text-success"><?php echo (int)$kpis['activos']; ?></div>
             </div>
         </div>
     </div>
     <div class="col-12 col-md-4">
-        <div class="card shadow-sm border-0 border-start border-info border-4 h-100">
-            <div class="card-body py-3">
-                <p class="text-muted text-uppercase mb-1 fw-bold fs-xs ls-1" >Con acceso al sistema</p>
-                <h3 class="mb-0 fw-bold text-info"><?php echo (int)$kpis['con_acceso']; ?></h3>
+        <div class="card stat-card border-info">
+            <div class="card-body">
+                <div class="stat-label">Con acceso al sistema</div>
+                <div class="stat-value text-info"><?php echo (int)$kpis['con_acceso']; ?></div>
             </div>
         </div>
     </div>

@@ -209,34 +209,34 @@ ui_page_header('bi-arrow-left-right', 'Traslado #' . (int)$traspaso['id'], $subt
 <?php /* ======================== KPIs ======================== */ ?>
 <div class="row g-3 mb-4 kpi-row d-print-none">
     <div class="col-6 col-md-3">
-        <div class="card border-0 shadow-sm h-100">
-            <div class="card-body py-3">
-                <div class="small text-muted text-uppercase fw-bold fs-xs" >Ítems</div>
-                <div class="h4 mb-0 fw-bold"><?php echo number_format($totalItems, 0, ',', '.'); ?></div>
+        <div class="card stat-card border-primary">
+            <div class="card-body">
+                <div class="stat-label">Ítems</div>
+                <div class="stat-value"><?php echo number_format($totalItems, 0, ',', '.'); ?></div>
             </div>
         </div>
     </div>
     <div class="col-6 col-md-3">
-        <div class="card border-0 shadow-sm h-100">
-            <div class="card-body py-3">
-                <div class="small text-muted text-uppercase fw-bold fs-xs" >Cantidad Total</div>
-                <div class="h4 mb-0 fw-bold text-primary"><?php echo number_format($totalCantidad, 2, ',', '.'); ?></div>
+        <div class="card stat-card border-info">
+            <div class="card-body">
+                <div class="stat-label">Cantidad Total</div>
+                <div class="stat-value"><?php echo number_format($totalCantidad, 2, ',', '.'); ?></div>
             </div>
         </div>
     </div>
     <div class="col-6 col-md-3">
-        <div class="card border-0 shadow-sm h-100">
-            <div class="card-body py-3">
-                <div class="small text-muted text-uppercase fw-bold fs-xs" >Valor Total</div>
-                <div class="h4 mb-0 fw-bold text-success">$<?php echo number_format($totalTraspaso, 0, ',', '.'); ?></div>
+        <div class="card stat-card border-success">
+            <div class="card-body">
+                <div class="stat-label">Valor Total</div>
+                <div class="stat-value text-success">$<?php echo number_format($totalTraspaso, 0, ',', '.'); ?></div>
             </div>
         </div>
     </div>
     <div class="col-6 col-md-3">
-        <div class="card border-0 shadow-sm h-100">
-            <div class="card-body py-3">
-                <div class="small text-muted text-uppercase fw-bold fs-xs" >Estado</div>
-                <div class="mt-1"><?php echo estado_badge_ver($traspaso['estado']); ?></div>
+        <div class="card stat-card border-secondary">
+            <div class="card-body">
+                <div class="stat-label">Estado</div>
+                <div class="stat-badge"><?php echo estado_badge_ver($traspaso['estado']); ?></div>
             </div>
         </div>
     </div>

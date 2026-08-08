@@ -197,36 +197,36 @@ ui_page_header('bi-inboxes', $pageTitle, $subtitulo, ob_get_clean());
 ?>
 
 <!-- KPIs -->
-<div class="row g-2 mb-3">
+<div class="row g-3 mb-3">
     <div class="col-6 col-lg-3">
-        <div class="card shadow-sm border-0 border-start border-4 border-primary">
-            <div class="card-body py-2 px-3">
-                <div class="text-muted small text-uppercase fw-semibold">Productos en Stock</div>
-                <div class="h4 mb-0 fw-bold"><?php echo (int)$stats['total_registros']; ?></div>
+        <div class="card stat-card border-primary">
+            <div class="card-body">
+                <div class="stat-label">Productos en Stock</div>
+                <div class="stat-value"><?php echo (int)$stats['total_registros']; ?></div>
             </div>
         </div>
     </div>
     <div class="col-6 col-lg-3">
-        <div class="card shadow-sm border-0 border-start border-4 border-success">
-            <div class="card-body py-2 px-3">
-                <div class="text-muted small text-uppercase fw-semibold">Unidades Totales</div>
-                <div class="h4 mb-0 fw-bold text-success"><?php echo number_format((float)$stats['stock_total'], 0, ',', '.'); ?></div>
+        <div class="card stat-card border-success">
+            <div class="card-body">
+                <div class="stat-label">Unidades Totales</div>
+                <div class="stat-value text-success"><?php echo number_format((float)$stats['stock_total'], 0, ',', '.'); ?></div>
             </div>
         </div>
     </div>
     <div class="col-6 col-lg-3">
-        <div class="card shadow-sm border-0 border-start border-4 border-warning">
-            <div class="card-body py-2 px-3">
-                <div class="text-muted small text-uppercase fw-semibold">Stock Bajo</div>
-                <div class="h4 mb-0 fw-bold text-warning"><?php echo (int)$stats['stock_bajo']; ?></div>
+        <div class="card stat-card border-warning">
+            <div class="card-body">
+                <div class="stat-label">Stock Bajo</div>
+                <div class="stat-value text-warning"><?php echo (int)$stats['stock_bajo']; ?></div>
             </div>
         </div>
     </div>
     <div class="col-6 col-lg-3">
-        <div class="card shadow-sm border-0 border-start border-4 border-info">
-            <div class="card-body py-2 px-3">
-                <div class="text-muted small text-uppercase fw-semibold">Valor stock</div>
-                <div class="h4 mb-0 fw-bold text-info">$<?php echo number_format((float)$stats['valor_total'], 0, ',', '.'); ?></div>
+        <div class="card stat-card border-info">
+            <div class="card-body">
+                <div class="stat-label">Valor stock</div>
+                <div class="stat-value text-info">$<?php echo number_format((float)$stats['valor_total'], 0, ',', '.'); ?></div>
             </div>
         </div>
     </div>

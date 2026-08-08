@@ -50,28 +50,28 @@ require_once __DIR__ . '/../../inc/header.php';
 <?php ui_page_header('bi-truck', 'Proveedores', 'Gestiona el directorio de proveedores registrados', '<a href="proveedores_crear.php" class="btn btn-primary"><i class="bi bi-plus-lg me-1"></i> Nuevo Proveedor</a>'); ?>
 
 <!-- KPIs -->
-<div class="row g-2 mb-3">
+<div class="row g-3 mb-3">
     <div class="col-6 col-lg-4">
-        <div class="card shadow-sm border-0 border-start border-4 border-primary">
-            <div class="card-body py-2 px-3">
-                <div class="text-muted small text-uppercase fw-semibold">Total</div>
-                <div class="h4 mb-0 fw-bold"><?php echo count($proveedores); ?></div>
+        <div class="card stat-card border-primary">
+            <div class="card-body">
+                <div class="stat-label">Total</div>
+                <div class="stat-value"><?php echo count($proveedores); ?></div>
             </div>
         </div>
     </div>
     <div class="col-6 col-lg-4">
-        <div class="card shadow-sm border-0 border-start border-4 border-success">
-            <div class="card-body py-2 px-3">
-                <div class="text-muted small text-uppercase fw-semibold">Activos</div>
-                <div class="h4 mb-0 fw-bold text-success"><?php echo $totalActivos; ?></div>
+        <div class="card stat-card border-success">
+            <div class="card-body">
+                <div class="stat-label">Activos</div>
+                <div class="stat-value text-success"><?php echo $totalActivos; ?></div>
             </div>
         </div>
     </div>
     <div class="col-6 col-lg-4">
-        <div class="card shadow-sm border-0 border-start border-4 border-danger">
-            <div class="card-body py-2 px-3">
-                <div class="text-muted small text-uppercase fw-semibold">Inactivos</div>
-                <div class="h4 mb-0 fw-bold text-danger"><?php echo $totalInactivos; ?></div>
+        <div class="card stat-card border-danger">
+            <div class="card-body">
+                <div class="stat-label">Inactivos</div>
+                <div class="stat-value text-danger"><?php echo $totalInactivos; ?></div>
             </div>
         </div>
     </div>

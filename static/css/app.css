@@ -157,6 +157,23 @@
     --bs-table-border-color: var(--app-border);
 }
 
+/* Utilidades de texto: en oscuro usan los tonos brillantes del tema
+   (los colores por defecto de Bootstrap quedan oscuros y se leen mal) */
+[data-bs-theme="dark"] .text-primary   { color: var(--app-brand) !important; }
+[data-bs-theme="dark"] .text-success   { color: var(--app-success-text) !important; }
+[data-bs-theme="dark"] .text-danger    { color: var(--app-danger-text) !important; }
+[data-bs-theme="dark"] .text-warning   { color: var(--app-warning-text) !important; }
+[data-bs-theme="dark"] .text-info      { color: var(--app-info-text) !important; }
+[data-bs-theme="dark"] .text-secondary { color: var(--app-text-muted) !important; }
+
+/* Utilidades de borde: mismo criterio, acentos legibles sobre fondo oscuro */
+[data-bs-theme="dark"] .border-primary   { border-color: var(--app-brand) !important; }
+[data-bs-theme="dark"] .border-success   { border-color: var(--app-success-text) !important; }
+[data-bs-theme="dark"] .border-danger    { border-color: var(--app-danger-text) !important; }
+[data-bs-theme="dark"] .border-warning   { border-color: var(--app-warning-text) !important; }
+[data-bs-theme="dark"] .border-info      { border-color: var(--app-info-text) !important; }
+[data-bs-theme="dark"] .border-secondary { border-color: var(--app-text-muted) !important; }
+
 /* ===== 2. BASE ===== */
 * { -webkit-tap-highlight-color: transparent; }
 
@@ -610,6 +627,50 @@ a { color: var(--app-brand); }
     color: var(--app-text);
 }
 .card .card-body { color: var(--app-text); }
+
+/* ===== 7b. CARDS DE ESTADÍSTICAS (KPI) — tamaño y texto unificados ===== */
+.stat-card {
+    height: 100%;
+    border: 0;
+    border-left: 4px solid var(--app-border-strong);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-sm);
+}
+.stat-card.border-primary   { border-left-color: var(--app-brand); }
+.stat-card.border-success   { border-left-color: var(--app-success-text); }
+.stat-card.border-danger    { border-left-color: var(--app-danger-text); }
+.stat-card.border-warning   { border-left-color: var(--app-warning-text); }
+.stat-card.border-info      { border-left-color: var(--app-info-text); }
+.stat-card.border-secondary { border-left-color: var(--app-text-muted); }
+
+.stat-card .card-body {
+    padding: 0.9rem 1rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    min-height: 74px;
+}
+.stat-card .stat-label {
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    color: var(--app-text-muted);
+    line-height: 1.3;
+    margin-bottom: 0.3rem;
+}
+.stat-card .stat-value {
+    font-size: 1.3rem;
+    font-weight: 700;
+    line-height: 1.1;
+    color: var(--app-text);
+    margin: 0;
+}
+.stat-card .stat-badge {
+    display: flex;
+    align-items: center;
+    flex: 1;
+}
 
 /* ===== 8. TABLAS ===== */
 .table-responsive {
@@ -1111,6 +1172,10 @@ a { color: var(--app-brand); }
     /* KPIs del dashboard más compactos y alineados */
     .dash-kpi .card-body { padding: 0.8rem 0.9rem; }
     .dash-kpi .kpi-value { font-size: 1.25rem; }
+
+    /* Cards de estadísticas compactas en móvil */
+    .stat-card .card-body { padding: 0.7rem 0.8rem; min-height: 64px; }
+    .stat-card .stat-value { font-size: 1.15rem; }
 }
 
 /* ===== 18. UTILITARIAS (fase 4 — limpieza de inline styles) ===== */

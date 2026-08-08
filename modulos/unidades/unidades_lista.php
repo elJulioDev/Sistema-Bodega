@@ -90,28 +90,28 @@ require_once __DIR__ . '/../../inc/header.php';
 ); ?>
 
 <!-- KPIs -->
-<div class="row g-3 mb-4">
+<div class="row g-3 mb-3">
     <div class="col-6 col-md-4">
-        <div class="card shadow-sm border-0 border-start border-primary border-4 h-100">
-            <div class="card-body py-3">
-                <p class="text-muted text-uppercase mb-1 fw-bold fs-xs ls-1" >Total</p>
-                <h3 class="mb-0 fw-bold text-body"><?php echo (int)$kpis['total']; ?></h3>
+        <div class="card stat-card border-primary">
+            <div class="card-body">
+                <div class="stat-label">Total</div>
+                <div class="stat-value"><?php echo (int)$kpis['total']; ?></div>
             </div>
         </div>
     </div>
     <div class="col-6 col-md-4">
-        <div class="card shadow-sm border-0 border-start border-success border-4 h-100">
-            <div class="card-body py-3">
-                <p class="text-muted text-uppercase mb-1 fw-bold fs-xs ls-1" >Activas</p>
-                <h3 class="mb-0 fw-bold text-success"><?php echo (int)$kpis['activas']; ?></h3>
+        <div class="card stat-card border-success">
+            <div class="card-body">
+                <div class="stat-label">Activas</div>
+                <div class="stat-value text-success"><?php echo (int)$kpis['activas']; ?></div>
             </div>
         </div>
     </div>
     <div class="col-6 col-md-4">
-        <div class="card shadow-sm border-0 border-start border-secondary border-4 h-100">
-            <div class="card-body py-3">
-                <p class="text-muted text-uppercase mb-1 fw-bold fs-xs ls-1" >Inactivas</p>
-                <h3 class="mb-0 fw-bold text-secondary"><?php echo (int)$kpis['inactivas']; ?></h3>
+        <div class="card stat-card border-secondary">
+            <div class="card-body">
+                <div class="stat-label">Inactivas</div>
+                <div class="stat-value text-secondary"><?php echo (int)$kpis['inactivas']; ?></div>
             </div>
         </div>
     </div>

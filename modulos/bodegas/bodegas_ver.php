@@ -157,34 +157,34 @@ $pageHeaderActions = ob_get_clean();
 <!-- KPIs -->
 <div class="row g-3 mb-3">
     <div class="col-6 col-md-3">
-        <div class="card shadow-sm border-0 border-start border-primary border-4 h-100">
-            <div class="card-body py-3">
-                <p class="text-muted text-uppercase mb-1 fw-bold fs-xs ls-1" >Productos</p>
-                <h3 class="mb-0 fw-bold text-body"><?php echo number_format((int)$kpi['productos'], 0, ',', '.'); ?></h3>
+        <div class="card stat-card border-primary">
+            <div class="card-body">
+                <div class="stat-label">Productos</div>
+                <div class="stat-value"><?php echo number_format((int)$kpi['productos'], 0, ',', '.'); ?></div>
             </div>
         </div>
     </div>
     <div class="col-6 col-md-3">
-        <div class="card shadow-sm border-0 border-start border-info border-4 h-100">
-            <div class="card-body py-3">
-                <p class="text-muted text-uppercase mb-1 fw-bold fs-xs ls-1" >Unidades</p>
-                <h3 class="mb-0 fw-bold text-body"><?php echo number_format((float)$kpi['unidades'], 2, ',', '.'); ?></h3>
+        <div class="card stat-card border-info">
+            <div class="card-body">
+                <div class="stat-label">Unidades</div>
+                <div class="stat-value"><?php echo number_format((float)$kpi['unidades'], 2, ',', '.'); ?></div>
             </div>
         </div>
     </div>
     <div class="col-6 col-md-3">
-        <div class="card shadow-sm border-0 border-start border-success border-4 h-100">
-            <div class="card-body py-3">
-                <p class="text-muted text-uppercase mb-1 fw-bold fs-xs ls-1" >Valor total</p>
-                <h3 class="mb-0 fw-bold text-success">$<?php echo number_format((float)$kpi['valor'], 0, ',', '.'); ?></h3>
+        <div class="card stat-card border-success">
+            <div class="card-body">
+                <div class="stat-label">Valor total</div>
+                <div class="stat-value text-success">$<?php echo number_format((float)$kpi['valor'], 0, ',', '.'); ?></div>
             </div>
         </div>
     </div>
     <div class="col-6 col-md-3">
-        <div class="card shadow-sm border-0 border-start border-warning border-4 h-100">
-            <div class="card-body py-3">
-                <p class="text-muted text-uppercase mb-1 fw-bold fs-xs ls-1" >Stock bajo</p>
-                <h3 class="mb-0 fw-bold text-warning"><?php echo (int)$kpi['stock_bajo']; ?></h3>
+        <div class="card stat-card border-warning">
+            <div class="card-body">
+                <div class="stat-label">Stock bajo</div>
+                <div class="stat-value text-warning"><?php echo (int)$kpi['stock_bajo']; ?></div>
             </div>
         </div>
     </div>

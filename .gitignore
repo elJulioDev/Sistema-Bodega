@@ -1,6 +1,8 @@
 # 1. Credenciales y configuración confidencial
 # db.php ahora es genérico (lee de .env). Solo .env se oculta.
 .env
+*.docx
+*.pdf
 
 # 2. Logs de errores y debug
 # Ignora todos los archivos de error_log que genera PHP/Apache en tus carpetas

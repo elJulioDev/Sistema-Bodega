@@ -158,36 +158,36 @@ ui_btn_link('Registrar Movimiento', 'movimientos_crear.php', 'primary', 'bi-plus
 ui_page_header('bi-arrow-left-right', $titulo, $subtitulo, ob_get_clean());
 ?>
 
-<div class="row g-3 mb-4">
+<div class="row g-3 mb-3">
     <div class="col-6 col-md-3">
-        <div class="card shadow-sm border-0 border-start border-primary border-4">
-            <div class="card-body py-3">
-                <div class="small text-muted text-uppercase fw-bold">Total</div>
-                <div class="h4 mb-0 fw-bold"><?php echo number_format((int)$kpi['total'], 0, ',', '.'); ?></div>
+        <div class="card stat-card border-primary">
+            <div class="card-body">
+                <div class="stat-label">Total</div>
+                <div class="stat-value"><?php echo number_format((int)$kpi['total'], 0, ',', '.'); ?></div>
             </div>
         </div>
     </div>
     <div class="col-6 col-md-3">
-        <div class="card border-0 shadow-sm border-start border-success border-4">
-            <div class="card-body py-3">
-                <div class="small text-muted text-uppercase fw-bold">Entradas</div>
-                <div class="h4 mb-0 fw-bold text-success"><?php echo number_format((int)$kpi['entradas'], 0, ',', '.'); ?></div>
+        <div class="card stat-card border-success">
+            <div class="card-body">
+                <div class="stat-label">Entradas</div>
+                <div class="stat-value text-success"><?php echo number_format((int)$kpi['entradas'], 0, ',', '.'); ?></div>
             </div>
         </div>
     </div>
     <div class="col-6 col-md-3">
-        <div class="card border-0 shadow-sm border-start border-danger border-4">
-            <div class="card-body py-3">
-                <div class="small text-muted text-uppercase fw-bold">Salidas</div>
-                <div class="h4 mb-0 fw-bold text-danger"><?php echo number_format((int)$kpi['salidas'], 0, ',', '.'); ?></div>
+        <div class="card stat-card border-danger">
+            <div class="card-body">
+                <div class="stat-label">Salidas</div>
+                <div class="stat-value text-danger"><?php echo number_format((int)$kpi['salidas'], 0, ',', '.'); ?></div>
             </div>
         </div>
     </div>
     <div class="col-6 col-md-3">
-        <div class="card border-0 shadow-sm border-start border-primary border-4">
-            <div class="card-body py-3">
-                <div class="small text-muted text-uppercase fw-bold">Traslados</div>
-                <div class="h4 mb-0 fw-bold text-primary"><?php echo number_format((int)$kpi['traslados'], 0, ',', '.'); ?></div>
+        <div class="card stat-card border-primary">
+            <div class="card-body">
+                <div class="stat-label">Traslados</div>
+                <div class="stat-value"><?php echo number_format((int)$kpi['traslados'], 0, ',', '.'); ?></div>
             </div>
         </div>
     </div>
