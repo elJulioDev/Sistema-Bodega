@@ -196,7 +196,7 @@ ui_page_header('bi-arrow-left-right', $titulo, $subtitulo, ob_get_clean());
 <div class="card shadow-sm border-0 mb-3">
     <div class="card-body py-3">
         <form method="get" class="row g-2 align-items-end">
-            <div class="col-12 col-sm-6 col-md-3">
+            <div class="col-12 col-sm-6 col-md-2">
                 <label class="form-label text-secondary fw-bold small">Buscar</label>
                 <input type="text" name="buscar" value="<?php echo h($buscar); ?>" class="form-control" placeholder="Producto, código...">
             </div>
@@ -235,7 +235,7 @@ ui_page_header('bi-arrow-left-right', $titulo, $subtitulo, ob_get_clean());
                 <input type="date" name="fecha_hasta" value="<?php echo h($fecha_hasta); ?>" class="form-control">
             </div>
 
-            <div class="col-12 col-md-1 d-flex gap-1">
+            <div class="col-12 col-md-2 d-flex gap-1">
                 <button type="submit" class="btn btn-primary w-100"><i class="bi bi-funnel"></i></button>
                 <a href="movimientos_lista.php" class="btn btn-light border" title="Limpiar"><i class="bi bi-eraser"></i></a>
             </div>

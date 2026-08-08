@@ -247,10 +247,13 @@ $dashSub = 'Hola, ' . $user['nombre'] . ' · ' . $rolTxt;
 if ($miBodegaNombre) {
     $dashSub .= ' · ' . $miBodegaNombre;
 }
+$diasSemana = array('Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado');
+$mesesAnio  = array(1 => 'enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre');
+$fechaLarga = $diasSemana[(int)date('w')] . ', ' . (int)date('j') . ' de ' . $mesesAnio[(int)date('n')] . ' de ' . date('Y');
 ob_start();
 ?>
-<span class="badge bg-body text-secondary border d-none d-md-inline-flex align-items-center gap-1 py-2 px-3">
-    <i class="bi bi-calendar3"></i> <?php echo date('d/m/Y'); ?>
+<span class="badge bg-body text-secondary border d-inline-flex align-items-center gap-1 py-2 px-3">
+    <i class="bi bi-calendar3"></i> <?php echo h($fechaLarga); ?>
 </span>
 <?php
 ui_page_header('bi-speedometer2', 'Panel principal', $dashSub, ob_get_clean());
