@@ -139,13 +139,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     SELECT sb.id, sb.stock_actual, sb.costo_promedio, p.nombre
                     FROM   stock_bodega sb
                     INNER  JOIN productos p ON p.id = sb.id_producto
-                    WHERE  sb.id_bodega = ? AND sb.id_producto = ? LIMIT 1
+                    WHERE  sb.id_bodega = ? AND sb.id_producto = ? LIMIT 1 FOR UPDATE
                 ");
                 $stmtStockDestino = $pdo->prepare("
                     SELECT id, stock_actual, costo_promedio FROM stock_bodega
-                    WHERE id_bodega = ? AND id_producto = ? LIMIT 1
+                    WHERE id_bodega = ? AND id_producto = ? LIMIT 1 FOR UPDATE
                 ");
-                $stmtUpdateStock = $pdo->prepare("UPDATE stock_bodega SET stock_actual = ?, costo_promedio = ? WHERE id = ?");
+                // Salida origen: decremento atómico con guarda de stock (evita
+                // condición de carrera si dos traslados golpean la misma fila).
+                $stmtRestarStock = $pdo->prepare("
+                    UPDATE stock_bodega SET stock_actual = stock_actual - ?, costo_promedio = ?
+                    WHERE id = ? AND stock_actual >= ?
+                ");
+                // Entrada destino: incremento atómico
+                $stmtSumarStock = $pdo->prepare("
+                    UPDATE stock_bodega SET stock_actual = stock_actual + ?, costo_promedio = ?
+                    WHERE id = ?
+                ");
                 $stmtInsertStock = $pdo->prepare("INSERT INTO stock_bodega (id_bodega, id_producto, stock_actual, costo_promedio) VALUES (?, ?, ?, ?)");
 
                 $uid = isset($_SESSION['user_id']) ? (int)$_SESSION['user_id'] : null;
@@ -165,14 +175,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $subtotal      = $cantidad * $costoUnitario;
 
                     $stmtDetalle->execute(array($id_traspaso, $id_producto, $stockOrigen['nombre'], $cantidad, $costoUnitario, $subtotal));
-                    $nuevoStockOrigen = (float)$stockOrigen['stock_actual'] - $cantidad;
-                    $stmtUpdateStock->execute(array($nuevoStockOrigen, $costoUnitario, (int)$stockOrigen['id']));
+
+                    $stmtRestarStock->execute(array($cantidad, $costoUnitario, (int)$stockOrigen['id'], $cantidad));
+                    if ($stmtRestarStock->rowCount() === 0) {
+                        throw new Exception('Stock insuficiente para "' . $stockOrigen['nombre'] . '". Intenta nuevamente.');
+                    }
 
                     $stmtStockDestino->execute(array($id_bodega_destino, $id_producto));
                     $stockDestino = $stmtStockDestino->fetch();
                     if ($stockDestino) {
-                        $nuevoStockDestino = (float)$stockDestino['stock_actual'] + $cantidad;
-                        $stmtUpdateStock->execute(array($nuevoStockDestino, $costoUnitario, (int)$stockDestino['id']));
+                        $stmtSumarStock->execute(array($cantidad, $costoUnitario, (int)$stockDestino['id']));
                     } else {
                         $stmtInsertStock->execute(array($id_bodega_destino, $id_producto, $cantidad, $costoUnitario));
                     }
