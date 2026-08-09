@@ -76,6 +76,7 @@ CREATE TABLE usuarios (
     id_bodega      INT UNSIGNED NULL,
     id_unidad      INT UNSIGNED NULL,
     estado         TINYINT(1)   NOT NULL DEFAULT 1,
+    debe_cambiar_clave TINYINT(1) NOT NULL DEFAULT 0,
     created_at     DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
     UNIQUE KEY uq_usuarios_usuario (usuario),
     KEY idx_usuarios_funcionario (id_funcionario),
@@ -411,6 +412,22 @@ CREATE TABLE configuraciones (
     clave VARCHAR(60) NOT NULL,
     valor TEXT NULL,
     PRIMARY KEY (clave)
+) ENGINE=InnoDB;
+
+-- ---------------------------------------------------------
+-- login_intentos (throttle de fuerza bruta persistente)
+-- Registra intentos fallidos por (usuario, ip) y bloqueos
+-- temporales, en lugar de depender del contador de sesión.
+-- ---------------------------------------------------------
+CREATE TABLE login_intentos (
+    id              INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    usuario         VARCHAR(80) NOT NULL,
+    ip              VARCHAR(45) NOT NULL,
+    intentos        INT UNSIGNED NOT NULL DEFAULT 1,
+    bloqueado_hasta DATETIME NULL DEFAULT NULL,
+    ultimo_intento  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY uq_login_usuario_ip (usuario, ip),
+    KEY idx_login_bloqueado (bloqueado_hasta)
 ) ENGINE=InnoDB;
 
 SET FOREIGN_KEY_CHECKS = 1;

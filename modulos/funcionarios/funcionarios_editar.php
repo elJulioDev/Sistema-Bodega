@@ -60,10 +60,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($stmt->fetch()) {
             $error = 'Ya existe otro funcionario con ese RUT.';
         } elseif ($crear_acceso === 1) {
-            if (!$tieneUsuario && ($clave === '' || strlen($clave) < 4)) {
-                $error = 'La contraseña debe tener al menos 4 caracteres.';
-            } elseif ($clave !== '' && strlen($clave) < 4) {
-                $error = 'La nueva contraseña debe tener al menos 4 caracteres.';
+            if (!$tieneUsuario && !validar_clave_politica($clave, $error)) {
+                // $error ya contiene el mensaje de la política de contraseñas
+            } elseif ($clave !== '' && !validar_clave_politica($clave, $error)) {
+                // $error ya contiene el mensaje de la política de contraseñas
             } elseif (!in_array($rol, array('admin', 'bodega', 'solicitante'), true)) {
                 $error = 'Rol inválido.';
             } elseif ($rol === 'bodega' && !$bodegasSel) {
@@ -112,7 +112,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             $clave_hash = password_hash($clave, PASSWORD_DEFAULT);
                             $stmt = $pdo->prepare("UPDATE usuarios SET
                                 nombre = ?, email = ?, usuario = ?, clave_hash = ?,
-                                rol = ?, id_unidad = ?
+                                rol = ?, id_unidad = ?, debe_cambiar_clave = 1
                                 WHERE id = ?");
                             $stmt->execute(array(
                                 $nombre, $email !== '' ? $email : null, $rut, $clave_hash,
@@ -132,9 +132,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     } else {
                         $clave_hash = password_hash($clave, PASSWORD_DEFAULT);
                         $sql = "INSERT INTO usuarios
-                                  (id_funcionario, nombre, email, usuario, clave_hash, rol, id_bodega, id_unidad, estado)
+                                  (id_funcionario, nombre, email, usuario, clave_hash, rol, id_bodega, id_unidad, estado, debe_cambiar_clave)
                                 VALUES
-                                  (:id_funcionario, :nombre, :email, :usuario, :clave_hash, :rol, NULL, :id_unidad, 1)";
+                                  (:id_funcionario, :nombre, :email, :usuario, :clave_hash, :rol, NULL, :id_unidad, 1, 1)";
                         $stmt = $pdo->prepare($sql);
                         $stmt->execute(array(
                             ':id_funcionario' => $id,
@@ -333,7 +333,7 @@ require_once __DIR__ . '/../../inc/header.php';
                             <?php echo $tieneUsuario ? 'Nueva contraseña' : 'Contraseña'; ?>
                             <?php if (!$tieneUsuario): ?><span class="text-danger">*</span><?php endif; ?>
                         </label>
-                        <input type="password" name="clave" id="inpClave" class="form-control" autocomplete="new-password" minlength="4" placeholder="<?php echo $tieneUsuario ? 'Dejar en blanco para no cambiar' : ''; ?>">
+                        <input type="password" name="clave" id="inpClave" class="form-control" autocomplete="new-password" minlength="8" placeholder="<?php echo $tieneUsuario ? 'Mínimo 8 caracteres, letras y números. Dejar en blanco para no cambiar' : 'Mínimo 8 caracteres, letras y números'; ?>">
                     </div>
                     <div class="col-md-6">
                         <label class="form-label fw-bold text-secondary">Rol del sistema <span class="text-danger">*</span></label>

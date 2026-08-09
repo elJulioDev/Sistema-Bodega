@@ -47,6 +47,8 @@ Sistema de Bodega: inventario en **PHP puro procedural** (sin framework, sin com
   - `solicitudes_detalle` tiene tanto `observacion` (nota del solicitante al pedir) como `motivo_ajuste` (nota del encargado al ajustar/revisar).
   - `productos`, `stock_bodega` y `usuarios_bodegas` ya tienen `updated_at`/`created_at` en schema.sql.
   - `configuraciones` (clave/valor) guarda la personalización del sitio; se lee/escribe con `site_config()` / `site_save_config()` de `inc/settings.php`.
+  - `usuarios.debe_cambiar_clave` (TINYINT) fuerza el cambio de clave en el primer login; la página obligatoria es `modulos/usuarios/cambiar_clave.php` y `require_login()` reenvía ahí hasta cambiarla.
+  - `login_intentos` (usuario, ip, intentos, bloqueado_hasta, ultimo_intento) es el throttle persistente de fuerza bruta; helpers en `inc/functions.php`: `login_bloqueado()`, `registrar_intento_fallido()`, `limpiar_intentos_login()`.
 - Solicitudes caducan solas: al cargar `solicitudes_lista.php` se llama `caducar_solicitudes_vencidas($pdo)` (en `inc/functions.php`) para pasar a `caducada` las pendientes/en_revisión vencidas (estado ENUM). Llamarla al inicio en cualquier vista de solicitudes que deba mostrar estados al día.
 - Encargados↔bodegas es **M:N** vía `usuarios_bodegas` (la columna legacy `bodegas.id_encargado` solo existe para compatibilidad). Usar helpers de `inc/bodegas_helpers.php`: `user_bodegas_ids()`, `user_bodegas()`, `user_puede_operar_bodega()`, `asignar_encargado_bodega()`, `desasignar_encargado_bodega()`, etc.
 

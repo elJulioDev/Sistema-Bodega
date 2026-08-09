@@ -28,12 +28,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     $usuario = post('usuario');
     $clave   = post('clave');
+    $ip      = client_ip();
 
-    // Throttling simple contra fuerza bruta (contador en sesión)
-    $intentosFallidos = isset($_SESSION['login_intentos']) ? (int)$_SESSION['login_intentos'] : 0;
-    if ($intentosFallidos >= 5) {
-        sleep(2);
-        $error = 'Demasiados intentos fallidos. Espera unos segundos y vuelve a intentar.';
+    // Throttling persistente contra fuerza bruta (tabla login_intentos,
+    // por usuario+IP, no por sesión: resiste scripts que descarten cookies).
+    $segundosBloqueo = login_bloqueado($pdo, $usuario, $ip);
+    if ($segundosBloqueo !== false) {
+        $minutos = (int)ceil($segundosBloqueo / 60);
+        $error = 'Demasiados intentos fallidos. Intenta de nuevo en aproximadamente ' . $minutos . ' minuto(s).';
     } elseif ($usuario === '' || $clave === '') {
         $error = 'Debes ingresar tu usuario (RUT) y contraseña.';
     } else {
@@ -42,9 +44,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt->execute(array(':usuario' => $usuario));
         $row = $stmt->fetch();
 
-        if ($row && password_verify($clave, $row['clave_hash'])) {
-            // Limpiar contador y renovar el ID de sesión (evita fijación de sesión)
-            unset($_SESSION['login_intentos']);
+        // Hash fijo para igualar el tiempo de respuesta cuando el usuario
+        // no existe (evita enumeración de usuarios por timing).
+        $hashDummy = '$2y$12$PXhv3qWL99X4iMk1x1csOehfQIMl8ipVGmd0U096ya5eLmJh6zDX.';
+        $claveCorrecta = $row && password_verify($clave, $row['clave_hash']);
+        if (!$row) {
+            password_verify($clave, $hashDummy);
+        }
+
+        if ($claveCorrecta) {
+            // Limpiar intentos fallidos y renovar el ID de sesión (anti fixation)
+            limpiar_intentos_login($pdo, $usuario, $ip);
             session_regenerate_id(true);
 
             // Sesion principal usada por auth.php y modulos
@@ -55,16 +65,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $_SESSION['user_id_bodega']      = $row['id_bodega']      !== null ? (int)$row['id_bodega']      : 0;
             $_SESSION['user_id_unidad']      = $row['id_unidad']      !== null ? (int)$row['id_unidad']      : 0;
             $_SESSION['user_id_funcionario'] = $row['id_funcionario'] !== null ? (int)$row['id_funcionario'] : 0;
+            $_SESSION['debe_cambiar_clave']  = isset($row['debe_cambiar_clave']) ? (int)$row['debe_cambiar_clave'] : 0;
+            $_SESSION['last_activity']       = time();
 
             // Alias legacy para index.php / header.php antiguo
             $_SESSION['usuario_id']     = (int)$row['id'];
             $_SESSION['usuario_nombre'] = $row['nombre'];
             $_SESSION['usuario_rol']    = $row['rol'];
 
+            if ((int)$_SESSION['debe_cambiar_clave'] === 1) {
+                set_flash('info', 'Debes cambiar tu contraseña antes de continuar.');
+                redirect(BASE_URL . '/modulos/usuarios/cambiar_clave.php');
+            }
+
             set_flash('success', 'Bienvenido al sistema.');
             redirect(BASE_URL . '/index.php');
         } else {
-            $_SESSION['login_intentos'] = $intentosFallidos + 1;
+            registrar_intento_fallido($pdo, $usuario, $ip);
             $error = 'Usuario o contraseña incorrectos.';
         }
     }
@@ -93,7 +110,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             --app-accent: <?php echo h($siteColorSec); ?>;
         }
     </style>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" integrity="sha384-XGjxtQfXaH2tnPFa9x+ruJTuLE3Aa6LhHSWRr1XeTyhezb4abCG4ccI5AkVDxqC+" crossorigin="anonymous">
     <link rel="stylesheet" href="static/css/login.css">
 </head>
 <body>

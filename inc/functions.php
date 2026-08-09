@@ -34,6 +34,144 @@ function get($key, $default = '')
     return isset($_GET[$key]) ? trim($_GET[$key]) : $default;
 }
 
+/**
+ * IP del cliente (limitada a 45 chars, IPv6). Se usa para el
+ * throttle de fuerza bruta persistente del login.
+ */
+function client_ip()
+{
+    $ip = isset($_SERVER['REMOTE_ADDR']) ? $_SERVER['REMOTE_ADDR'] : '0.0.0.0';
+    return substr($ip, 0, 45);
+}
+
+/**
+ * Indica si el usuario+IP está bloqueado por intentos fallidos.
+ * Retorna false si no está bloqueado, o los segundos restantes de bloqueo.
+ *
+ * La comparación se hace en SQL (UNIX_TIMESTAMP) para no depender de la
+ * zona horaria de PHP vs. la del motor de BD.
+ *
+ * @param PDO    $pdo
+ * @param string $usuario
+ * @param string $ip
+ * @return int|false
+ */
+function login_bloqueado($pdo, $usuario, $ip)
+{
+    $stmt = $pdo->prepare("
+        SELECT UNIX_TIMESTAMP(bloqueado_hasta) - UNIX_TIMESTAMP(NOW()) AS restante
+        FROM   login_intentos
+        WHERE  usuario = ? AND ip = ?
+        LIMIT  1
+    ");
+    $stmt->execute(array($usuario, $ip));
+    $fila = $stmt->fetch(PDO::FETCH_ASSOC);
+    if (!$fila) {
+        return false;
+    }
+    $restante = (int)$fila['restante'];
+    if ($restante <= 0) {
+        return false;
+    }
+    return $restante;
+}
+
+/**
+ * Registra un intento fallido de login. A partir de 5 fallos
+ * consecutivos (usuario+IP) activa un bloqueo de 15 minutos.
+ *
+ * @param PDO    $pdo
+ * @param string $usuario
+ * @param string $ip
+ */
+function registrar_intento_fallido($pdo, $usuario, $ip)
+{
+    $stmt = $pdo->prepare("
+        SELECT id, intentos
+        FROM   login_intentos
+        WHERE  usuario = ? AND ip = ?
+        LIMIT  1
+    ");
+    $stmt->execute(array($usuario, $ip));
+    $fila = $stmt->fetch(PDO::FETCH_ASSOC);
+
+    if ($fila) {
+        $nuevos = (int)$fila['intentos'] + 1;
+        if ($nuevos >= 5) {
+            $stmt = $pdo->prepare("
+                UPDATE login_intentos
+                SET    intentos = ?, bloqueado_hasta = DATE_ADD(NOW(), INTERVAL 15 MINUTE), ultimo_intento = NOW()
+                WHERE  id = ?
+            ");
+        } else {
+            $stmt = $pdo->prepare("
+                UPDATE login_intentos
+                SET    intentos = ?, ultimo_intento = NOW()
+                WHERE  id = ?
+            ");
+        }
+        $stmt->execute(array($nuevos, (int)$fila['id']));
+    } else {
+        $stmt = $pdo->prepare("
+            INSERT INTO login_intentos (usuario, ip, intentos, ultimo_intento)
+            VALUES (?, ?, 1, NOW())
+        ");
+        $stmt->execute(array($usuario, $ip));
+    }
+}
+
+/**
+ * Limpia el contador de intentos tras un login exitoso.
+ *
+ * @param PDO    $pdo
+ * @param string $usuario
+ * @param string $ip
+ */
+function limpiar_intentos_login($pdo, $usuario, $ip)
+{
+    $stmt = $pdo->prepare("DELETE FROM login_intentos WHERE usuario = ? AND ip = ?");
+    $stmt->execute(array($usuario, $ip));
+}
+
+/**
+ * Valida que una contraseña cumpla la política del sistema
+ * (mínimo 8 caracteres, con letras y números).
+ *
+ * @param string $clave
+ * @param string $mensaje  Recibe el mensaje de error si no valida.
+ * @return bool
+ */
+function validar_clave_politica($clave, &$mensaje)
+{
+    if (strlen($clave) < 8) {
+        $mensaje = 'La contraseña debe tener al menos 8 caracteres.';
+        return false;
+    }
+    if (!preg_match('/[A-Za-z]/', $clave) || !preg_match('/[0-9]/', $clave)) {
+        $mensaje = 'La contraseña debe incluir letras y números.';
+        return false;
+    }
+    return true;
+}
+
+/**
+ * Genera una contraseña temporal aleatoria y fuerte (CSPRNG),
+ * sin caracteres ambiguos (0/O/1/l). El primer login obligará a cambiarla.
+ *
+ * @param int $longitud
+ * @return string
+ */
+function generar_clave_temporal($longitud = 10)
+{
+    $caracteres = 'abcdefghijkmnopqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    $max = strlen($caracteres) - 1;
+    $clave = '';
+    for ($i = 0; $i < $longitud; $i++) {
+        $clave .= $caracteres[random_int(0, $max)];
+    }
+    return $clave;
+}
+
 function set_flash($type, $message)
 {
     if (session_status() === PHP_SESSION_NONE) {

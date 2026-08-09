@@ -46,8 +46,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if ($id_funcionario <= 0) {
         $error = 'Debes seleccionar un funcionario.';
-    } elseif ($clave === '' || strlen($clave) < 4) {
-        $error = 'La contraseña debe tener al menos 4 caracteres.';
+    } elseif (!validar_clave_politica($clave, $error)) {
+        // $error ya contiene el mensaje de la política de contraseñas
     } elseif (!in_array($rol, array('admin', 'bodega', 'solicitante'), true)) {
         $error = 'Rol inválido.';
     } elseif ($rol === 'bodega' && $id_bodega <= 0) {
@@ -82,9 +82,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $clave_hash = password_hash($clave, PASSWORD_DEFAULT);
 
                 $sql = "INSERT INTO usuarios
-                          (id_funcionario, nombre, email, usuario, clave_hash, rol, id_bodega, id_unidad, estado)
+                          (id_funcionario, nombre, email, usuario, clave_hash, rol, id_bodega, id_unidad, estado, debe_cambiar_clave)
                         VALUES
-                          (:id_funcionario, :nombre, :email, :usuario, :clave_hash, :rol, :id_bodega, :id_unidad, 1)";
+                          (:id_funcionario, :nombre, :email, :usuario, :clave_hash, :rol, :id_bodega, :id_unidad, 1, 1)";
                 $stmt = $pdo->prepare($sql);
                 $stmt->execute(array(
                     ':id_funcionario' => $func['id'],
@@ -183,7 +183,7 @@ require_once __DIR__ . '/../../inc/header.php';
                         <label class="form-label fw-bold text-secondary">
                             Contraseña <span class="text-danger">*</span>
                         </label>
-                        <input type="password" name="clave" class="form-control" placeholder="Mínimo 4 caracteres" required autocomplete="new-password">
+                        <input type="password" name="clave" class="form-control" placeholder="Mínimo 8 caracteres, letras y números" required autocomplete="new-password">
                     </div>
 
                     <!-- Rol -->

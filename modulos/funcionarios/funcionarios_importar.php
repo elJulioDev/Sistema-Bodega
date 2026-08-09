@@ -29,8 +29,11 @@ $resultado = array();
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['archivo_csv'])) {
     $archivo = $_FILES['archivo_csv'];
 
+    // Límite de tamaño: 2 MB
     if ($archivo['error'] !== UPLOAD_ERR_OK) {
         $error = 'Error al subir el archivo.';
+    } elseif ($archivo['size'] <= 0 || $archivo['size'] > 2097152) {
+        $error = 'El archivo excede el tamaño máximo permitido (2 MB).';
     } else {
         $f = fopen($archivo['tmp_name'], 'r');
 
@@ -57,7 +60,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['archivo_csv'])) {
         $actualizados = 0;
         $omitidos = 0;
         $usuariosCreados = 0;
+        $clavesTemporales = array();
         $errores = array();
+        $maxFilas = 5000;
 
         try {
             $stmtCheck = $pdo->prepare("SELECT id FROM funcionarios WHERE rut = ? LIMIT 1");
@@ -67,17 +72,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['archivo_csv'])) {
 
             // Busca usuario por RUT (campo usuario) O por id_funcionario
             $stmtChkUsuario = $pdo->prepare("SELECT id FROM usuarios WHERE usuario = ? LIMIT 1");
+            $stmtLinkUsuario = $pdo->prepare("UPDATE usuarios SET id_funcionario=?, id_unidad=? WHERE usuario=?");
+
             $stmtInsertUsuario = $pdo->prepare("
                 INSERT INTO usuarios
-                    (id_funcionario, nombre, email, usuario, clave_hash, rol, id_unidad, id_bodega, estado)
-                VALUES (?, ?, NULL, ?, ?, 'solicitante', ?, NULL, 1)
+                    (id_funcionario, nombre, email, usuario, clave_hash, rol, id_unidad, id_bodega, estado, debe_cambiar_clave)
+                VALUES (?, ?, NULL, ?, ?, 'solicitante', ?, NULL, 1, 1)
             ");
-            // Actualiza id_funcionario si el usuario ya existe pero apunta a funcionario eliminado
-            $stmtLinkUsuario = $pdo->prepare("UPDATE usuarios SET id_funcionario=?, id_unidad=? WHERE usuario=?");
 
             while (($datos = fgetcsv($f, 2000, ';')) !== FALSE) {
                 $fila++;
                 if (empty(array_filter($datos))) continue;
+
+                // Límite de filas procesadas (protege memoria/tiempo de ejecución)
+                if ($fila > $maxFilas) {
+                    $errores[] = "Se detuvo el procesamiento: el archivo supera las $maxFilas filas.";
+                    break;
+                }
 
                 $datos = array_map(function($valor) {
                     return mb_convert_encoding(trim($valor), 'UTF-8', 'UTF-8, ISO-8859-1, Windows-1252');
@@ -133,16 +144,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['archivo_csv'])) {
                 $usuarioExiste = $stmtChkUsuario->fetch(PDO::FETCH_ASSOC);
                 $stmtChkUsuario->closeCursor(); // [FIX] cerrar cursor
 
-                $claveAuto = ($codigo !== '') ? $codigo : $rut;
-                $hashAuto  = password_hash($claveAuto, PASSWORD_BCRYPT);
-
                 if (!$usuarioExiste) {
-                    // Crear cuenta nueva
+                    // Crear cuenta nueva con contraseña temporal aleatoria
+                    // (obligará a cambiarla en el primer login).
+                    $claveAuto = generar_clave_temporal();
+                    $hashAuto  = password_hash($claveAuto, PASSWORD_DEFAULT);
                     $ok = $stmtInsertUsuario->execute(array(
                         $idFuncionario, $nombre, $rut, $hashAuto, $id_unidad
                     ));
                     if ($ok) {
                         $usuariosCreados++;
+                        $clavesTemporales[] = array('usuario' => $rut, 'clave' => $claveAuto);
                     } else {
                         // [FIX] capturar error silencioso de PDO
                         $info = $stmtInsertUsuario->errorInfo();
@@ -164,13 +176,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['archivo_csv'])) {
                 'actualizados'    => $actualizados,
                 'omitidos'        => $omitidos,
                 'usuariosCreados' => $usuariosCreados,
+                'clavesTemporales'=> $clavesTemporales,
                 'errores'         => $errores
             );
 
         } catch (Exception $e) {
             $pdo->rollBack();
             fclose($f);
-            $error = 'Error al procesar el archivo: ' . $e->getMessage();
+            // Loggear el detalle real y mostrar solo un mensaje genérico al usuario
+            error_log('[Importar funcionarios] ' . $e->getMessage());
+            $error = 'Error al procesar el archivo. Revisa que el CSV tenga el formato indicado e inténtalo nuevamente.';
         }
     }
 }
@@ -219,6 +234,21 @@ require_once __DIR__ . '/../../inc/header.php';
                         </ul>
                     </div>
 
+                    <?php if (!empty($resultado['clavesTemporales'])): ?>
+                        <div class="alert alert-info mb-3">
+                            <h6 class="alert-heading"><i class="bi bi-key-fill me-2"></i>Contraseñas temporales de cuentas nuevas</h6>
+                            <p class="small mb-2">
+                                Estas cuentas obligan a cambiar la contraseña en el primer ingreso.
+                                Comunica estas claves por un canal seguro.
+                            </p>
+                            <ul class="mb-0 small list-unstyled scroll-200">
+                                <?php foreach ($resultado['clavesTemporales'] as $ct): ?>
+                                    <li><strong><?php echo h($ct['usuario']); ?></strong> → <code><?php echo h($ct['clave']); ?></code></li>
+                                <?php endforeach; ?>
+                            </ul>
+                        </div>
+                    <?php endif; ?>
+
                     <?php if (!empty($resultado['errores'])): ?>
                         <div class="alert alert-warning">
                             <strong>Advertencias (<?php echo count($resultado['errores']); ?>):</strong>
@@ -261,7 +291,7 @@ require_once __DIR__ . '/../../inc/header.php';
                     <li class="mb-2">Completa los datos respetando los nombres exactos de las unidades.</li>
                     <li class="mb-2">Si un RUT ya existe, se actualizarán sus datos (no se duplica).</li>
                     <li class="mb-2">Cada funcionario recibe acceso automático con rol <strong>solicitante</strong>.</li>
-                    <li>La contraseña inicial es el <strong>código RRHH</strong> (o el RUT si no tiene código).</li>
+                    <li>Las cuentas nuevas reciben una <strong>contraseña temporal aleatoria</strong> (se muestran al procesar el archivo) y se obliga a cambiarla en el primer ingreso.</li>
                 </ol>
 
                 <a href="?plantilla=1" class="btn btn-outline-success w-100 mb-3">
@@ -272,7 +302,7 @@ require_once __DIR__ . '/../../inc/header.php';
 
                 <h6 class="fw-bold text-body mb-2 small">Columnas requeridas</h6>
                 <ul class="small text-muted ps-3 mb-0">
-                    <li><code>Codigo</code> — Código interno RRHH (contraseña inicial)</li>
+                    <li><code>Codigo</code> — Código interno RRHH</li>
                     <li><code>RUT</code> — Formato 12345678-9 (nombre de usuario)</li>
                     <li><code>Nombre</code> — Nombre completo (obligatorio)</li>
                     <li><code>Unidad</code> — Nombre exacto o código</li>

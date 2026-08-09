@@ -56,12 +56,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $stmtChkU->execute(array($rut));
                 $usuarioAutoMsg = '';
                 if (!$stmtChkU->fetch()) {
-                    $clave_auto = ($codigo !== '') ? $codigo : $rut;
-                    $clave_hash = password_hash($clave_auto, PASSWORD_BCRYPT);
+                    $clave_auto = generar_clave_temporal();
+                    $clave_hash = password_hash($clave_auto, PASSWORD_DEFAULT);
                     $stmtU = $pdo->prepare("
                         INSERT INTO usuarios
-                            (id_funcionario, nombre, email, usuario, clave_hash, rol, id_unidad, id_bodega, estado)
-                        VALUES (?, ?, ?, ?, ?, 'solicitante', ?, NULL, 1)
+                            (id_funcionario, nombre, email, usuario, clave_hash, rol, id_unidad, id_bodega, estado, debe_cambiar_clave)
+                        VALUES (?, ?, ?, ?, ?, 'solicitante', ?, NULL, 1, 1)
                     ");
                     $stmtU->execute(array(
                         $idFuncionario,
@@ -71,7 +71,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         $clave_hash,
                         $id_unidad > 0 ? $id_unidad : null
                     ));
-                    $usuarioAutoMsg = ' con acceso al sistema (rol Solicitante, contraseña: código)';
+                    $usuarioAutoMsg = ' con acceso al sistema (rol Solicitante, contraseña temporal: ' . $clave_auto . ')';
                 }
 
                 $pdo->commit();

@@ -52,8 +52,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $error = 'Para rol Encargado debes asignar una bodega.';
     } elseif ($rol === 'solicitante' && $id_unidad <= 0) {
         $error = 'Para rol Solicitante debes asignar una unidad.';
-    } elseif ($clave !== '' && strlen($clave) < 4) {
-        $error = 'La contraseña debe tener al menos 4 caracteres.';
+    } elseif ($clave !== '' && !validar_clave_politica($clave, $error)) {
+        // $error ya contiene el mensaje de la política de contraseñas
     } else {
         // Normalizar asignaciones segun rol
         $bodFinal = ($rol === 'bodega') ? $id_bodega : null;
@@ -61,7 +61,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         if ($clave !== '') {
             $clave_hash = password_hash($clave, PASSWORD_DEFAULT);
-            $stmt = $pdo->prepare("UPDATE usuarios SET clave_hash=?, rol=?, id_bodega=?, id_unidad=? WHERE id=?");
+            $stmt = $pdo->prepare("UPDATE usuarios SET clave_hash=?, rol=?, id_bodega=?, id_unidad=?, debe_cambiar_clave=1 WHERE id=?");
             $stmt->execute(array($clave_hash, $rol, $bodFinal, $uniFinal, $id));
         } else {
             $stmt = $pdo->prepare("UPDATE usuarios SET rol=?, id_bodega=?, id_unidad=? WHERE id=?");
@@ -119,7 +119,7 @@ require_once __DIR__ . '/../../inc/header.php';
                     <!-- Clave -->
                     <div class="col-md-6">
                         <label class="form-label fw-bold text-secondary">Nueva Contraseña</label>
-                        <input type="password" name="clave" class="form-control" placeholder="Dejar en blanco para no cambiar" autocomplete="new-password">
+                        <input type="password" name="clave" class="form-control" placeholder="Mínimo 8 caracteres, letras y números (dejar en blanco para no cambiar)" autocomplete="new-password">
                     </div>
 
                     <!-- Rol -->
