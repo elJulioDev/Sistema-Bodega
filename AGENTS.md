@@ -5,8 +5,9 @@ Sistema de Bodega: inventario en **PHP puro procedural** (sin framework, sin com
 ## Cómo verificar el trabajo
 - No hay tests ni linter. Verificación = `php -l <archivo>` en cada archivo tocado + revisión de `git diff`.
 - Lint: sirve tanto `php` de PATH (8.5) como `/opt/lampp/bin/php` (8.2, el de XAMPP). La BD viva local es la de XAMPP (`127.0.0.1:3306`, usuario `root` sin password, ver `.env`).
+- **El `php` de PATH (8.5) no trae `pdo_mysql`**: cualquier página que consulte la BD da "Error de conexión a la base de datos". Para smoke tests o scripts que toquen la BD usar SIEMPRE `/opt/lampp/bin/php`.
 - Acceso real: Apache/XAMPP en `http://localhost/Sistema-Bodega` (path de `BASE_URL` en `.env`, gitignoreado; `.env.example` es la plantilla).
-- Smoke test rápido sin Apache: `php -S 127.0.0.1:8099` desde la raíz del proyecto y pedir `login.php`/`index.php` directamente (302 sin sesión, render con sesión).
+- Smoke test rápido sin Apache: `/opt/lampp/bin/php -S 127.0.0.1:8099` desde la raíz del proyecto y pedir `login.php`/`index.php` directamente (302 sin sesión, render con sesión).
 
 ## Setup (solo primera vez)
 1. `cp .env.example .env` y ajustar credenciales (`DB_NAME=sistema_bodega` por defecto).
@@ -14,6 +15,8 @@ Sistema de Bodega: inventario en **PHP puro procedural** (sin framework, sin com
 3. Generar hash real y actualizarlo:
    `php -r "echo password_hash('CLAVE', PASSWORD_DEFAULT);"`
    luego `UPDATE usuarios SET clave_hash='...' WHERE usuario='admin';`
+- Datos demo (para capturas/demo): `/opt/lampp/bin/mysql -u root < database/seed_demo.sql` — **vacía todas las tablas**, no ejecutarlo sobre datos reales. Usuarios demo en README.
+- `AUDITORIA_SEGURIDAD.md` (auditoría de seguridad completa del sistema) es un documento de trabajo interno **gitignoreado**: no commitearlo ni regenerarlo a menos que se re-audite.
 
 ## Estructura y esqueleto de cada página
 - Sin enrutador: cada archivo PHP es una página accesible directamente. Raíz: `login.php`, `index.php`, `logout.php`. Módulos: `modulos/<dominio>/<accion>.php`.
