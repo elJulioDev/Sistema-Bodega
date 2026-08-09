@@ -28,3 +28,6 @@ desktop.ini
 .idea/
 *.swp
 *.swo
+
+# 6. Documentos de trabajo interno (no forman parte del repositorio)
+AUDITORIA_SEGURIDAD.md

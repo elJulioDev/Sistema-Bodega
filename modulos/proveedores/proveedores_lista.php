@@ -215,7 +215,7 @@ require_once __DIR__ . '/../../inc/header.php';
 
     <div class="prov-card-head">
         <div class="prov-card-head-l">
-            <span class="prov-av"><?php echo $ini; ?></span>
+            <span class="prov-av"><?php echo h($ini); ?></span>
             <span class="prov-card-razon"><?php echo h($p['razon_social']); ?></span>
         </div>
         <?php if ($on): ?>

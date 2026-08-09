@@ -33,6 +33,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $error = 'El color principal debe tener formato hexadecimal (#rrggbb).';
     } elseif (!preg_match('/^#[0-9a-fA-F]{6}$/', $datos['site_color_secundario'])) {
         $error = 'El color secundario debe tener formato hexadecimal (#rrggbb).';
+    } elseif (!preg_match('/^bi-[a-z0-9-]+$/', $datos['site_icono'])) {
+        $error = 'El ícono debe ser una clase válida de Bootstrap Icons (ej: bi-box-seam).';
     } elseif (!in_array($datos['tema_default'], array('light', 'dark', 'auto'), true)) {
         $error = 'Tema por defecto inválido.';
     } else {

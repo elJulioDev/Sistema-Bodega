@@ -31,84 +31,99 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['archivo_csv'])) {
     $archivo = $_FILES['archivo_csv'];
 
     if ($archivo['error'] === UPLOAD_ERR_OK) {
-        $f = fopen($archivo['tmp_name'], 'r');
-        
-        // Saltar BOM si existe
-        $bom = fread($f, 3);
-        if ($bom !== chr(0xEF).chr(0xBB).chr(0xBF)) {
-            rewind($f);
-        }
-        
-        fgetcsv($f, 1000, ';'); // Saltar cabecera
-        
-        $pdo->beginTransaction();
-        $fila = 1;
-        $importados = 0;
-        $omitidos = 0;
-        
-        try {
-            $stmtUnidad = $pdo->prepare("SELECT id FROM unidades_medida WHERE (nombre = ? OR codigo = ?) AND estado = 1 LIMIT 1");
-            $stmtCheck = $pdo->prepare("SELECT id FROM productos WHERE codigo = ? LIMIT 1");
-            $stmtInsert = $pdo->prepare("INSERT INTO productos (codigo, nombre, id_unidad_medida, activo_fijo, stock_minimo, descripcion, estado) VALUES (?, ?, ?, ?, ?, ?, 1)");
+        if ($archivo['size'] <= 0 || $archivo['size'] > 2097152) {
+            $error = 'El archivo excede el tamaño máximo permitido (2 MB).';
+        } else {
+            $f = fopen($archivo['tmp_name'], 'r');
 
-            while (($datos = fgetcsv($f, 1000, ';')) !== FALSE) {
-                $fila++;
-                if (empty(array_filter($datos))) continue;
-
-                // VALIDACIÓN DE COLUMNAS: Deben ser 6
-                if (count($datos) < 6) {
-                    throw new Exception("Fila {$fila}: El archivo debe tener 6 columnas. Descarga la nueva plantilla.");
-                }
-
-                $codigo       = trim($datos[0]);
-                $nombre       = trim($datos[1]);
-                $uni_nombre   = trim($datos[2]);
-                $activo_fijo  = (int)trim($datos[3]);
-                $stock_minimo = (float)str_replace(',', '.', $datos[4]);
-                $descripcion  = trim($datos[5]);
-
-                if ($codigo === '' || $nombre === '') {
-                    throw new Exception("Fila {$fila}: Código y Nombre son obligatorios.");
-                }
-
-                // Validar duplicado
-                $stmtCheck->execute(array($codigo));
-                if ($stmtCheck->fetch()) {
-                    $omitidos++;
-                    continue;
-                }
-
-                // Buscar unidad (por nombre o código)
-                $stmtUnidad->execute(array($uni_nombre, $uni_nombre));
-                $resUnidad = $stmtUnidad->fetch();
-                if (!$resUnidad) {
-                    throw new Exception("Fila {$fila}: La unidad de medida '{$uni_nombre}' no existe en el sistema.");
-                }
-                $id_unidad = $resUnidad['id'];
-
-                $stmtInsert->execute(array(
-                    $codigo, 
-                    $nombre, 
-                    $id_unidad, 
-                    $activo_fijo, 
-                    $stock_minimo, 
-                    ($descripcion !== '' ? $descripcion : null)
-                ));
-                $importados++;
+            // Saltar BOM si existe
+            $bom = fread($f, 3);
+            if ($bom !== chr(0xEF).chr(0xBB).chr(0xBF)) {
+                rewind($f);
             }
 
-            $pdo->commit();
-            $msg = "¡Importación completada! {$importados} productos importados";
-            if ($omitidos > 0) { $msg .= ", {$omitidos} omitidos (códigos duplicados)"; }
-            $msg .= '.';
-            set_flash('success', $msg);
-            redirect('productos_lista.php');
+            fgetcsv($f, 1000, ';'); // Saltar cabecera
 
-        } catch (Exception $e) {
-            $pdo->rollBack();
-            $error = $e->getMessage();
+            $pdo->beginTransaction();
+            $fila = 1;
+            $importados = 0;
+            $omitidos = 0;
+            $maxFilas = 5000;
+
+            try {
+                $stmtUnidad = $pdo->prepare("SELECT id FROM unidades_medida WHERE (nombre = ? OR codigo = ?) AND estado = 1 LIMIT 1");
+                $stmtCheck = $pdo->prepare("SELECT id FROM productos WHERE codigo = ? LIMIT 1");
+                $stmtInsert = $pdo->prepare("INSERT INTO productos (codigo, nombre, id_unidad_medida, activo_fijo, stock_minimo, descripcion, estado) VALUES (?, ?, ?, ?, ?, ?, 1)");
+
+                while (($datos = fgetcsv($f, 1000, ';')) !== FALSE) {
+                    $fila++;
+                    if (empty(array_filter($datos))) continue;
+
+                    // Límite de filas procesadas (protege memoria/tiempo de ejecución)
+                    if ($fila > $maxFilas) {
+                        throw new Exception("Se detuvo el procesamiento: el archivo supera las {$maxFilas} filas.");
+                    }
+
+                    // VALIDACIÓN DE COLUMNAS: Deben ser 6
+                    if (count($datos) < 6) {
+                        throw new Exception("Fila {$fila}: El archivo debe tener 6 columnas. Descarga la nueva plantilla.");
+                    }
+
+                    $codigo       = trim($datos[0]);
+                    $nombre       = trim($datos[1]);
+                    $uni_nombre   = trim($datos[2]);
+                    $activo_fijo  = (int)trim($datos[3]);
+                    $stock_minimo = (float)str_replace(',', '.', $datos[4]);
+                    $descripcion  = trim($datos[5]);
+
+                    if ($codigo === '' || $nombre === '') {
+                        throw new Exception("Fila {$fila}: Código y Nombre son obligatorios.");
+                    }
+
+                    // Validar duplicado
+                    $stmtCheck->execute(array($codigo));
+                    if ($stmtCheck->fetch()) {
+                        $omitidos++;
+                        continue;
+                    }
+
+                    // Buscar unidad (por nombre o código)
+                    $stmtUnidad->execute(array($uni_nombre, $uni_nombre));
+                    $resUnidad = $stmtUnidad->fetch();
+                    if (!$resUnidad) {
+                        throw new Exception("Fila {$fila}: La unidad de medida '{$uni_nombre}' no existe en el sistema.");
+                    }
+                    $id_unidad = $resUnidad['id'];
+
+                    $stmtInsert->execute(array(
+                        $codigo,
+                        $nombre,
+                        $id_unidad,
+                        $activo_fijo,
+                        $stock_minimo,
+                        ($descripcion !== '' ? $descripcion : null)
+                    ));
+                    $importados++;
+                }
+
+                $pdo->commit();
+                $msg = "¡Importación completada! {$importados} productos importados";
+                if ($omitidos > 0) { $msg .= ", {$omitidos} omitidos (códigos duplicados)"; }
+                $msg .= '.';
+                set_flash('success', $msg);
+                redirect('productos_lista.php');
+
+            } catch (PDOException $e) {
+                // Error inesperado de BD: loguear detalle y mostrar mensaje genérico
+                $pdo->rollBack();
+                error_log('[Importar productos] ' . $e->getMessage());
+                $error = 'Error de base de datos al procesar el archivo. Intenta nuevamente.';
+            } catch (Exception $e) {
+                $pdo->rollBack();
+                $error = $e->getMessage();
+            }
+            fclose($f);
         }
-        fclose($f);
     } else {
         $error = 'Error al subir el archivo. Intenta nuevamente.';
     }

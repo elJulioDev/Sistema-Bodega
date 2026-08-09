@@ -51,6 +51,10 @@ if (!headers_sent()) {
     header('X-Content-Type-Options: nosniff');
     header('X-Frame-Options: DENY');
     header('Referrer-Policy: same-origin');
+    if ($es_https) {
+        header('Strict-Transport-Security: max-age=31536000; includeSubDomains');
+    }
+    header("Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=(), usb=()");
     header(
         "Content-Security-Policy: default-src 'self'; "
         . "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; "
